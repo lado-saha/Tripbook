@@ -1,0 +1,25 @@
+<resources>
+    <string name="app_name">Tripbook</string>
+    <string name="lb_search">search</string>
+    <string name="dsc_btn_cancel_search">cancel search</string>
+    <string name="lb_add_towns">add towns</string>
+    <string name="lb_add_towns_from_regions">add towns from regions</string>
+    <string name="lb_add_towns_from_division">add towns from divisions</string>
+    <string name="lb_no_results">no results</string>
+    <string name="lb_see_all_options">see all options</string>
+    <string name="lb_region_name">region name</string>
+    <string name="lb_division_name">division name</string>
+    <string name="lb_town_name">town name</string>
+    <string name="lb_src_cmr">source: …/Africa/Cameroon</string>
+    <string name="lb_town">town</string>
+    <string name="lb_division">division</string>
+    <string name="lb_region">region</string>
+    <string name="dsc_visibility_fab_toggle">toggle fab visibility</string>
+    <string name="dsc_add_town">"import towns "</string>
+    <string name="dsc_show_town_details">show town details</string>
+    <string name="dsc_show_details">show road details</string>
+    <string name="dsc_connect_towns">connect town by a route</string>
+    <string name="dsc_delete">delete selected roads</string>
+    <string name="dsc_delete_selected_towns">delete selected roads</string>
+    <string name="dsc_help">help</string>
+</resources>
