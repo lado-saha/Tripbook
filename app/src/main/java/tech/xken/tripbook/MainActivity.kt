@@ -4,9 +4,8 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import dagger.hilt.android.AndroidEntryPoint
-import tech.xken.tripbook.ui.components.ContainerPrev
-import tech.xken.tripbook.ui.navigation.UnivScreens
-import tech.xken.tripbook.ui.navigation.UniverseNavGraph
+import tech.xken.tripbook.ui.navigation.AppNavGraph
+
 import tech.xken.tripbook.ui.theme.TripbookTheme
 
 @AndroidEntryPoint
@@ -15,51 +14,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             TripbookTheme {
-//                UniverseNavGraph(
-//                    startDestination = UnivScreens.UNIVERSE_VISUALIZER
-//                )
-                ContainerPrev(
-                )
-//                UniverseSearchScreen(
-//                    onNavigateBack = {}
-//                )
-                /*// A surface container using the 'background' color from the theme
-                Surface(
-                    modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colors.background
-                ) {
-                    LaunchedEffect(Unit) {
-                        // We get the Road, links and town
-                        editorVM.repo.testGetRoadAndLinkAndTowns(
-                            roadFields = with(Road) { "$ID,$NAME,$DISTANCE, $TOWN_1, $TOWN_2" },
-                            townsFields = with(Town) { "$ID,$NAME,$LAT,$LON" },
-                            onLoading = { Log.d("Get Road", "LOADING ..") },
-                            onFailure = { Log.d("Get Road", "FAILED: ${it.message}") },
-                            onSuccess = {
-                                Log.d("Get Road", "$it")
-                                val road = it.first
-                                val link = it.second.copy(distance = road.distance!!)
-                                val nodes = it.third.associate { town ->
-                                    town.id to Node(id = town.id,
-                                        name = town.name!!,
-                                        lat = town.lat!!,
-                                        lon = town.lon!!)
-                                } as HashMap<String, Node>
-
-                                editorVM.updateUiS { uis ->
-                                    uis.copy(
-                                        itinerary = link,
-                                        nodes = nodes,
-                                        masterUI = uis.masterUI.update(nodes.keys.map { id ->
-                                            UiItem(itemID = id)
-                                        }).update(UiItem(link.roadID)),
-                                    )
-                                }
-                            }
-                        )
-                    }
-                }
-                if (editorVM.uiS.nodes.isNotEmpty()) UniverseEditor(viewModel = editorVM)*/
+                AppNavGraph()
             }
         }
     }

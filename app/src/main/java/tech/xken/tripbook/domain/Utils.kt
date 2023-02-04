@@ -1,17 +1,30 @@
 package tech.xken.tripbook.domain
 
+import android.telephony.PhoneNumberUtils
 import android.util.Log
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.PointerInputChange
+import androidx.compose.ui.input.pointer.pointerInput
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.withContext
 import tech.xken.tripbook.data.models.Road
 import tech.xken.tripbook.data.models.Town
+import tech.xken.tripbook.data.models.codeCountryMap
 import java.util.*
-import kotlin.collections.HashMap
 import kotlin.coroutines.CoroutineContext
 
-/** Path to the file containing all towns in the country cameroon*/
+fun isCodeInvalid(code: String?) = codeCountryMap[code ?: ""] == null
 
+/**
+ * Returns true if the phone number is invalid and true else
+ */
+fun isPhoneInvalid(phone: String?, code: String?): Boolean {
+    val country = codeCountryMap[code ?: ""]
+    val formatted = PhoneNumberUtils.formatNumber(phone ?: "", country ?: "")
+    return isCodeInvalid(code) || formatted == null || formatted == (phone ?: "")
+}
 
 /**
  * Takes a french abbreviation from of the regions of cameroon
@@ -138,6 +151,13 @@ val String.caps
     }
 
 /**
+ * Capitalises each word
+ */
+val String.titleCase
+    get() = this.split(" ").map{it.caps}.fold(""){ acc, s -> "$acc $s" }
+
+
+/**
  * This is used in searching. It works by comparing a shorter string [inputStr] to the equivalent part of [referenceStr].
  * To do this, we first make sure [inputStr] length is less than or equals to [referenceStr]. In this case, we cut (starting
  * from the beginning and with equal length as [inputStr]), [referenceStr] and compare with [inputStr] to see if they are the same.
@@ -151,3 +171,21 @@ fun strAreTheSame(inputStr: String, referenceStr: String): Boolean {
     else
         referenceStr1.substring(inputStr1.indices).contentEquals(inputStr1, ignoreCase = true)
 }
+
+
+/**
+ * This disables all the children of the composable
+ * @param disabled If true, all children are disable
+ */
+fun Modifier.disableComposable(disabled: Boolean = true) =
+    if (disabled)
+        pointerInput(Unit) {
+            awaitPointerEventScope {
+                while (true) {
+                    awaitPointerEvent(PointerEventPass.Initial)
+                        .changes
+                        .forEach(PointerInputChange::consume)
+                }
+            }
+        }
+    else this

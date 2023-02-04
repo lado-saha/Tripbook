@@ -9,8 +9,8 @@ import tech.xken.tripbook.data.models.Results.Success
  */
 sealed class Results<out R> {
 
-    data class Success<out T>(val data: T) : Results<T>()
     data class Failure(val exception: Exception) : Results<Nothing>()
+    data class Success<out T>(val data: T) : Results<T>()
 
     /**
      * Used for debugging and testing
@@ -22,6 +22,25 @@ sealed class Results<out R> {
         }
     }
 }
+/*sealed class Results<T> {
+    data class Success<T>(val data: T) : Results<T>()
+    data class Failure<T>(val exception: Exception) : Results<T>()
+
+    *//**
+ * Used for debugging and testing
+ *//*
+    override fun toString(): String {
+        return when (this) {
+            is Success<*> -> "Success[data=$data]"
+            is Failure -> "Error[exception=$exception]"
+        }
+    }
+    companion object{
+        fun <T> success(data: T) = Success(data)
+        fun <T> failure(exception: Exception) = Failure<T>(exception)
+    }
+
+}*/
 
 val <T> Results<T>.data get() = (this as Success).data
 val <T> Results<T>.exception get() = (this as Results.Failure).exception
