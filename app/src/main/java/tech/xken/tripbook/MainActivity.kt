@@ -1,8 +1,11 @@
+@file:OptIn(ExperimentalMaterialApi::class)
+
 package tech.xken.tripbook
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.material.ExperimentalMaterialApi
 import dagger.hilt.android.AndroidEntryPoint
 import tech.xken.tripbook.ui.navigation.AppNavGraph
 

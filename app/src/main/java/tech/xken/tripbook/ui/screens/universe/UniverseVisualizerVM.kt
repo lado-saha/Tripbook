@@ -1,4 +1,4 @@
-package tech.xken.tripbook.ui.screens.universe_editor
+package tech.xken.tripbook.ui.screens.universe
 
 import android.util.Log
 import androidx.compose.ui.geometry.Offset
@@ -8,11 +8,10 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
-import tech.xken.tripbook.R
 import tech.xken.tripbook.data.models.*
 import tech.xken.tripbook.data.sources.universe.UniverseRepository
 import tech.xken.tripbook.domain.WhileUiSubscribed
-import tech.xken.tripbook.ui.navigation.UniverseDestinationArgs.UNIV_SEARCH_RESULT
+import tech.xken.tripbook.ui.navigation.UniverseArgs.UNIV_SEARCH_RESULT
 import javax.inject.Inject
 
 data class UniverseVisualizerUiState(
@@ -50,8 +49,6 @@ class UniverseVisualizerVM @Inject constructor(
     private val _selectedTowns = MutableStateFlow(listOf<String>())
     private val _isToolboxVisible = MutableStateFlow(true)
     private val _townFocus = MutableStateFlow("")
-
-
 
     @Suppress("UNCHECKED_CAST")
     val uiState = combine(
@@ -151,48 +148,48 @@ class UniverseVisualizerVM @Inject constructor(
         savedStateHandle.getStateFlow<Pair<Int, List<String>>?>(UNIV_SEARCH_RESULT, null)
             .collectLatest { searchResults ->
                 Log.d("UNIV_SEARCH_RESULT", searchResults.toString())
-                if (searchResults != null) {
-                    _isLoading.value = true
-                    when (searchResults.first) {
-                        R.string.lb_town -> {
-                            val townsNames = searchResults.second
-                            repo.townsFromNames(townsNames).also { results ->
-                                if (results.succeeded) {
-                                    // We convert all town objects into TownNodes objects ready for ui consumption
-                                    _towns.value += results.data.map { TownNode(town = it) }
-                                        .associateBy { it.town.id }
-                                    Log.d("AddTowns", "${_towns.value.entries}")
-                                } else _message.value = "${results.exception}"
-                            }
-                        }
-                        R.string.lb_region -> {
-                            val regions = searchResults.second
-                            regions.forEach { region ->
-                                repo.townsFromRegion(region).also { results ->
-                                    if (results.succeeded) {
-                                        _towns.value +=
-                                            results.data.map { TownNode(town = it) }
-                                                .associateBy { it.town.id }
-                                    } else _message.value = "${results.exception}"
-                                }
-                            }
-                        }
-                        R.string.lb_division -> {
-                            val divisions = searchResults.second
-                            divisions.forEach { division ->
-                                repo.townsFromDivision(division).also { results ->
-                                    if (results.succeeded) {
-                                        _towns.value +=
-                                            results.data.map { TownNode(town = it) }
-                                                .associateBy { it.town.id }
-//                                addTownToMasterUi(idToTowns.keys)
-                                    } else _message.value = "${results.exception}"
-                                }
-                            }
-                        }
-                    }
-                    _isLoading.value = false
-                }
+//                if (searchResults != null) {
+//                    _isLoading.value = true
+//                    when (searchResults.first) {
+//                        R.string.lb_town -> {
+//                            val townsNames = searchResults.second
+//                            repo.townsFromNames(townsNames).also { results ->
+//                                if (results.succeeded) {
+//                                    // We convert all town objects into TownNodes objects ready for ui consumption
+//                                    _towns.value += results.data.map { TownNode(town = it) }
+//                                        .associateBy { it.town.id }
+//                                    Log.d("AddTowns", "${_towns.value.entries}")
+//                                } else _message.value = "${results.exception}"
+//                            }
+//                        }
+//                        R.string.lb_region -> {
+//                            val regions = searchResults.second
+//                            regions.forEach { region ->
+//                                repo.townsFromRegion(region).also { results ->
+//                                    if (results.succeeded) {
+//                                        _towns.value +=
+//                                            results.data.map { TownNode(town = it) }
+//                                                .associateBy { it.town.id }
+//                                    } else _message.value = "${results.exception}"
+//                                }
+//                            }
+//                        }
+//                        R.string.lb_division -> {
+//                            val divisions = searchResults.second
+//                            divisions.forEach { division ->
+//                                repo.townsFromDivision(division).also { results ->
+//                                    if (results.succeeded) {
+//                                        _towns.value +=
+//                                            results.data.map { TownNode(town = it) }
+//                                                .associateBy { it.town.id }
+////                                addTownToMasterUi(idToTowns.keys)
+//                                    } else _message.value = "${results.exception}"
+//                                }
+//                            }
+//                        }
+//                    }
+//                    _isLoading.value = false
+//                }
             }
     }
 

@@ -7,26 +7,31 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import tech.xken.tripbook.ui.navigation.UniverseDestinationArgs.UNIV_SEARCH_RESULT
+import androidx.navigation.navArgument
+import tech.xken.tripbook.R
+import tech.xken.tripbook.ui.navigation.UnivScreens.UNIVERSE_SEARCH
+import tech.xken.tripbook.ui.navigation.UniverseArgs.UNIV_SEARCH_CALLER_ROUTE
+import tech.xken.tripbook.ui.navigation.UniverseArgs.UNIV_SEARCH_FIELDS
+import tech.xken.tripbook.ui.navigation.UniverseArgs.UNIV_SEARCH_RESULT
+import tech.xken.tripbook.ui.screens.agency.ParkDetails
+import tech.xken.tripbook.ui.screens.agency.ParkDetailsVM
 import tech.xken.tripbook.ui.screens.booking.BookerSignIn
 import tech.xken.tripbook.ui.screens.booking.BookerSignUpOrDetails
-import tech.xken.tripbook.ui.screens.booking.BookerSignUpVM
-import tech.xken.tripbook.ui.screens.universe_editor.UniverseEditorScreen
-import tech.xken.tripbook.ui.screens.universe_editor.UniverseSearchScreen
-import tech.xken.tripbook.ui.screens.universe_editor.UniverseVisualizer
-import tech.xken.tripbook.ui.screens.universe_editor.UniverseVisualizerVM
+import tech.xken.tripbook.ui.screens.universe.*
 
 @Composable
 fun AppNavGraph(
     modifier: Modifier = Modifier,
     navController: NavHostController = rememberNavController(),
-    startDestination: String = BookingScreens.BOOKER_SIGN_IN,
+    startDestination: String = AgencyScreens.AGENCY_PARK_DETAILS,
 ) {
     val bookingNavActions = BookingNavActions(navController)
+    val univNavActions = UnivNavActions(navController)
     val currentNavBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = currentNavBackStackEntry?.destination?.route
 
@@ -35,6 +40,16 @@ fun AppNavGraph(
         startDestination = startDestination,
         modifier = modifier,
     ) {
+        //Agency
+        composable(AgencyScreens.AGENCY_PARK_DETAILS) {
+            ParkDetails(vm = hiltViewModel(), navigateBack = { navController.popBackStack() }, onTownClick = {
+                univNavActions.navigateToUnivSearch(
+                    AgencyScreens.AGENCY_PARK_DETAILS, arrayOf(
+                        R.string.lb_town, R.string.lb_region
+                    )
+                )
+            })
+        }
         // sign up - sign in
         // Booking
         composable(BookingScreens.BOOKER_SIGN_IN) {
@@ -69,24 +84,23 @@ fun AppNavGraph(
             UniverseVisualizer(viewModel = hiltViewModel<UniverseVisualizerVM>().apply {
                 savedStateHandle = it.savedStateHandle
             }) {
-                navController.navigate(route = UnivScreens.UNIVERSE_SEARCH)
+                navController.navigate(route = UNIVERSE_SEARCH)
             }
         }
         composable(UnivScreens.UNIVERSE_EDITOR) {
-            UniverseEditorScreen()
+            UniverseEditor()
         }
-        composable(UnivScreens.UNIVERSE_SEARCH) {
-            UniverseSearchScreen { results ->
-                navController.getBackStackEntry(UnivScreens.UNIVERSE_VISUALIZER).savedStateHandle[UNIV_SEARCH_RESULT] =
-                    results
-                Log.d(
-                    "UNIV SEARCH CLEAR",
-                    navController.getBackStackEntry(UnivScreens.UNIVERSE_VISUALIZER)
-                        .savedStateHandle.contains(UNIV_SEARCH_RESULT).toString()
-                )
+        composable(
+            route = UnivDestinations.UNIV_SEARCH_ROUTE,
+            arguments = listOf(
+                navArgument(UNIV_SEARCH_FIELDS) { type = NavType.StringType },
+                navArgument(UNIV_SEARCH_CALLER_ROUTE) { type = NavType.StringType },
+            )
+        ) {
+            UniverseSearch { results ->
                 navController.popBackStack()
+                Log.d("Univ was Selected: ", results.toString())
             }
         }
-
     }
 }

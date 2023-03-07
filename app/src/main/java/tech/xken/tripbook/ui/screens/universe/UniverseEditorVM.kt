@@ -1,5 +1,6 @@
-package tech.xken.tripbook.ui.screens.universe_editor
+package tech.xken.tripbook.ui.screens.universe
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -7,11 +8,8 @@ import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import tech.xken.tripbook.data.models.*
 import tech.xken.tripbook.data.models.Results.*
-import tech.xken.tripbook.data.models.uistates.UniverseEditorUiS
 import tech.xken.tripbook.data.sources.universe.UniverseRepository
-import tech.xken.tripbook.domain.WhileUiSubscribed
-import tech.xken.tripbook.domain.parseStrRoads
-import tech.xken.tripbook.domain.parseStrTowns
+import tech.xken.tripbook.domain.*
 import javax.inject.Inject
 
 
@@ -29,7 +27,7 @@ data class UniverseEditorUiState(
 
 @HiltViewModel
 class UniverseEditorVM @Inject constructor(
-    private val repository: UniverseRepository,
+    private val repo: UniverseRepository,
 ) : ViewModel() {
     private val _isLoading = MutableStateFlow(false)
     private val _percentProgression = MutableStateFlow(Double.NaN)
@@ -60,25 +58,61 @@ class UniverseEditorVM @Inject constructor(
         initialValue = UniverseEditorUiState()
     )
 
-    /**
-     * Manages the selection of towns. Note that a town is marked when long clicked
-     * Marks town if not found in []
-     */
-    fun markSelectedTown(id: String){
-
-    }
 
     /**
      * Admin function called to fill the local database with towns
-     * @param strTowns is to be from the resource containing all the towns
+     * @param univStrings is to be from the resource containing all the towns
      */
-    fun addTowns(strTowns: Array<String>) {
-        started("Started adding towns")
-        val total = strTowns.size
+    fun saveUniverse(univStrings: Array<String>) {
+        started("Started saving universe")
         viewModelScope.launch {
-            val towns = parseStrTowns(strTowns) { _, _ -> }
-            repository.saveTowns(towns)
-            finished("Finished adding towns. Added $total Towns")
+            started(percentCompletion = 0.0)
+            repo.savePlanets(parsePlanets())
+            started(percentCompletion = 20.0)
+            Log.d("Universe", "Universe Starting ....")
+            repo.saveContinents(parseContinents {
+                Log.d("Parser", it)
+                repo.planetsFromNames(listOf(it)).data.first()
+            })
+            started(percentCompletion = 40.0)
+            Log.d("Universe", "Universe FINISH")
+            Log.d("Universe", "Universe Starting ....")
+            repo.saveCountries(parseCountries {
+                Log.d("Parser", it)
+                repo.continentsFromNames(listOf(it)).data.first()
+            })
+            started(percentCompletion = 60.0)
+            Log.d("Universe", "Universe  FINISH")
+            Log.d("Universe", "Universe Starting ....")
+            repo.saveRegions(parseRegions(univStrings) {
+                Log.d("Parser", it)
+                repo.countriesFromNames(listOf(it)).data.first()
+            })
+            started(percentCompletion = 70.0)
+            Log.d("Universe", "Universe  FINISH")
+            Log.d("Universe", "Universe Starting ....")
+            repo.saveDivisions(parseDivisions(univStrings) {
+                Log.d("Parser", it)
+                repo.regionsFromNames(listOf(it)).data.first()
+            })
+            started(percentCompletion = 75.0)
+            Log.d("Universe", "Universe  FINISH")
+            Log.d("Universe", "Universe Starting ....")
+            repo.saveSubdivisions(parseSubdivisions(univStrings) {
+                Log.d("Parser", it)
+                repo.divisionsFromNames(listOf(it)).data.first()
+            })
+            started(percentCompletion = 80.0)
+            Log.d("Universe", "Universe  FINISH")
+            Log.d("Universe", "Universe Starting ....")
+            repo.saveTowns(parseTowns(univStrings) {
+                Log.d("Parser", it)
+                repo.subdivisionsFromNames(listOf(it)).data.first()
+            })
+            Log.d("Universe", "Universe  FINISH")
+            started(percentCompletion = 100.0)
+            finished("Finished")
+            _isLoading.value = false
         }
     }
 
@@ -91,12 +125,12 @@ class UniverseEditorVM @Inject constructor(
         val total = strRoads.size
         viewModelScope.launch {
             val roads = parseStrRoads(strRoads, _towns.value) { _, _ -> }
-            repository.saveRoads(roads)
+            repo.saveRoads(roads)
             val allTownPairs = mutableListOf<TownPair>()
             roads.forEachIndexed { _, road ->
                 allTownPairs += TownPair.townPairsFromTownsIds(road.itineraryTownsIds, road.id)
             }
-            repository.saveTownPairs(allTownPairs)
+            repo.saveTownPairs(allTownPairs)
             finished("Finished: added $total roads, and ${allTownPairs.size} Town pairs")
         }
     }
@@ -104,11 +138,11 @@ class UniverseEditorVM @Inject constructor(
     fun getTowns() {
         started()
         viewModelScope.launch {
-            repository.towns().also {
-                if (it.succeeded) {
-                    _towns.value = it.data
+            repo.towns().also { towns ->
+                if (towns.succeeded) {
+                    _towns.value = towns.data.sortedBy { it.subdivision }
                     finished("Got ${_towns.value.size} towns")
-                } else finished("Error: ${it.exception.message}")
+                } else finished("Error: ${towns.exception.message}")
             }
         }
     }
@@ -116,7 +150,7 @@ class UniverseEditorVM @Inject constructor(
     fun getRoads() {
         started()
         viewModelScope.launch {
-            repository.roads().also {
+            repo.roads().also {
                 if (it.succeeded) {
                     _roads.value = it.data
                     finished("Got ${_roads.value.size} roads")

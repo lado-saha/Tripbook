@@ -3,10 +3,7 @@ package tech.xken.tripbook.data.sources.universe
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
-import tech.xken.tripbook.data.models.Results
-import tech.xken.tripbook.data.models.Road
-import tech.xken.tripbook.data.models.Town
-import tech.xken.tripbook.data.models.TownPair
+import tech.xken.tripbook.data.models.*
 
 /**
  * Default implementation of [UniverseRepository] and is the only entry point to the backend
@@ -15,35 +12,76 @@ class UniverseRepositoryImpl(
     private val localDataSource: UniverseDataSource,
     private val ioDispatcher: CoroutineDispatcher,
 ) : UniverseRepository {
-    override suspend fun townNames(excludedIds: List<String>) =
-        localDataSource.townNames(excludedIds)
-
-    override suspend fun townRegionNames(excludedIds: List<String>) =
-        localDataSource.townRegionNames(excludedIds)
-
-    override suspend fun townDivisionsNames(excludedIds: List<String>) =
-        localDataSource.townDivisionsNames(excludedIds)
-
     override suspend fun towns() = localDataSource.towns()
+    override suspend fun townsFromNames(names: List<String>): Results<List<Town>> =
+        localDataSource.townsFromNames(names)
 
-    override suspend fun townsFromIDs(ids: List<String>) = localDataSource.townsFromIDs(ids)
+    override suspend fun townsFromIds(ids: List<String>): Results<List<Town>> =
+        localDataSource.townsFromIds(ids)
 
-    override suspend fun townsFromNames(names: List<String>) = localDataSource.townsFromNames(names)
+    override suspend fun planetsOfTowns(ids: List<String>): Results<List<Planet>> =
+        localDataSource.planetsOfTowns(ids)
 
-    override suspend fun townsFromGeoPoint(lat: Double, lon: Double) =
-        localDataSource.townsFromGeoPoint(lat, lon)
+    override suspend fun continentsOfTowns(ids: List<String>): Results<List<Continent>> =
+        localDataSource.continentsOfTowns(ids)
 
-    override suspend fun townsFromRegion(region: String) = localDataSource.townsFromRegion(region)
+    override suspend fun countriesOfTowns(ids: List<String>): Results<List<Country>> =
+        localDataSource.countriesOfTowns(ids)
 
-    override suspend fun townsFromDivision(division: String) =
-        localDataSource.townsFromDivision(division)
+    override suspend fun regionsOfTowns(ids: List<String>): Results<List<Region>> =
+        localDataSource.regionsOfTowns(ids)
 
-    override suspend fun townsFromSubDivision(subdivision: String) =
-        localDataSource.townsFromSubDivision(subdivision)
+    override suspend fun divisionsOfTowns(ids: List<String>): Results<List<Division>> =
+        localDataSource.divisionsOfTowns(ids)
+
+    override suspend fun subdivisionsOfTowns(ids: List<String>): Results<List<Subdivision>> =
+        localDataSource.subdivisionsOfTowns(ids)
 
     override suspend fun saveTowns(towns: List<Town>): Unit = coroutineScope {
         launch { localDataSource.saveTowns(towns) }
     }
+
+    override suspend fun planets(): Results<List<Planet>> = localDataSource.planets()
+    override suspend fun planetsFromNames(names: List<String>): Results<List<Planet>> =
+        localDataSource.planetsFromNames(names)
+
+    override suspend fun planetsFromIds(ids: List<String>): Results<List<Planet>> =
+        localDataSource.planetsFromIds(ids)
+
+    override suspend fun continents(): Results<List<Continent>> = localDataSource.continents()
+    override suspend fun continentsFromNames(names: List<String>): Results<List<Continent>> =
+        localDataSource.continentsFromNames(names)
+
+    override suspend fun continentsFromIds(ids: List<String>): Results<List<Continent>> =
+        localDataSource.continentsFromIds(ids)
+
+    override suspend fun countries(): Results<List<Country>> = localDataSource.countries()
+    override suspend fun countriesFromNames(names: List<String>): Results<List<Country>> =
+        localDataSource.countriesFromNames(names)
+
+    override suspend fun countriesFromIds(ids: List<String>): Results<List<Country>> =
+        localDataSource.countriesFromIds(ids)
+
+    override suspend fun regions(): Results<List<Region>> = localDataSource.regions()
+    override suspend fun regionsFromNames(names: List<String>): Results<List<Region>> =
+        localDataSource.regionsFromNames(names)
+
+    override suspend fun regionsFromIds(ids: List<String>): Results<List<Region>> =
+        localDataSource.regionsFromIds(ids)
+
+    override suspend fun divisions(): Results<List<Division>> = localDataSource.divisions()
+    override suspend fun divisionsFromNames(names: List<String>): Results<List<Division>> =
+        localDataSource.divisionsFromNames(names)
+
+    override suspend fun divisionsFromIds(ids: List<String>): Results<List<Division>> =
+        localDataSource.divisionsFromIds(ids)
+
+    override suspend fun subdivisions(): Results<List<Subdivision>> = localDataSource.subdivisions()
+    override suspend fun subdivisionsFromNames(names: List<String>): Results<List<Subdivision>> =
+        localDataSource.subdivisionsFromNames(names)
+
+    override suspend fun subdivisionsFromIds(ids: List<String>): Results<List<Subdivision>> =
+        localDataSource.subdivisionsFromIds(ids)
 
     override suspend fun roads(): Results<List<Road>> = localDataSource.roads()
 
@@ -71,4 +109,28 @@ class UniverseRepositoryImpl(
 
     override suspend fun itineraryOfRoadFromId(id: String, start: String, stop: String) =
         localDataSource.itineraryOfRoadFromId(id, start, stop)
+
+    override suspend fun savePlanets(planets: List<Planet>): Unit = coroutineScope {
+        launch { localDataSource.savePlanets(planets) }
+    }
+
+    override suspend fun saveContinents(continents: List<Continent>): Unit = coroutineScope {
+        launch { localDataSource.saveContinents(continents) }
+    }
+
+    override suspend fun saveCountries(countries: List<Country>): Unit = coroutineScope {
+        launch { localDataSource.saveCountries(countries) }
+    }
+
+    override suspend fun saveRegions(regions: List<Region>): Unit = coroutineScope {
+        launch { localDataSource.saveRegions(regions) }
+    }
+
+    override suspend fun saveDivisions(divisions: List<Division>): Unit = coroutineScope {
+        launch { localDataSource.saveDivisions(divisions) }
+    }
+
+    override suspend fun saveSubdivisions(subdivisions: List<Subdivision>): Unit = coroutineScope {
+        launch { localDataSource.saveSubdivisions(subdivisions) }
+    }
 }

@@ -1,4 +1,4 @@
-package tech.xken.tripbook.ui.screens.universe_editor
+package tech.xken.tripbook.ui.screens.universe
 
 import android.util.Log
 import androidx.compose.animation.AnimatedVisibility
@@ -23,10 +23,9 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.SavedStateHandle
 import tech.xken.tripbook.R
 import tech.xken.tripbook.ui.components.TownNodeItem
-import tech.xken.tripbook.ui.navigation.UniverseDestinationArgs
+import tech.xken.tripbook.ui.navigation.UniverseArgs
 
 @Composable
 fun UniverseVisualizer(
@@ -38,7 +37,7 @@ fun UniverseVisualizer(
     viewModel.addTowns()
 
     val x: State<Pair<Int, List<String>>?> =
-        viewModel.savedStateHandle.getStateFlow(UniverseDestinationArgs.UNIV_SEARCH_RESULT, null).collectAsState()
+        viewModel.savedStateHandle.getStateFlow(UniverseArgs.UNIV_SEARCH_RESULT, null).collectAsState()
     Log.d("UNIVERSE SEARCH RES", x.value?.toString() ?: "")
 
 

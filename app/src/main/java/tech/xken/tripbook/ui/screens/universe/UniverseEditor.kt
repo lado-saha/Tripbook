@@ -1,4 +1,4 @@
-package tech.xken.tripbook.ui.screens.universe_editor
+package tech.xken.tripbook.ui.screens.universe
 
 import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.layout.*
@@ -22,7 +22,7 @@ import tech.xken.tripbook.R
 import tech.xken.tripbook.ui.components.LoadingContent
 
 @Composable
-fun UniverseEditorScreen(
+fun UniverseEditor(
     modifier: Modifier = Modifier,
     viewModel: UniverseEditorVM = hiltViewModel(),
     scaffoldState: ScaffoldState = rememberScaffoldState(),
@@ -32,7 +32,7 @@ fun UniverseEditorScreen(
         scaffoldState = scaffoldState
     ) { paddingValues ->
         val uiState by viewModel.uiState.collectAsState()
-        val townsArray = stringArrayResource(id = R.array.towns)
+        val townsArray = stringArrayResource(id = R.array.universe)
         val roadsArray = stringArrayResource(id = R.array.roads)
 
         Column(
@@ -49,7 +49,7 @@ fun UniverseEditorScreen(
             if (uiState.currentItem.isNotBlank()) Text(uiState.currentItem,
                 modifier = Modifier.fillMaxWidth())
 
-            Button(onClick = { viewModel.addTowns(townsArray) },
+            Button(onClick = { viewModel.saveUniverse(townsArray) },
                 modifier = Modifier.padding(2.dp)) {
                 Icon(imageVector = Icons.Default.Add, "Adding towns")
                 Text("Add towns")
@@ -70,7 +70,7 @@ fun UniverseEditorScreen(
             if (uiState.towns.isNotEmpty())
                 LazyColumn(modifier = Modifier.fillMaxWidth()) {
                     items(uiState.towns) {
-                        Text("${it.name}", Modifier.padding(horizontal = 8.dp))
+                        Text("${it.name} ${it.subdivision}", Modifier.padding(horizontal = 8.dp))
                     }
                 }
             if (uiState.roads.isNotEmpty())

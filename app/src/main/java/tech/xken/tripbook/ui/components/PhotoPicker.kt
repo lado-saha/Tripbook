@@ -30,7 +30,7 @@ fun PhotoPicker(
     photoBitmap: Bitmap?,
     placeholder: ImageVector,
     onBrowseGalleryClick: () -> Unit,
-    onLaunchCameraClick: () -> Unit,
+    onLaunchCameraClick: () -> Unit = {},
     onDeletePhotoClick: () -> Unit,
     modifier: Modifier = Modifier,
 

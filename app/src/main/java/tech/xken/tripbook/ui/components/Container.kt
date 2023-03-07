@@ -1,49 +1,125 @@
 package tech.xken.tripbook.ui.components
 
+import android.graphics.Bitmap
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.material.Card
-import androidx.compose.material.Icon
-import androidx.compose.material.LocalTextStyle
-import androidx.compose.material.Text
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material.icons.filled.Fullscreen
-import androidx.compose.material.icons.filled.FullscreenExit
+import androidx.compose.material.icons.outlined.InsertPhoto
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 
 @Composable
-fun Container() {
+fun MenuItem(
+    modifier: Modifier = Modifier,
+    imageVector: ImageVector,
+    title: String,
+    subtitle: String,
+    errorText: () -> String? = { subtitle },
+    onClick: () -> Unit,
+) {
     Card(
-        modifier = Modifier
-            .padding(16.dp)
-            .fillMaxSize(0.9f)
+        modifier = modifier.clickable { onClick() },
+        border = if (errorText() != null) BorderStroke(1.dp, MaterialTheme.colors.error) else null
     ) {
-        Box() {
-            Card() {
-                Row(modifier = Modifier
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.padding(vertical = 8.dp, horizontal = 8.dp)
+        ) {
+            Icon(
+                imageVector = imageVector, contentDescription = null, modifier = Modifier
                     .padding(4.dp)
-                    .fillMaxWidth()) {
-                    Icon(imageVector = Icons.Default.FullscreenExit, contentDescription = "")
-                    Text(
-                        modifier = Modifier.weight(0.8f, fill = true),
-                        text = "West Region", style = LocalTextStyle.current.copy(
-                            textAlign = TextAlign.Center,
-                            fontWeight = FontWeight.Bold
-                        ))
-                    Icon(imageVector = Icons.Default.ArrowDropDown, contentDescription = "")
-                }
+                    .weight(0.1f)
+            )
+            Column(
+                modifier = Modifier
+                    .padding(2.dp)
+                    .weight(0.9f, true)
+            ) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.h6.copy(fontSize = 16.sp),
+                    modifier = Modifier.padding(4.dp)
+                )
+                val color =
+                    if (errorText() == null) MaterialTheme.typography.caption.color else MaterialTheme.colors.error
+                Text(
+                    text = errorText() ?: subtitle,
+                    style = MaterialTheme.typography.caption.copy(color = color),
+                    modifier = Modifier.padding(4.dp)
+                )
             }
+
         }
     }
 }
-@Preview
+
 @Composable
-fun ContainerPrev(){
-    Container()
+fun MainMenuItem(
+    modifier: Modifier = Modifier,
+    imageBitmap: Bitmap? = null,
+    placeholder: ImageVector = Icons.Outlined.InsertPhoto,
+    title: String,
+    subtitle: String,
+    errorText: () -> String? = { subtitle },
+    onClick: () -> Unit,
+) {
+
+    Card(
+        modifier = modifier.clickable { onClick() },
+        border = if (errorText() != null) BorderStroke(1.dp, MaterialTheme.colors.error) else null
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.padding(vertical = 8.dp, horizontal = 8.dp)
+        ) {
+            if (imageBitmap != null) {
+                Image(
+                    bitmap = imageBitmap.asImageBitmap(),
+                    contentDescription = null,
+                    modifier = Modifier
+                        .weight(0.2f)
+                        .padding(4.dp)
+                        .size(64.dp)
+                        .clip(CircleShape)
+                )
+            } else {
+                Icon(
+                    imageVector = placeholder, contentDescription = null, modifier = Modifier
+                        .weight(0.2f)
+                        .padding(4.dp)
+                        .size(64.dp)
+                        .clip(CircleShape)
+                )
+            }
+            Column(
+                modifier = Modifier
+                    .padding(4.dp)
+                    .weight(0.8f, true)
+            ) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.h6.copy(fontSize = 20.sp),
+                    modifier = Modifier.padding(4.dp)
+                )
+                val color =
+                    if (errorText() == null) MaterialTheme.typography.caption.color else MaterialTheme.colors.error
+                Text(
+                    text = errorText() ?: subtitle,
+                    style = MaterialTheme.typography.caption.copy(color = color),
+                    modifier = Modifier.padding(4.dp)
+                )
+            }
+
+        }
+    }
 }

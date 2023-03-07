@@ -4,6 +4,7 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
@@ -15,6 +16,7 @@ import tech.xken.tripbook.data.models.exception
 import tech.xken.tripbook.data.models.succeeded
 import tech.xken.tripbook.data.sources.universe.UniverseRepository
 import tech.xken.tripbook.domain.WhileUiSubscribed
+import tech.xken.tripbook.domain.caps
 import javax.inject.Inject
 
 data class TripSearchUiState(
@@ -30,7 +32,9 @@ data class TripSearchUiState(
     val toFilteredNames: List<String> = listOf(),
     val isFromExpanded: Boolean = false,
     val isToExpanded: Boolean = false,
-)
+) {
+    val tripStr get() = "${from.trim().caps} - ${to.trim().caps}"
+}
 
 @HiltViewModel
 class TripSearchVM @Inject constructor(
@@ -46,8 +50,8 @@ class TripSearchVM @Inject constructor(
     private val _tripSearchResults = MutableStateFlow<List<Trip>>(listOf())
     private val _isFromExpanded = MutableStateFlow(false)
     private val _isToExpanded = MutableStateFlow(false)
-/*    private val _fromFilteredNames = MutableStateFlow<List<String>>(listOf())
-    private val _toFilteredNames = MutableStateFlow<List<String>>(listOf())*/
+    private val _fromFilteredNames = MutableStateFlow<List<String>>(listOf())
+    private val _toFilteredNames = MutableStateFlow<List<String>>(listOf())
 
     init {
         initTripSearch()
@@ -63,7 +67,9 @@ class TripSearchVM @Inject constructor(
         _isShowingResults,//6
         _tripSearchResults,//7
         _isFromExpanded,//8
-        _isToExpanded//9
+        _isToExpanded,//9
+        _fromFilteredNames,//10
+        _toFilteredNames,//11
     ) {
         TripSearchUiState(
             from = it[0] as String,
@@ -74,8 +80,8 @@ class TripSearchVM @Inject constructor(
             townNames = it[5] as List<String>,
             isShowingResults = it[6] as Boolean,
             tripSearchResults = it[7] as List<Trip>,
-            fromFilteredNames = filterNamesFrom(it[0] as String),
-            toFilteredNames = filterNamesFrom(it[1] as String),
+            fromFilteredNames = it[10] as List<String>,
+            toFilteredNames = it[11] as List<String>,
             isFromExpanded = it[8] as Boolean,
             isToExpanded = it[9] as Boolean
         )
@@ -85,20 +91,33 @@ class TripSearchVM @Inject constructor(
 
     private fun initTripSearch() = viewModelScope.launch {
         onLoading(true)
-        repo.townNames(listOf()).also {
-            if (it.succeeded) {
-                _townNames.value = it.data
-            } else {
-                Log.e("TRIP SEARCH", "Error: ${it.exception.message}")
-                _message.value = R.string.msg_unexpexted_error
-            }
-        }
+//        repo.townNames(listOf()).also {
+//            if (it.succeeded) {
+//                _townNames.value = it.data
+//            } else {
+//                Log.e("TRIP SEARCH", "Error: ${it.exception.message}")
+//                _message.value = R.string.msg_unexpexted_error
+//            }
+//        }
         onLoading(false)
     }
 
-    fun filterNamesFrom(str: String) = when {
-        str.isBlank() -> _townNames.value
-        else -> _townNames.value.filter { it.contains(str.trim(), true) }
+    fun filterFromNames(str: String) {
+        viewModelScope.launch(Dispatchers.IO) {
+            if (str.length >= 2)
+                _fromFilteredNames.value = _townNames.value.filter { it.contains(str.trim(), true) }
+            else
+                _fromFilteredNames.value = listOf()
+        }
+    }
+
+    fun filterToNames(str: String) {
+        viewModelScope.launch(Dispatchers.IO) {
+            if (str.length >= 2)
+                _toFilteredNames.value = _townNames.value.filter { it.contains(str.trim(), true) }
+            else
+                _toFilteredNames.value = listOf()
+        }
     }
 
     fun onLoading(new: Boolean) {
@@ -121,18 +140,20 @@ class TripSearchVM @Inject constructor(
         _to.value = new
     }
 
-    val isFromError = when {
-        _from.value == "" -> R.string.msg_required_field
-        _townNames.value.binarySearch(_from.value.lowercase()) == -1 -> R.string.msg_unknown_town_error
+    fun isFromError(str: String) = when {
+        str == "" -> R.string.msg_required_field
+        _fromFilteredNames.value.indexOf(
+            str.trim().lowercase()
+        ) == -1 -> R.string.msg_unknown_town_error
         else -> null
     }
 
-    val isToError = when {
-        _to.value == "" -> R.string.msg_required_field
-        _townNames.value.binarySearch(
-            _to.value.trim().lowercase()
+    fun isToError(str: String) = when {
+        str == "" -> R.string.msg_required_field
+        _toFilteredNames.value.indexOf(
+            str.trim().lowercase()
         ) == -1 -> R.string.msg_unknown_town_error
-        _from.value.trim().lowercase() == _to.value.trim()
+        str.trim().lowercase() == _from.value.trim()
             .lowercase() -> R.string.msg_from_to_town_same_error
         else -> null
     }

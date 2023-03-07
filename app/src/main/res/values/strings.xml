@@ -56,4 +56,23 @@
     <string name="msg_from_to_town_same_error">destination and start must be different</string>
     <string name="lb_to">to</string>
     <string name="lb_from">from</string>
+    <string name="msg_success_saving_park">successfully saved park</string>
+    <string name="lb_park_creation">park creation</string>
+    <string name="lb_park_edition">park edition</string>
+    <string name="lb_support_email_1">support email 1</string>
+    <string name="lb_support_email_2">support email 2</string>
+    <string name="lb_support_phone_2">support phone 2</string>
+    <string name="lb_support_phone_1">support phone 1</string>
+    <string name="msg_added_x_towns">you\'ve added 2 towns</string>
+    <string name="lb_towns">towns</string>
+    <string name="lb_trip_schedules">trip schedules</string>
+    <string name="lb_hide_info">hide info</string>
+    <string name="lb_planet">planet</string>
+    <string name="lb_continent">continent</string>
+    <string name="lb_country">country</string>
+    <string name="lb_subdivision">subdivision</string>
+    <string name="lb_selected">selected</string>
+    <string name="lb_all_selected">all selected</string>
+    <string name="lb_go">go</string>
+    <string name="msg_inherit_selection">Inherits selection from parent place</string>
 </resources>
