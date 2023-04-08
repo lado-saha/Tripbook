@@ -244,6 +244,7 @@ fun SearchResultItem(
                     end.linkTo(isSelectedRef.start)
                     width = Dimension.fillToConstraints
                 },
+            fontSize = 16.sp
         )
         Checkbox(
             checked = isSelected,

@@ -2,6 +2,7 @@ package tech.xken.tripbook.data.models
 
 import androidx.room.ColumnInfo
 import androidx.room.Entity
+import androidx.room.Ignore
 import androidx.room.PrimaryKey
 import tech.xken.tripbook.R
 
@@ -9,7 +10,7 @@ import tech.xken.tripbook.R
 data class Booker(
     @ColumnInfo(name = ID) @PrimaryKey val id: String,
     @ColumnInfo(name = NAME) var name: String?,
-    @ColumnInfo(name = GENDER) val gender: String?,
+    @ColumnInfo(name = GENDER) val genderID: String?,
     @ColumnInfo(name = PHOTO_URL) val photoUrl: String?,
     @ColumnInfo(name = BIRTHDAY) val birthday: Long?,
     @ColumnInfo(name = OCCUPATION) val occupation: String?,
@@ -17,15 +18,20 @@ data class Booker(
     @ColumnInfo(name = PHONE_CODE) val phoneCode: String?,
     @ColumnInfo(name = EMAIL) val email: String?,
     @ColumnInfo(name = TIMESTAMP) val timestamp: Long?,
-    @ColumnInfo(name = NATIONALITY) val nationality: String?,
+    @ColumnInfo(name = NATIONALITY) val nationality: String?,// This should be a reference to the country
     @ColumnInfo(name = PASSWORD) val password: String?,
 ) {
+    val gender get() = when(genderID){
+        "male" -> Gender.MALE
+        "female" -> Gender.FEMALE
+        else -> null
+    }
     companion object {
         const val TABLE_NAME = "Bookers"
         const val PASSWORD = "password"
         const val ID = "id"
         const val NAME = "name"
-        const val GENDER = "gender"
+        const val GENDER = "gender_id"
         const val PHOTO_URL = "photo_url"
         const val BIRTHDAY = "birthday"
         const val OCCUPATION = "occupation"
@@ -38,10 +44,10 @@ data class Booker(
         /**
          * Creates a new empty [Booker] with id=[NEW_ID]
          */
-        fun new() = Booker(
-            id = NEW_ID,
+        fun new(id: String = NEW_ID) = Booker(
+            id = id,
             name = null,
-            gender = null,
+            genderID = null,
             photoUrl = null,
             birthday = null,
             occupation = null,
@@ -50,7 +56,8 @@ data class Booker(
             email = null,
             timestamp = null,
             nationality = null,
-            password = null)
+            password = null
+        )
     }
 }
 
@@ -69,23 +76,28 @@ data class CurrentBooker(
     }
 }
 
-@Entity(tableName = Scanner.TABLE_NAME, primaryKeys = [Scanner.BOOKER, Scanner.AGENCY])
+@Entity(tableName = Scanner.TABLE_NAME, primaryKeys = [Scanner.BOOKER_ID, Scanner.AGENCY_ID])
 data class Scanner(
-    @ColumnInfo(name = BOOKER) val booker: String,
-    @ColumnInfo(name = AGENCY) val agency: String,
-    @ColumnInfo(name = PERMISSIONS) val permissions: String?,
+    @ColumnInfo(name = BOOKER_ID) val bookerID: String,
+    @ColumnInfo(name = AGENCY_ID) val agencyID: String,
     @ColumnInfo(name = TIMESTAMP) val timestamp: Long?,
-    @ColumnInfo(name = ROLE) val role: String?,
+    @ColumnInfo(name = IS_SUSPENDED) val isSuspended: Boolean?,
 ) {
+    @Ignore
+    var jobIds: MutableList<String>? = null
+
+    @Ignore
+    var booker: Booker = Booker.new(bookerID)
+
     companion object {
+        const val IS_SUSPENDED = "is_suspended"
         const val TABLE_NAME = "Scanners"
-        const val BOOKER = "booker"
-        const val AGENCY = "agency"
-        const val PERMISSIONS = "permissions"
+        const val BOOKER_ID = "booker_id"
+        const val AGENCY_ID = "agency_id"
         const val TIMESTAMP = "timestamp"
-        const val ROLE = "role"
     }
 }
+
 
 enum class Gender {
     MALE, FEMALE, UNSPECIFIED;

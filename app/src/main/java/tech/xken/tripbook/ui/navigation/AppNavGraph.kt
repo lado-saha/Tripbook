@@ -1,11 +1,15 @@
+@file:OptIn(ExperimentalMaterialApi::class)
+
 package tech.xken.tripbook.ui.navigation
 
 
 import android.util.Log
+import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavBackStackEntry
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -13,13 +17,12 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import tech.xken.tripbook.R
 import tech.xken.tripbook.ui.navigation.UnivScreens.UNIVERSE_SEARCH
-import tech.xken.tripbook.ui.navigation.UniverseArgs.UNIV_SEARCH_CALLER_ROUTE
+import tech.xken.tripbook.ui.navigation.UniverseArgs.UNIVERSE_SEARCH_RETURN_TOWNS_ONLY
+import tech.xken.tripbook.ui.navigation.UniverseArgs.UNIV_SEARCH_CALLER_SCREEN
 import tech.xken.tripbook.ui.navigation.UniverseArgs.UNIV_SEARCH_FIELDS
-import tech.xken.tripbook.ui.navigation.UniverseArgs.UNIV_SEARCH_RESULT
-import tech.xken.tripbook.ui.screens.agency.ParkDetails
-import tech.xken.tripbook.ui.screens.agency.ParkDetailsVM
+import tech.xken.tripbook.ui.navigation.UniverseArgs.UNIV_SEARCH_HAS_PRESELECTED_FIELDS
+import tech.xken.tripbook.ui.screens.agency.station.*
 import tech.xken.tripbook.ui.screens.booking.BookerSignIn
 import tech.xken.tripbook.ui.screens.booking.BookerSignUpOrDetails
 import tech.xken.tripbook.ui.screens.universe.*
@@ -28,10 +31,11 @@ import tech.xken.tripbook.ui.screens.universe.*
 fun AppNavGraph(
     modifier: Modifier = Modifier,
     navController: NavHostController = rememberNavController(),
-    startDestination: String = AgencyScreens.AGENCY_PARK_DETAILS,
+    startDestination: String = AgencyDestinations.AGENCY_STATION_DASHBOARD_ROUTE,
 ) {
     val bookingNavActions = BookingNavActions(navController)
     val univNavActions = UnivNavActions(navController)
+    val agencyNavActions = AgencyNavActions(navController)
     val currentNavBackStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = currentNavBackStackEntry?.destination?.route
 
@@ -40,16 +44,79 @@ fun AppNavGraph(
         startDestination = startDestination,
         modifier = modifier,
     ) {
-        //Agency
-        composable(AgencyScreens.AGENCY_PARK_DETAILS) {
-            ParkDetails(vm = hiltViewModel(), navigateBack = { navController.popBackStack() }, onTownClick = {
-                univNavActions.navigateToUnivSearch(
-                    AgencyScreens.AGENCY_PARK_DETAILS, arrayOf(
-                        R.string.lb_town, R.string.lb_region
-                    )
-                )
+        composable(
+            AgencyDestinations.AGENCY_STATION_JOBS_ROUTE,
+            arguments = listOf(navArgument(AgencyArgs.AGENCY_STATION_ID) {
+                type = NavType.StringType
             })
+        ) {
+            StationJobs(onNavigateBack = { navController.popBackStack() }, onJobClick = {})
         }
+        //Agency
+        composable(route = AgencyDestinations.AGENCY_STATION_DASHBOARD_ROUTE,
+            arguments = listOf(
+                navArgument(AgencyArgs.AGENCY_STATION_IS_EDIT_MODE) { type = NavType.BoolType },
+                navArgument(AgencyArgs.AGENCY_STATION_ID) { type = NavType.StringType }
+            )) {
+            StationDashboard(
+                vm = hiltViewModel(),
+                navigateBack = { navController.popBackStack() },
+                onProfileClick = { id, isEditMode ->
+                    agencyNavActions.navigateToStationProfile(isEditMode, id)
+                },
+                onLocationClick = {
+                    agencyNavActions.navigateToStationLocation(it)
+                },
+                onStationJobsClick = {
+                agencyNavActions.navigateToStationJobs(it)
+                })
+        }
+
+        composable(route = AgencyDestinations.AGENCY_STATION_PERSONNEL_ROUTE,
+            arguments = listOf(
+                navArgument(AgencyArgs.AGENCY_ID) { type = NavType.StringType },
+                navArgument(AgencyArgs.AGENCY_STATION_ID) { type = NavType.StringType }
+            )) { entry ->
+            EditStationPersonnel(
+                navigateBack = { navController.popBackStack() },
+                onComplete = { navController.popBackStack() }
+            )
+        }
+
+        composable(route = AgencyDestinations.AGENCY_STATION_PROFILE_ROUTE,
+            arguments = listOf(
+                navArgument(AgencyArgs.AGENCY_STATION_IS_EDIT_MODE) { type = NavType.BoolType },
+                navArgument(AgencyArgs.AGENCY_STATION_ID) { type = NavType.StringType }
+            )) { entry ->
+            EditStationProfile(
+                vm = hiltViewModel(),
+                navigateBack = { navController.popBackStack() },
+                onComplete = { navController.popBackStack() }
+            )
+        }
+
+        composable(
+            route = AgencyDestinations.AGENCY_STATION_LOCATION_ROUTE,
+            arguments = listOf(
+                navArgument(AgencyArgs.AGENCY_STATION_ID) { type = NavType.StringType },
+                navArgument(AgencyArgs.AGENCY_STATION_NAME) { type = NavType.StringType },
+                navArgument(AgencyArgs.AGENCY_STATION_LON) { type = NavType.FloatType },
+                navArgument(AgencyArgs.AGENCY_STATION_LAT) { type = NavType.FloatType },
+            )
+        ) { entry: NavBackStackEntry ->
+            EditStationLocation(
+                onBackClick = { navController.popBackStack() },
+                onComplete = { navController.popBackStack() },
+                onAddEditLocationClick = {
+                    univNavActions.navigateToUnivSearch(
+                        it,
+                        AgencyScreens.AGENCY_STATION_LOCATION,
+                        true
+                    )
+                }
+            )
+        }
+
         // sign up - sign in
         // Booking
         composable(BookingScreens.BOOKER_SIGN_IN) {
@@ -93,11 +160,13 @@ fun AppNavGraph(
         composable(
             route = UnivDestinations.UNIV_SEARCH_ROUTE,
             arguments = listOf(
+                navArgument(UNIV_SEARCH_HAS_PRESELECTED_FIELDS) { type = NavType.BoolType },
+                navArgument(UNIVERSE_SEARCH_RETURN_TOWNS_ONLY) { type = NavType.BoolType },
                 navArgument(UNIV_SEARCH_FIELDS) { type = NavType.StringType },
-                navArgument(UNIV_SEARCH_CALLER_ROUTE) { type = NavType.StringType },
+                navArgument(UNIV_SEARCH_CALLER_SCREEN) { type = NavType.StringType },
             )
         ) {
-            UniverseSearch { results ->
+            UniverseSearch() { results ->
                 navController.popBackStack()
                 Log.d("Univ was Selected: ", results.toString())
             }

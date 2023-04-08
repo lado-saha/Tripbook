@@ -21,9 +21,13 @@ import tech.xken.tripbook.data.sources.booking.local.BookingLocalDataSourceImpl
 import tech.xken.tripbook.data.sources.caches.CachesDataSource
 import tech.xken.tripbook.data.sources.caches.CachesRepository
 import tech.xken.tripbook.data.sources.caches.CachesRepositoryImpl
-import tech.xken.tripbook.data.sources.caches.local.CachesDao
 import tech.xken.tripbook.data.sources.caches.local.CachesLocalDataSourceImpl
 import tech.xken.tripbook.data.sources.caches.local.CachesLocalDatabase
+import tech.xken.tripbook.data.sources.init.InitDataSource
+import tech.xken.tripbook.data.sources.init.InitRepository
+import tech.xken.tripbook.data.sources.init.InitRepositoryImpl
+import tech.xken.tripbook.data.sources.init.local.InitLocalDataSourceImpl
+import tech.xken.tripbook.data.sources.init.local.InitLocalDatabase
 import tech.xken.tripbook.data.sources.universe.UniverseDataSource
 import tech.xken.tripbook.data.sources.universe.UniverseRepository
 import tech.xken.tripbook.data.sources.universe.UniverseRepositoryImpl
@@ -37,6 +41,9 @@ import javax.inject.Singleton
 @Retention(AnnotationRetention.RUNTIME)
 annotation class LocalUniverseDataSource
 
+@Qualifier
+@Retention(AnnotationRetention.RUNTIME)
+annotation class LocalInitDataSource
 
 @Qualifier
 @Retention(AnnotationRetention.RUNTIME)
@@ -49,6 +56,8 @@ annotation class LocalAgencyDataSource
 @Qualifier
 @Retention(AnnotationRetention.RUNTIME)
 annotation class LocalCachesDataSource
+
+/*--------------------------------------------------------*/
 /**
  * A Module to help hilt instantiate all our repositories`
  */
@@ -84,15 +93,29 @@ object RepositoryModule {
         localDataSource,
         ioDispatcher
     )
+
     @Singleton
     @Provides
     fun provideAgencyRepository(
+        @LocalBookingDataSource localBookingDataSource: BookingDataSource,
         @LocalAgencyDataSource localAgencyDataSource: AgencyDataSource,
-        @LocalUniverseDataSource localUniverseDataSource: UniverseDataSource,
         @IoDispatcher ioDispatcher: CoroutineDispatcher,
     ): AgencyRepository = AgencyRepositoryImpl(
         localAgencyDataSource,
-        localUniverseDataSource,
+        BookingRepositoryImpl(
+            localBookingDataSource,
+            ioDispatcher
+        ),
+        ioDispatcher
+    )
+
+    @Singleton
+    @Provides
+    fun provideInitRepository(
+        @LocalInitDataSource localInitDataSource: InitDataSource,
+        @IoDispatcher ioDispatcher: CoroutineDispatcher,
+    ): InitRepository = InitRepositoryImpl(
+        localInitDataSource,
         ioDispatcher
     )
 }
@@ -110,6 +133,17 @@ object DataSourceModule {
         database: CachesLocalDatabase,
         @IoDispatcher ioDispatcher: CoroutineDispatcher,
     ): CachesDataSource = CachesLocalDataSourceImpl(
+        database.dao,
+        ioDispatcher
+    )
+
+    @Singleton
+    @Provides
+    @LocalInitDataSource
+    fun provideLocalInitDataSource(
+        database: InitLocalDatabase,
+        @IoDispatcher ioDispatcher: CoroutineDispatcher,
+    ): InitDataSource = InitLocalDataSourceImpl(
         database.dao,
         ioDispatcher
     )
@@ -164,6 +198,7 @@ object DatabaseModule {
             "Caches.db"
         ).fallbackToDestructiveMigration().build()
     }
+
     @Singleton
     @Provides//One instance only for the database
     fun provideUniverseDatabase(@ApplicationContext context: Context): UniverseLocalDatabase {
@@ -191,6 +226,16 @@ object DatabaseModule {
             context.applicationContext,
             AgencyLocalDatabase::class.java,
             "Agency.db"
+        ).fallbackToDestructiveMigration().build()
+    }
+
+    @Singleton
+    @Provides
+    fun provideInitDatabase(@ApplicationContext context: Context): InitLocalDatabase {
+        return Room.databaseBuilder(
+            context.applicationContext,
+            InitLocalDatabase::class.java,
+            "init.db"
         ).fallbackToDestructiveMigration().build()
     }
 }

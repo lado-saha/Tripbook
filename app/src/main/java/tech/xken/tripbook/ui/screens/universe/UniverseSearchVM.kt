@@ -1,5 +1,6 @@
 package tech.xken.tripbook.ui.screens.universe
 
+import android.util.Log
 import androidx.annotation.StringRes
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
@@ -16,6 +17,7 @@ import tech.xken.tripbook.data.sources.caches.CachesRepository
 import tech.xken.tripbook.data.sources.universe.UniverseRepository
 import tech.xken.tripbook.domain.WhileUiSubscribed
 import tech.xken.tripbook.ui.components.Filter
+import tech.xken.tripbook.ui.navigation.UnivScreens
 import tech.xken.tripbook.ui.navigation.UniverseArgs
 import java.util.*
 import javax.inject.Inject
@@ -24,15 +26,7 @@ data class UniverseSearchUiState(
     val isLoading: Boolean = false,
     val message: Int? = null,
     val query: String = "",
-    val queryFields: List<Int> = listOf(
-//        R.string.lb_town,
-        R.string.lb_planet,
-//        R.string.lb_continent,
-//        R.string.lb_country,
-//        R.string.lb_region,
-//        R.string.lb_division,
-//        R.string.lb_subdivision
-    ),
+    val queryFields: List<Int> = listOf(R.string.lb_planet),
     val isInitComplete: Boolean = false,
     val isComplete: Boolean = false,
 
@@ -52,7 +46,7 @@ data class UniverseSearchUiState(
     val subdivision: Map<String, Subdivision> = mapOf(),
     val towns: Map<String, Town> = mapOf(),
     val filters: List<Filter> = listOf(
-        Filter(R.string.lb_selected), Filter(R.string.lb_all_selected)
+        Filter(R.string.lb_selected), Filter(R.string.lb_parent_selected)
     ),
     val isFiltersVisible: Boolean = true,
     val isError: Boolean = false,
@@ -65,9 +59,11 @@ data class UniverseSearchUiState(
     val selectedDivisions: Map<String, Boolean> = mapOf(),
     val selectedSubdivisions: Map<String, Boolean> = mapOf(),
     val selectedTowns: Map<String, Boolean> = mapOf(),
+    val isToolboxVisible: Boolean = false,
 ) {
+    val isParentSelectionMode get() = !isError && filters.find { it.name == R.string.lb_parent_selected }!!.isSelected
     val isSelectionMode get() = !isError && filters.find { it.name == R.string.lb_selected }!!.isSelected
-    val isNormalMode get() = !isSelectionMode && !isError
+    val isNormalMode get() = !isSelectionMode && !isError && !isParentSelectionMode
 }
 
 /**
@@ -77,13 +73,15 @@ data class UniverseSearchUiState(
 class UniverseSearchVM @Inject constructor(
     private val savedStateHandle: SavedStateHandle,
     private val repo: UniverseRepository,
-    private val cachesRepo: CachesRepository
+    private val cachesRepo: CachesRepository,
 ) : ViewModel() {
     private val _queryFields = MutableStateFlow(
         (savedStateHandle[UniverseArgs.UNIV_SEARCH_FIELDS] ?: "${R.string.lb_town}").trim()
             .split(" ")
             .map { it.toInt() }
-
+    )
+    private val _hasPreSelectedFields = MutableStateFlow<Boolean>(
+        savedStateHandle[UniverseArgs.UNIV_SEARCH_HAS_PRESELECTED_FIELDS]!!
     )
     private val _allPlanets = MutableStateFlow(mapOf<String, Planet>())
     private val _allContinents = MutableStateFlow(mapOf<String, Continent>())
@@ -92,7 +90,6 @@ class UniverseSearchVM @Inject constructor(
     private val _allDivisions = MutableStateFlow(mapOf<String, Division>())
     private val _allSubdivisions = MutableStateFlow(mapOf<String, Subdivision>())
     private val _allTowns = MutableStateFlow(mapOf<String, Town>())
-
     private val _selectedPlanets = MutableStateFlow(mapOf<String, Boolean>())
     private val _selectedContinents = MutableStateFlow(mapOf<String, Boolean>())
     private val _selectedCountries = MutableStateFlow(mapOf<String, Boolean>())
@@ -100,7 +97,6 @@ class UniverseSearchVM @Inject constructor(
     private val _selectedDivisions = MutableStateFlow(mapOf<String, Boolean>())
     private val _selectedSubdivisions = MutableStateFlow(mapOf<String, Boolean>())
     private val _selectedTowns = MutableStateFlow(mapOf<String, Boolean>())
-
     private val _planets = MutableStateFlow(mapOf<String, Planet>())
     private val _continents = MutableStateFlow(mapOf<String, Continent>())
     private val _countries = MutableStateFlow(mapOf<String, Country>())
@@ -115,9 +111,10 @@ class UniverseSearchVM @Inject constructor(
     private val _message = MutableStateFlow<Int?>(null)
     private val _isLoading = MutableStateFlow(false)
     private val _query = MutableStateFlow("")
+    private val _isToolboxVisible = MutableStateFlow(false)
     private val _filters = MutableStateFlow(
         listOf(
-            Filter(R.string.lb_selected), Filter(R.string.lb_all_selected)
+            Filter(R.string.lb_selected), Filter(R.string.lb_parent_selected)
         )
     )
     private val _isFiltersVisible = MutableStateFlow(true)
@@ -158,7 +155,8 @@ class UniverseSearchVM @Inject constructor(
         _selectedRegions,
         _selectedDivisions,
         _selectedSubdivisions,
-        _selectedTowns
+        _selectedTowns,
+        _isToolboxVisible
     ) {
         UniverseSearchUiState(
             query = it[0] as String,
@@ -192,6 +190,7 @@ class UniverseSearchVM @Inject constructor(
             selectedDivisions = it[28] as Map<String, Boolean>,
             selectedSubdivisions = it[29] as Map<String, Boolean>,
             selectedTowns = it[30] as Map<String, Boolean>,
+            isToolboxVisible = it[31] as Boolean
         ).also { initSearch() }
     }.stateIn(
         scope = viewModelScope,
@@ -200,10 +199,10 @@ class UniverseSearchVM @Inject constructor(
     )
 
     private fun initSearch() {
-        if (!_isInitComplete.value)
+        if (!_isInitComplete.value) {
             viewModelScope.launch {
                 onLoading(true)
-                if (_queryFields.value.contains(R.string.lb_planet))
+                if (_queryFields.value.contains(R.string.lb_planet)) {
                     repo.planets().also { data ->
                         when (data) {
                             is Failure -> {}
@@ -211,6 +210,7 @@ class UniverseSearchVM @Inject constructor(
                                 data.data.sortedBy { it.name }.associateBy { it.id }
                         }
                     }
+                }
 
                 if (_queryFields.value.contains(R.string.lb_continent))
                     repo.continents().also { data ->
@@ -265,77 +265,191 @@ class UniverseSearchVM @Inject constructor(
                                 data.data.sortedBy { it.name }.associateBy { it.id }
                         }
                     }
+
                 onQueryChange("")
-                _isInitComplete.value = true
+                //We load cached data and clear cache
+                if (_hasPreSelectedFields.value)
+                    cachesRepo.univSelections(
+                        fromScreen = savedStateHandle[UniverseArgs.UNIV_SEARCH_CALLER_SCREEN]!!,
+                        toScreen = UnivScreens.UNIVERSE_SEARCH
+                    ).also { data ->
+                        when (data) {
+                            is Failure -> {
+                                Log.d("UnivSelection", data.exception.toString())
+                            }
+                            is Success -> {
+                                if(data.data.isNotEmpty()) {
+                                    onFilterClick(Filter(R.string.lb_selected))
+                                    data.data.forEach {
+                                        onResultsSelected(it.selections.trim().split(" "), it.place)
+                                    }
+                                }
+                                cachesRepo.clearUnivSelections()
+                            }
+                        }
+                    }
                 onLoading(false)
+                _isInitComplete.value = true
             }
+        }
+    }
+
+    fun onToolboxVisibilityChange(new: Boolean) {
+        _isToolboxVisible.value = new
     }
 
     fun onErrorChange(new: Boolean) {
         _isError.value = new
     }
 
+    fun onResultsSelected(ids: List<String>, field: Int = _queryFields.value.first()) =
+        viewModelScope.launch {
+            when (field) {
+                R.string.lb_planet -> {
+                    _selectedPlanets.value = _selectedPlanets.value.toMutableMap().apply {
+                        ids.forEach { id -> if (this[id] == null) this[id] = true else remove(id) }
+                    }.toMap()
+                }
+                R.string.lb_continent -> {
+                    _selectedContinents.value = _selectedContinents.value.toMutableMap().apply {
+                        ids.forEach { id -> if (this[id] == null) this[id] = true else remove(id) }
+                    }.toMap()
+                }
+                R.string.lb_country -> {
+                    _selectedCountries.value = _selectedCountries.value.toMutableMap().apply {
+                        ids.forEach { id -> if (this[id] == null) this[id] = true else remove(id) }
+                    }.toMap()
+                }
+                R.string.lb_region -> {
+                    _selectedRegions.value = _selectedRegions.value.toMutableMap().apply {
+                        ids.forEach { id -> if (this[id] == null) this[id] = true else remove(id) }
+                    }.toMap()
+                }
+                R.string.lb_division -> {
+                    _selectedDivisions.value = _selectedDivisions.value.toMutableMap().apply {
+                        ids.forEach { id -> if (this[id] == null) this[id] = true else remove(id) }
+                    }.toMap()
+                }
+                R.string.lb_subdivision -> {
+                    _selectedSubdivisions.value = _selectedSubdivisions.value.toMutableMap().apply {
+                        ids.forEach { id -> if (this[id] == null) this[id] = true else remove(id) }
+                    }.toMap()
+                }
+                R.string.lb_town -> {
+                    _selectedTowns.value = _selectedTowns.value.toMutableMap().apply {
+                        ids.forEach { id -> if (this[id] == null) this[id] = true else remove(id) }
+                    }.toMap()
+                }
+            }
+        }
 
-    fun onResultSelection(id: String) = viewModelScope.launch {
+    fun onQueryChange(query: String) = viewModelScope.launch {
+        _isToolboxVisible.value = false
+        _query.value = query.trim().lowercase()
+        //Updating autoComplete options
         when (_queryFields.value.first()) {
-            R.string.lb_planet -> {
-                _selectedPlanets.value = _selectedPlanets.value.toMutableMap().apply {
-                    if (this[id] == null) this[id] = true else remove(id)
-                }.toMap()
-            }
-            R.string.lb_continent -> {
-                _selectedContinents.value = _selectedContinents.value.toMutableMap().apply {
-                    if (this[id] == null) this[id] = true else remove(id)
-                }.toMap()
-            }
-            R.string.lb_country -> {
-                _selectedCountries.value = _selectedCountries.value.toMutableMap().apply {
-                    if (this[id] == null) this[id] = true else remove(id)
-                }.toMap()
-            }
-            R.string.lb_region -> {
-                _selectedRegions.value = _selectedRegions.value.toMutableMap().apply {
-                    if (this[id] == null) this[id] = true else remove(id)
-                }.toMap()
-            }
-            R.string.lb_division -> {
-                _selectedDivisions.value = _selectedDivisions.value.toMutableMap().apply {
-                    if (this[id] == null) this[id] = true else remove(id)
-                }.toMap()
-            }
-            R.string.lb_subdivision -> {
-                _selectedSubdivisions.value = _selectedSubdivisions.value.toMutableMap().apply {
-                    if (this[id] == null) this[id] = true else remove(id)
-                }.toMap()
-            }
-            R.string.lb_town -> {
-                _selectedTowns.value = _selectedTowns.value.toMutableMap().apply {
-                    if (this[id] == null) this[id] = true else remove(id)
-                }.toMap()
+            R.string.lb_planet -> _planets.value =
+                _allPlanets.value.filter { it.value.name!!.contains(query) }
+            R.string.lb_continent -> _continents.value =
+                _allContinents.value.filter { it.value.name!!.contains(query) }
+            R.string.lb_country -> _countries.value =
+                _allCountries.value.filter { it.value.name!!.contains(query) }
+            R.string.lb_region -> _regions.value =
+                _allRegions.value.filter { it.value.name!!.contains(query) }
+            R.string.lb_division -> _divisions.value =
+                _allDivisions.value.filter { it.value.name!!.contains(query) }
+            R.string.lb_subdivision -> _subdivisions.value =
+                _allSubdivisions.value.filter { it.value.name!!.contains(query) }
+            R.string.lb_town -> _towns.value =
+                _allTowns.value.filter { it.value.name!!.contains(query) }
+        }
+        onErrorChange(searchResults().isEmpty())
+    }
+
+    fun selectAll() {
+        val ids = searchResults().keys
+        viewModelScope.launch {
+            when (_queryFields.value[0]) {
+                R.string.lb_planet -> {
+                    _selectedPlanets.value = _selectedPlanets.value.toMutableMap().apply {
+                        ids.forEach { this[it] = true }
+                    }.toMap()
+                }
+                R.string.lb_continent -> {
+                    _selectedContinents.value = _selectedContinents.value.toMutableMap().apply {
+                        ids.forEach { this[it] = true }
+                    }.toMap()
+                }
+                R.string.lb_country -> {
+                    _selectedCountries.value = _selectedCountries.value.toMutableMap().apply {
+                        ids.forEach { this[it] = true }
+                    }.toMap()
+                }
+                R.string.lb_region -> {
+                    _selectedRegions.value = _selectedRegions.value.toMutableMap().apply {
+                        ids.forEach { this[it] = true }
+                    }.toMap()
+                }
+                R.string.lb_division -> {
+                    _selectedDivisions.value = _selectedDivisions.value.toMutableMap().apply {
+                        ids.forEach { this[it] = true }
+                    }.toMap()
+                }
+                R.string.lb_subdivision -> {
+                    _selectedSubdivisions.value = _selectedSubdivisions.value.toMutableMap().apply {
+                        ids.forEach { this[it] = true }
+                    }.toMap()
+                }
+                R.string.lb_town -> {
+                    _selectedTowns.value = _selectedTowns.value.toMutableMap().apply {
+                        ids.forEach { this[it] = true }
+                    }.toMap()
+                }
             }
         }
     }
 
-    fun onQueryChange(query: String) = viewModelScope.launch {
-        _query.value = query
-        //Updating autoComplete options
-        when (_queryFields.value.first()) {
-            R.string.lb_planet -> _planets.value =
-                _allPlanets.value.filter { it.value.name!!.contains(query, true) }
-            R.string.lb_continent -> _continents.value =
-                _allContinents.value.filter { it.value.name!!.contains(query, true) }
-            R.string.lb_country -> _countries.value =
-                _allCountries.value.filter { it.value.name!!.contains(query, true) }
-            R.string.lb_region -> _regions.value =
-                _allRegions.value.filter { it.value.name!!.contains(query, true) }
-            R.string.lb_division -> _divisions.value =
-                _allDivisions.value.filter { it.value.name!!.contains(query, true) }
-            R.string.lb_subdivision -> _subdivisions.value =
-                _allSubdivisions.value.filter { it.value.name!!.contains(query, true) }
-            R.string.lb_town -> _towns.value =
-                _allTowns.value.filter { it.value.name!!.contains(query, true) }
+    fun deselectAll() {
+        val ids = searchResults().keys
+        viewModelScope.launch {
+            when (_queryFields.value[0]) {
+                R.string.lb_planet -> {
+                    _selectedPlanets.value = _selectedPlanets.value.toMutableMap().apply {
+                        ids.forEach { remove(it) }
+                    }.toMap()
+                }
+                R.string.lb_continent -> {
+                    _selectedContinents.value = _selectedContinents.value.toMutableMap().apply {
+                        ids.forEach { remove(it) }
+                    }.toMap()
+                }
+                R.string.lb_country -> {
+                    _selectedCountries.value = _selectedCountries.value.toMutableMap().apply {
+                        ids.forEach { remove(it) }
+                    }.toMap()
+                }
+                R.string.lb_region -> {
+                    _selectedRegions.value = _selectedRegions.value.toMutableMap().apply {
+                        ids.forEach { remove(it) }
+                    }.toMap()
+                }
+                R.string.lb_division -> {
+                    _selectedDivisions.value = _selectedDivisions.value.toMutableMap().apply {
+                        ids.forEach { remove(it) }
+                    }.toMap()
+                }
+                R.string.lb_subdivision -> {
+                    _selectedSubdivisions.value = _selectedSubdivisions.value.toMutableMap().apply {
+                        ids.forEach { remove(it) }
+                    }.toMap()
+                }
+                R.string.lb_town -> {
+                    _selectedTowns.value = _selectedTowns.value.toMutableMap().apply {
+                        ids.forEach { remove(it) }
+                    }.toMap()
+                }
+            }
         }
-        onErrorChange(searchResults().isEmpty())
     }
 
     fun searchResults() = when (_queryFields.value.first()) {
@@ -423,30 +537,46 @@ class UniverseSearchVM @Inject constructor(
         else -> _selectedTowns.value.contains(id)
     }
 
-
     /**
      * We propagate the search results to the caller
      * The result is a pair with the first being the search field (e.g town name, town regions etc) and
      * the second is the list which was selected from the search
      */
-    fun saveSelectionBeforeNav() {
+    fun saveSelectionBeforeNav(onFinish: () -> Unit) {
         viewModelScope.launch {
-            val selections = mapOf(
-                R.string.lb_planet to _selectedPlanets.value.keys.fold("") { acc, i -> "$acc $i" },
-                R.string.lb_continent to _selectedContinents.value.keys.fold("") { acc, i -> "$acc $i" },
-                R.string.lb_country to _selectedCountries.value.keys.fold("") { acc, i -> "$acc $i" },
-                R.string.lb_region to _selectedRegions.value.keys.fold("") { acc, i -> "$acc $i" },
-                R.string.lb_division to _selectedDivisions.value.keys.fold("") { acc, i -> "$acc $i" },
-                R.string.lb_subdivision to _selectedSubdivisions.value.keys.fold("") { acc, i -> "$acc $i" },
-                R.string.lb_town to _selectedTowns.value.keys.fold("") { acc, i -> "$acc $i" },
-            ).filter { it.key in _queryFields.value }.map {
-                UnivSelection(
-                    place = it.key,
-                    selections = it.value,
-                    callerRoute = savedStateHandle[UniverseArgs.UNIV_SEARCH_CALLER_ROUTE] ?: ""
+            val selections = if (savedStateHandle[UniverseArgs.UNIVERSE_SEARCH_RETURN_TOWNS_ONLY]!!)
+                listOf(
+                    UnivSelection(
+                        place = R.string.lb_town,
+                        selections = _allTowns.value.values.filter {
+                            isParentSelected(
+                                it.id,
+                                R.string.lb_town
+                            ) || isSelected(it.id, R.string.lb_town)
+                        }.fold("") { acc, town -> "$acc ${town.id}" },
+                        fromScreen = UnivScreens.UNIVERSE_SEARCH,
+                        toScreen = savedStateHandle[UniverseArgs.UNIV_SEARCH_CALLER_SCREEN]!!
+                    )
                 )
-            }
+            else
+                mapOf(
+                    R.string.lb_planet to _selectedPlanets.value.keys.fold("") { acc, i -> "$acc $i" },
+                    R.string.lb_continent to _selectedContinents.value.keys.fold("") { acc, i -> "$acc $i" },
+                    R.string.lb_country to _selectedCountries.value.keys.fold("") { acc, i -> "$acc $i" },
+                    R.string.lb_region to _selectedRegions.value.keys.fold("") { acc, i -> "$acc $i" },
+                    R.string.lb_division to _selectedDivisions.value.keys.fold("") { acc, i -> "$acc $i" },
+                    R.string.lb_subdivision to _selectedSubdivisions.value.keys.fold("") { acc, i -> "$acc $i" },
+                    R.string.lb_town to _selectedTowns.value.keys.fold("") { acc, i -> "$acc $i" },
+                ).filter { it.key in _queryFields.value }.map {
+                    UnivSelection(
+                        place = it.key,
+                        selections = it.value,
+                        toScreen = savedStateHandle[UniverseArgs.UNIV_SEARCH_CALLER_SCREEN] ?: "",
+                        fromScreen = UnivScreens.UNIVERSE_SEARCH
+                    )
+                }
             cachesRepo.saveUnivSelections(selections)
+            onFinish()
         }
     }
 

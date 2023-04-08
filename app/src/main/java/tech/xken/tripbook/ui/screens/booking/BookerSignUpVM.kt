@@ -6,9 +6,7 @@ import android.graphics.ImageDecoder
 import android.net.Uri
 import android.os.Build
 import android.provider.MediaStore
-import android.util.Log
 import androidx.core.net.toUri
-import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -25,7 +23,6 @@ import tech.xken.tripbook.domain.isPhoneInvalid
 import java.text.SimpleDateFormat
 import java.util.*
 import javax.inject.Inject
-import kotlin.properties.Delegates
 
 
 data class BookerSignUpUiState(
@@ -124,7 +121,7 @@ class BookerSignUpVM @Inject constructor(
                         val booker = it.data.first()
                         _booker.value = booker
                         _photoUri.value = booker.photoUrl?.toUri()
-                        _selectedGender.value = Gender.strGenderToGender(booker.gender).stringResId
+                        _selectedGender.value = Gender.strGenderToGender(booker.genderID).stringResId
                         onChangeMessage(R.string.msg_welcome_back)
                     }
                 }
@@ -210,7 +207,7 @@ class BookerSignUpVM @Inject constructor(
 
     fun onSelectedGenderChange(new: Int) {
         _selectedGender.value = new
-        _booker.value = _booker.value.copy(gender = Gender.resIdToGender(new).strGender)
+        _booker.value = _booker.value.copy(genderID = Gender.resIdToGender(new).strGender)
     }
 
     fun onGenderExpansionChange(new: Boolean) {

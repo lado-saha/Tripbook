@@ -10,7 +10,7 @@ data class AgencyProfile(
     @ColumnInfo(name = NAME) val name: String?,
     @ColumnInfo(name = TIMESTAMP) val timestamp: Long?,
     @ColumnInfo(name = CREATED_ON) val createdOn: Long?,
-    @ColumnInfo(name = CREATED_BY) val createdBy: String?,
+    @ColumnInfo(name = CREATED_BY) val createdBy: String?, //No need since the owner field in Scanner knows
     @ColumnInfo(name = LOGO_URL) val logoUrl: String?,
     @ColumnInfo(name = MOTTO) val motto: String?,
 ) {

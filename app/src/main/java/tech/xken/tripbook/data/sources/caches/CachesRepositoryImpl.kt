@@ -7,7 +7,9 @@ class CachesRepositoryImpl(
     private val localDataSource: CachesDataSource,
     val ioDispatcher: CoroutineDispatcher,
 ) : CachesRepository {
-    override fun univSelections() = localDataSource.univSelections()
+    override suspend fun univSelections(fromScreen: String, toScreen: String) = localDataSource.univSelections(fromScreen, toScreen)
+
+    override fun observeUnivSelections(fromScreen: String, toScreen: String) = localDataSource.observeUnivSelections(fromScreen,toScreen)
 
     override suspend fun saveUnivSelections(selections: List<UnivSelection>) {
         localDataSource.saveUnivSelections(selections)

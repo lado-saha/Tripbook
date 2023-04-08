@@ -5,8 +5,8 @@ import androidx.room.Entity
 import androidx.room.PrimaryKey
 
 
-@Entity(tableName = Park.TABLE_NAME)
-data class Park(
+@Entity(tableName = Station.TABLE_NAME)
+data class Station(
     @ColumnInfo(name = ID) @PrimaryKey val id: String,
     @ColumnInfo(name = NAME) val name: String?,
     @ColumnInfo(name = AGENCY) val agencyID: String?,
@@ -22,7 +22,7 @@ data class Park(
     @ColumnInfo(name = TIMESTAMP) val timestamp: Long?,
 ) {
     companion object {
-        const val TABLE_NAME = "Parks"
+        const val TABLE_NAME = "Stations"
         const val ID = "id"
         const val NAME = "name"
         const val LAT = "lat"
@@ -36,20 +36,38 @@ data class Park(
         const val SUPPORT_PHONE_2_CODE = "support_phone_2_code"
         const val TIMESTAMP = "timestamp"
         const val PHOTO_URL = "photo_url"
-        fun new() = Park(NEW_ID, null,null,null, null, null, null, null, null, null, null, null, null)
+        fun new(id: String = NEW_ID) = Station(id, null,null,null, null, null, null, null, null, null, null, null, null)
     }
 }
 
-@Entity(tableName = TownParkMap.TABLE_NAME, primaryKeys = [TownParkMap.PARK, TownParkMap.TOWN])
-data class TownParkMap(
-    @ColumnInfo(name = PARK) val park: String,
+@Entity(tableName = StationTownMap.TABLE_NAME, primaryKeys = [StationTownMap.STATION, StationTownMap.TOWN])
+data class StationTownMap(
+    @ColumnInfo(name = STATION) val station: String,
     @ColumnInfo(name = TOWN) val town: String,
     @ColumnInfo(name = TIMESTAMP) val timestamp: Long?,
 ) {
     companion object {
-        const val TABLE_NAME = "TownParkMaps"
-        const val PARK = "park"
+        const val TABLE_NAME = "StationTownMaps"
+        const val STATION = "station"
         const val TOWN = "town"
+        const val TIMESTAMP = "timestamp"
+    }
+}
+
+/**
+ * Attributes a scanner to a station
+ */
+@Entity(tableName = StationScannerMap.TABLE_NAME, primaryKeys = [StationScannerMap.STATION, StationScannerMap.SCANNER, "job"])
+data class StationScannerMap(
+    @ColumnInfo(name = STATION) val station: String,
+    @ColumnInfo(name = SCANNER) val scanner: String,
+    val job: String,
+    @ColumnInfo(name = TIMESTAMP) val timestamp: Long?,
+) {
+    companion object {
+        const val TABLE_NAME = "StationScannerMaps"
+        const val SCANNER = "scanner"
+        const val STATION = "station"
         const val TIMESTAMP = "timestamp"
     }
 }

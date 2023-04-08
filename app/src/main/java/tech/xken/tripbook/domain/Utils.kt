@@ -5,9 +5,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.PointerInputChange
 import androidx.compose.ui.input.pointer.pointerInput
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.withContext
+import tech.xken.tripbook.R
 import tech.xken.tripbook.data.models.*
 import java.util.*
 import kotlin.coroutines.CoroutineContext
@@ -69,8 +69,10 @@ val String.titleCase
     get() = this.split(" ").map { it.caps }.fold("") { acc, s -> "$acc $s" }
 
 val String.propre
-    get() = this.lowercase().replace("é", "e").replace("è", "e").replace("-", " " +
-            "")
+    get() = this.lowercase().replace("é", "e").replace("è", "e").replace(
+        "-", " " +
+                ""
+    )
 
 /**
  * This is used in searching. It works by comparing a shorter string [inputStr] to the equivalent part of [referenceStr].
@@ -104,3 +106,14 @@ fun Modifier.disableComposable(disabled: Boolean = true) =
             }
         }
     else this
+
+
+val DEFAULT_UNIV_QUERY_FIELDS = arrayOf(
+    R.string.lb_town,
+    R.string.lb_subdivision,
+    R.string.lb_division,
+    R.string.lb_region,
+    R.string.lb_country,
+    R.string.lb_continent,
+    R.string.lb_planet,
+)
