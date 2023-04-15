@@ -109,4 +109,11 @@
     <string name="msg_no_jobs_yet">no jobs added to your station yet</string>
     <string name="lb_available_jobs">availaible jobs</string>
     <string name="msg_done">done</string>
+    <string name="lb_yearly">yearly</string>
+    <string name="lb_daily">daily</string>
+    <string name="lb_weekly">weekly</string>
+    <string name="lb_monthly">monthly</string>
+    <string name="lb_salary">salary</string>
+    <string name="lb_payment_schedule">payment schedule</string>
+    <string name="msg_success_adding_job">Successfully added a new job to your station</string>
 </resources>

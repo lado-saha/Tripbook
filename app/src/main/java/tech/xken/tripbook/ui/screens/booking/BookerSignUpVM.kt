@@ -113,7 +113,7 @@ class BookerSignUpVM @Inject constructor(
             repo.bookersFromIds(listOf(_booker.value.id)).also {
                 when (it) {
                     is Results.Failure -> {
-                        onChangeMessage(R.string.msg_unexpexted_error)
+                        onMessageChange(R.string.msg_unexpexted_error)
                         _isComplete.value = true
                         //TODO: navigate away. This can rarely happen
                     }
@@ -122,7 +122,7 @@ class BookerSignUpVM @Inject constructor(
                         _booker.value = booker
                         _photoUri.value = booker.photoUrl?.toUri()
                         _selectedGender.value = Gender.strGenderToGender(booker.genderID).stringResId
-                        onChangeMessage(R.string.msg_welcome_back)
+                        onMessageChange(R.string.msg_welcome_back)
                     }
                 }
                 _isInitComplete.value = true
@@ -170,7 +170,7 @@ class BookerSignUpVM @Inject constructor(
         _isLoading.value = new
     }
 
-    fun onChangeMessage(resId: Int?) {
+    fun onMessageChange(resId: Int?) {
         _message.value = resId
     }
 
@@ -278,10 +278,10 @@ class BookerSignUpVM @Inject constructor(
                     .toString() else _booker.value.id
             )
             repo.saveBooker(booker)
-            onChangeMessage(R.string.msg_success_saving_booker)
+            onMessageChange(R.string.msg_success_saving_booker)
             _isComplete.value = true
             onLoading(false)
         }
-        else onChangeMessage(R.string.msg_fields_contain_errors)
+        else onMessageChange(R.string.msg_fields_contain_errors)
     }
 }

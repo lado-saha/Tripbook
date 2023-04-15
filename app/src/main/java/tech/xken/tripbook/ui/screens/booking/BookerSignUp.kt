@@ -30,7 +30,6 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import tech.xken.tripbook.R
 import tech.xken.tripbook.data.models.Gender
-import tech.xken.tripbook.data.models.NEW_ID
 import tech.xken.tripbook.domain.caps
 import tech.xken.tripbook.domain.disableComposable
 import tech.xken.tripbook.domain.titleCase
@@ -467,7 +466,7 @@ fun BookerSignUpOrDetails(
 
                     }
             }
-            vm.onChangeMessage(null)
+            vm.onMessageChange(null)
         }
     }
 }

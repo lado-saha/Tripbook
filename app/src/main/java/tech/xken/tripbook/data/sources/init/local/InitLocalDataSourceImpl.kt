@@ -23,9 +23,19 @@ class InitLocalDataSourceImpl internal constructor(
         dao.saveJobs(jobs)
     }
 
+    /**
+     * If no jobs has been added yet we do that and call the function recursively
+     */
     override suspend fun jobs(): Results<List<Job>> = withContext(ioDispatcher) {
         return@withContext try {
-            Success(dao.jobs())
+            val allJobs = dao.jobs()
+            if (allJobs.isEmpty()) {
+                saveJobs(
+                    jobs = Job.Companion.DefaultJobs.values().map { it.model }
+                )
+                jobs()
+            } else Success(allJobs)
+
         } catch (e: Exception) {
             Failure(e)
         }

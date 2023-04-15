@@ -13,13 +13,9 @@ data class Job(
     val wiki: String?,
     val timestamp: Long?,
 ) {
-
     companion object {
         enum class DefaultJobs {
             MANAGER, LUGGAGE_MASTER, SCANNER, DRIVER, JANITOR;
-            companion object {
-                val all = listOf(MANAGER, LUGGAGE_MASTER, SCANNER, DRIVER, JANITOR)
-            }
 
             val icon
                 get() = when (this) {
@@ -41,7 +37,7 @@ data class Job(
                     LUGGAGE_MASTER -> Job(
                         id = this.name,
                         name = "the ${this.name}",
-                        wiki = "A luggage master is responsible for the luggages of booker",
+                        wiki = "A luggage master is responsible for the booker luggage's",
                         timestamp = Date().time
                     )
                     SCANNER -> Job(

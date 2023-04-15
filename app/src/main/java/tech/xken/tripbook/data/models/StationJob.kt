@@ -10,6 +10,7 @@ import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.Ignore
 import androidx.room.PrimaryKey
+import tech.xken.tripbook.R
 
 
 @Entity(tableName = "StationJobs", primaryKeys = ["jobId", "station"])
@@ -17,7 +18,9 @@ data class StationJob(
     val jobId: String,
     val station: String,
     val salary: Double?,
-    @ColumnInfo(name = "payment_schedule") val paymentSchedule: String?,
+    val name: String?,
+    val timestamp: Long?,
+    @ColumnInfo(name = "payment_schedule") val paymentSchedule: PaymentSchedule?,
 ) {
     @Ignore
     var job: Job? = null
@@ -39,5 +42,13 @@ enum class StationDefJobs {
 }
 
 enum class PaymentSchedule {
-    MONTHLY, WEEKLY, DAILY, YEARLY
+    MONTHLY, WEEKLY, DAILY, YEARLY;
+
+    val str
+        get() = when (this) {
+            MONTHLY -> R.string.lb_monthly
+            WEEKLY -> R.string.lb_weekly
+            DAILY -> R.string.lb_daily
+            YEARLY -> R.string.lb_yearly
+        }
 }

@@ -50,7 +50,7 @@ fun AppNavGraph(
                 type = NavType.StringType
             })
         ) {
-            StationJobs(onNavigateBack = { navController.popBackStack() }, onJobClick = {})
+            StationJobs(onNavigateBack = { navController.popBackStack() }, onStationJobClick = {})
         }
         //Agency
         composable(route = AgencyDestinations.AGENCY_STATION_DASHBOARD_ROUTE,

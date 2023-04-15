@@ -4,14 +4,13 @@ import android.graphics.Bitmap
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.ArrowDropUp
-import androidx.compose.material.icons.filled.Visibility
-import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.InsertPhoto
 import androidx.compose.runtime.Composable
@@ -21,6 +20,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -69,7 +69,7 @@ fun StationJobItem(
                 ) {
                     Text(
                         text = stationJob.job!!.name!!.titleCase,
-                        style = MaterialTheme.typography.h6.copy(fontSize = 18.sp),
+                        style = MaterialTheme.typography.h6.copy(fontSize = 16.sp),
                         modifier = Modifier.padding(4.dp)
                     )
                     val color =
@@ -90,18 +90,12 @@ fun StationJobItem(
             }
             Column(modifier = Modifier.padding(2.dp)) {
                 Text(
-                    stringResource(id = R.string.lb_wiki),
-                    textAlign = TextAlign.End,
-                    modifier = Modifier.padding(2.dp)
-                )
-                Text(
                     stationJob.job!!.wiki!!.caps,
                     style = MaterialTheme.typography.caption,
                     modifier = Modifier.padding(2.dp)
                 )
             }
         }
-
     }
 }
 
@@ -113,40 +107,38 @@ fun ListHeader(
     logoIcon: ImageVector?,
     onVisibilityClick: (isVisible: Boolean) -> Unit,
 ) {
-    Card(
-        modifier = modifier.fillMaxWidth()
+
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceAround,
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceAround,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            logoIcon?.let {
-                Icon(
-                    imageVector = it,
-                    contentDescription = null,
-                    modifier = Modifier.weight(0.1f),
-                )
-            }
-
-            Text(
-                text = text,
-                modifier = Modifier.weight(0.8f, true),
-                fontWeight = FontWeight.Bold,
-                textAlign = TextAlign.Center
+        logoIcon?.let {
+            Icon(
+                imageVector = it,
+                contentDescription = null,
+                modifier = Modifier.weight(0.1f),
             )
-
-            IconButton(modifier = Modifier.weight(0.1f), onClick = {
-                onVisibilityClick(isVisible)
-            }) {
-                Icon(
-                    imageVector = if (isVisible) Icons.Default.ArrowDropUp else Icons.Default.ArrowDropDown,
-                    contentDescription = null,
-                )
-            }
         }
+
+        Text(
+            text = text,
+            modifier = Modifier.weight(0.8f, true),
+            fontWeight = FontWeight.Bold,
+            textAlign = TextAlign.Center
+        )
+
+        Icon(
+            modifier = Modifier
+                .weight(0.1f)
+                .clickable { onVisibilityClick(isVisible) },
+            imageVector = if (isVisible) Icons.Default.ArrowDropUp else Icons.Default.ArrowDropDown,
+            contentDescription = null,
+        )
+
     }
 }
+
 
 /**
  * [Job]
@@ -156,14 +148,12 @@ fun ListHeader(
 fun JobItem(
     modifier: Modifier = Modifier,
     job: Job,
-    onClick: () -> Unit,
+    onAddClick: () -> Unit,
 ) {
     Card(
         modifier = modifier,
+        elevation = 0.dp
 //        border = if (errorText() != null) BorderStroke(1.dp, MaterialTheme.colors.error) else null,
-        onClick = {
-            onClick()
-        },
     ) {
         Column(modifier = Modifier.padding(vertical = 4.dp, horizontal = 4.dp)) {
             Row(
@@ -173,13 +163,11 @@ fun JobItem(
                     imageVector = DefaultJobs.valueOf(job.id.replace("u_", "")).icon,
                     contentDescription = null,
                     modifier = Modifier
-                        .padding(4.dp)
-                        .weight(0.1f)
                 )
                 Column(
                     modifier = Modifier
                         .padding(2.dp)
-                        .weight(0.9f, true),
+                        .weight(0.8f, true),
                     horizontalAlignment = Alignment.Start
                 ) {
                     Text(
@@ -202,13 +190,17 @@ fun JobItem(
                     )
 
                 }
-            }
-            OutlinedButton(onClick = { }, modifier = Modifier.align(Alignment.End)) {
-                Icon(
-                    imageVector = Icons.Outlined.Add,
-                    contentDescription = null
-                )
-                Text(stringResource(id = R.string.lb_add_job).titleCase)
+                IconButton(
+                    onClick = { onAddClick() },
+                    modifier = Modifier
+                        .padding(4.dp)
+                        .weight(0.1f)
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.Add,
+                        contentDescription = null
+                    )
+                }
             }
         }
     }
