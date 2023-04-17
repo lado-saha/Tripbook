@@ -116,4 +116,23 @@
     <string name="lb_salary">salary</string>
     <string name="lb_payment_schedule">payment schedule</string>
     <string name="msg_success_adding_job">Successfully added a new job to your station</string>
+    <string name="lb_the_manager">the manager</string>
+    <string name="lb_the_luggage_master">the luggage master</string>
+    <string name="lb_the_scanner">the scanner</string>
+    <string name="lb_the_driver">the driver</string>
+    <string name="lb_the_janitor">the janitor</string>
+
+    <string name="lb_wiki_short_manager">responsible for managing the whole station</string>
+    <string name="lb_wiki_short_luggage_master">responsible for bookers luggage</string>
+    <string name="lb_wiki_short_janitor">responsible for station sanitation</string>
+    <string name="lb_wiki_short_driver">responsible for driving bookers to their destinations</string>
+    <string name="lb_wiki_short_scanner">responsible for scanning books and mailing services</string>
+
+    <string name="lb_wiki_long_luggage_master"></string>
+    <string name="lb_wiki_long_manager"></string>
+    <string name="lb_wiki_long_scanner"></string>
+    <string name="lb_wiki_long_driver"></string>
+    <string name="lb_wiki_long_janitor"></string>
+    <string name="msg_no_jobs_left">no job left to be added</string>
+    <string name="msg_job_not_initialized">salary and payment schedule needed</string>
 </resources>

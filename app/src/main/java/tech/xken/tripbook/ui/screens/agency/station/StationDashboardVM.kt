@@ -3,7 +3,6 @@ package tech.xken.tripbook.ui.screens.agency.station
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.ImageDecoder
-import android.net.Uri
 import android.os.Build
 import android.provider.MediaStore
 import androidx.core.net.toUri
@@ -15,14 +14,12 @@ import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import tech.xken.tripbook.R
 import tech.xken.tripbook.data.models.*
-import tech.xken.tripbook.data.models.Job.Companion.DefaultJobs
 import tech.xken.tripbook.data.sources.agency.AgencyRepository
 import tech.xken.tripbook.data.sources.caches.CachesRepository
 import tech.xken.tripbook.data.sources.init.InitRepository
 import tech.xken.tripbook.domain.Async
 import tech.xken.tripbook.domain.WhileUiSubscribed
 import tech.xken.tripbook.ui.navigation.AgencyArgs
-import java.util.*
 import javax.inject.Inject
 
 data class StationDashboardUiState(
@@ -100,13 +97,7 @@ class StationDashboardVM @Inject constructor(
     fun uploadDefaultJobs() {
         viewModelScope.launch {
             initRepo.saveJobs(
-                listOf(
-                    DefaultJobs.SCANNER,
-                    DefaultJobs.LUGGAGE_MASTER,
-                    DefaultJobs.MANAGER,
-                    DefaultJobs.JANITOR,
-                    DefaultJobs.DRIVER
-                ).map { it.model })
+                Job.defaultJobs.values.toList())
             onMessageChange(R.string.msg_done)
         }
     }

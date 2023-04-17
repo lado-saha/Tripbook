@@ -1,5 +1,6 @@
 package tech.xken.tripbook.data.sources.init.local
 
+import android.util.Log
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.withContext
@@ -30,8 +31,9 @@ class InitLocalDataSourceImpl internal constructor(
         return@withContext try {
             val allJobs = dao.jobs()
             if (allJobs.isEmpty()) {
+                Log.d("Jobs", "is all empty")
                 saveJobs(
-                    jobs = Job.Companion.DefaultJobs.values().map { it.model }
+                    jobs = Job.defaultJobs.values.toList()
                 )
                 jobs()
             } else Success(allJobs)

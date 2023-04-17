@@ -6,12 +6,13 @@ import tech.xken.tripbook.domain.DEFAULT_UNIV_QUERY_FIELDS
 import tech.xken.tripbook.ui.navigation.AgencyArgs.AGENCY_ID
 import tech.xken.tripbook.ui.navigation.AgencyArgs.AGENCY_STATION_ID
 import tech.xken.tripbook.ui.navigation.AgencyArgs.AGENCY_STATION_IS_EDIT_MODE
+import tech.xken.tripbook.ui.navigation.AgencyArgs.AGENCY_STATION_JOB_ID
 import tech.xken.tripbook.ui.navigation.AgencyArgs.AGENCY_STATION_LAT
 import tech.xken.tripbook.ui.navigation.AgencyArgs.AGENCY_STATION_LON
 import tech.xken.tripbook.ui.navigation.AgencyArgs.AGENCY_STATION_NAME
-import tech.xken.tripbook.ui.navigation.AgencyDestinations.AGENCY_STATION_JOBS_ROUTE
 import tech.xken.tripbook.ui.navigation.AgencyScreens.AGENCY_STATION_DASHBOARD
 import tech.xken.tripbook.ui.navigation.AgencyScreens.AGENCY_STATION_JOBS
+import tech.xken.tripbook.ui.navigation.AgencyScreens.AGENCY_STATION_JOB_DETAILS
 import tech.xken.tripbook.ui.navigation.AgencyScreens.AGENCY_STATION_LOCATION
 import tech.xken.tripbook.ui.navigation.AgencyScreens.AGENCY_STATION_PERSONNEL
 import tech.xken.tripbook.ui.navigation.AgencyScreens.AGENCY_STATION_PROFILE
@@ -34,6 +35,7 @@ object AgencyScreens {
     const val AGENCY_STATION_LOCATION = "station_location"
     const val AGENCY_STATION_PERSONNEL = "station_personnel"
     const val AGENCY_STATION_JOBS = "station_jobs"
+    const val AGENCY_STATION_JOB_DETAILS = "station_jobs_details"
 }
 
 object AgencyArgs {
@@ -56,6 +58,7 @@ object AgencyDestinations {
     const val AGENCY_STATION_PERSONNEL_ROUTE =
         "$AGENCY_STATION_PERSONNEL/{$AGENCY_STATION_ID}/{$AGENCY_ID}"
     const val AGENCY_STATION_JOBS_ROUTE = "$AGENCY_STATION_JOBS/{$AGENCY_STATION_ID}"
+    const val AGENCY_STATION_JOB_DETAILS_ROUTE = "$AGENCY_STATION_JOB_DETAILS/{$AGENCY_STATION_JOB_ID}"
 }
 
 object UnivDestinations {
@@ -86,6 +89,13 @@ object BookingNavArgs {
 
 class AgencyNavActions(private val navController: NavHostController) {
 
+    fun navigateToStationJobDetails(
+        jobId: String
+    ){
+        navController.navigate(route = "$AGENCY_STATION_JOB_DETAILS/$jobId"){
+            launchSingleTop = true
+        }
+    }
     fun navigateToStationJobs(
         station: String
     ){

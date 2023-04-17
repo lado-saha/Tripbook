@@ -17,6 +17,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import tech.xken.tripbook.data.models.StationJob
 import tech.xken.tripbook.ui.navigation.UnivScreens.UNIVERSE_SEARCH
 import tech.xken.tripbook.ui.navigation.UniverseArgs.UNIVERSE_SEARCH_RETURN_TOWNS_ONLY
 import tech.xken.tripbook.ui.navigation.UniverseArgs.UNIV_SEARCH_CALLER_SCREEN
@@ -50,7 +51,17 @@ fun AppNavGraph(
                 type = NavType.StringType
             })
         ) {
-            StationJobs(onNavigateBack = { navController.popBackStack() }, onStationJobClick = {})
+            StationJobs(onNavigateBack = { navController.popBackStack() }, onStationJobClick = {
+//                agencyNavActions.navigateToStationJobDetails(it)
+            })
+        }
+        composable(
+            AgencyDestinations.AGENCY_STATION_JOB_DETAILS_ROUTE,
+            arguments = listOf(navArgument(AgencyArgs.AGENCY_STATION_JOB_ID) {
+                type = NavType.StringType
+            })
+        ) {
+            StationJobDetails( onNavigateBack = { navController.popBackStack() })
         }
         //Agency
         composable(route = AgencyDestinations.AGENCY_STATION_DASHBOARD_ROUTE,

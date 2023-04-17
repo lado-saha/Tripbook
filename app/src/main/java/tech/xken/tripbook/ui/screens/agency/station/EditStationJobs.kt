@@ -124,7 +124,8 @@ class StationJobsVM @Inject constructor(
         _jobs,//5
         _stationJobAsync,//6
         _isStationJobsVisible,
-        _isJobsVisible
+        _isJobsVisible,
+        _isDetailsView
     ) { args ->
         StationJobsUiState(
             isLoading = args[0] as Boolean,
@@ -134,15 +135,19 @@ class StationJobsVM @Inject constructor(
             stationJobs = args[4] as List<StationJob>,
             jobs = args[5] as List<Job>,
             isStationJobsVisible = args[7] as Boolean,
-            isJobsVisible = args[8] as Boolean
+            isJobsVisible = args[8] as Boolean,
+            isDetailsView = args[9] as Boolean
         ).also { state ->
-            if (_jobs.value.isEmpty())
-                initRepo.jobs().also {
-                    when (it) {
-                        is Failure -> onMessageChange(null)
+            if (_isInitComplete.value && _jobs.value.isEmpty())
+                initRepo.jobs().also { results ->
+                    when (results) {
+                        is Failure -> {
+                            onMessageChange(null)
+                        }
                         is Success -> {
-                            _jobs.value = it.data
-                            Log.d("INIT_REPO", it.data.toString())
+                            _jobs.value =
+                                results.data.map { Job.defaultJobs[it.id]!! }
+                            Log.d("Jobs", _jobs.value.map { it.name }.toString())
                             _isInitComplete.value = true
                             onLoading(false)
                         }
@@ -196,12 +201,12 @@ class StationJobsVM @Inject constructor(
 
     fun onSalaryChange(new: String) {
         _salaryStr.value = new
-        _currentStationJob.value = _currentStationJob.value!!.copy(salary = new.toDoubleOrNull())
+        _currentStationJob.value = _currentStationJob.value!!.copy(salary = new.toLongOrNull())
     }
 
-    fun salaryErrorText(value: Double? = _currentStationJob.value?.salary) = when {
+    fun salaryErrorText(value: Long? = _currentStationJob.value?.salary) = when {
         value == null -> R.string.msg_required_field
-        value < 0.0 -> R.string.msg_invalid_field
+        value < 0L -> R.string.msg_invalid_field
         else -> null
     }
 
@@ -268,97 +273,115 @@ fun StationJobs(
     scaffoldState: ScaffoldState = rememberScaffoldState(),
     vm: StationJobsVM = hiltViewModel(),
     onNavigateBack: () -> Unit,
-    onStationJobClick: () -> Unit,
+    onStationJobClick: (id: String) -> Unit,
 ) {
     val uis by vm.uiState.collectAsState()
-    Scaffold(
-        scaffoldState = scaffoldState,
-        topBar = {
-            TopAppBar(
-                title = { Text(stringResource(id = R.string.lb_jobs).titleCase) },
-                modifier = Modifier.fillMaxWidth(),
-                navigationIcon = {
-                    IconButton(onClick = { onNavigateBack() }) {
-                        Icon(imageVector = Icons.Filled.ArrowBack, contentDescription = null)
-                    }
-                },
-            )
-        },
-    ) { paddingValues ->
-        LazyColumn(
-            contentPadding = paddingValues,
-            modifier = Modifier.fillMaxSize(),
-            state = rememberLazyListState()
-        ) {
-            //This is the station jobs and below we have the jobs which can be further added by the scanner
-            item {
-                ListHeader(
-                    text = stringResource(R.string.lb_added_jobs).titleCase,
-                    logoIcon = null,
-                    modifier = Modifier.padding(vertical = 2.dp),
-                    onVisibilityClick = {
-                        vm.onStationJobsVisibilityChange(!it)
-                    }, isVisible = uis.isStationJobsVisible
-                )
-            }
-            if (uis.stationJobs.isEmpty()) item {
-                Text(
-                    stringResource(R.string.msg_no_jobs_yet),
-                    style = MaterialTheme.typography.caption,
-                    textAlign = TextAlign.Center,
-                    modifier = Modifier.fillMaxWidth()
-                )
-            } else items(uis.stationJobs, key = { item: StationJob -> "station_${item.jobId}" }) {
-                AnimatedVisibility(
-                    visible = uis.isStationJobsVisible, modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(4.dp)
-                ) {
-                    StationJobItem(
-                        stationJob = it.apply {
-                            job = uis.jobs.find { job -> job.id == it.jobId }
+    if (!uis.isDetailsView)
+        Scaffold(
+            scaffoldState = scaffoldState,
+            topBar = {
+                TopAppBar(
+                    title = { Text(stringResource(id = R.string.lb_jobs).titleCase) },
+                    modifier = Modifier.fillMaxWidth(),
+                    navigationIcon = {
+                        IconButton(onClick = { onNavigateBack() }) {
+                            Icon(imageVector = Icons.Filled.ArrowBack, contentDescription = null)
                         }
+                    },
+                )
+            },
+        ) { paddingValues ->
+            LazyColumn(
+                contentPadding = paddingValues,
+                modifier = Modifier.fillMaxSize(),
+                state = rememberLazyListState()
+            ) {
+                //This is the station jobs and below we have the jobs which can be further added by the scanner
+                item {
+                    ListHeader(
+                        text = stringResource(R.string.lb_added_jobs).titleCase,
+                        logoIcon = Icons.Default.CheckCircle,
+                        modifier = Modifier.padding(2.dp),
+                        onVisibilityClick = {
+                            vm.onStationJobsVisibilityChange(!it)
+                        },
+                        isVisible = uis.isStationJobsVisible,
+                    )
+                }
+                if (uis.stationJobs.isEmpty()) item {
+                    Text(
+                        stringResource(R.string.msg_no_jobs_yet),
+                        style = MaterialTheme.typography.caption,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                } else items(
+                    uis.stationJobs,
+                    key = { item: StationJob -> "station_${item.jobId}" }) {
+                    AnimatedVisibility(
+                        visible = uis.isStationJobsVisible, modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(4.dp)
                     ) {
-                        // We prepare the detail view before navigating away
-                        vm.constructStationJobView(it.jobId)
-                        onStationJobClick()
+                        StationJobItem(
+                            stationJob = it.apply {
+                                job = uis.jobs.find { job -> job.id == it.jobId }
+                            }, errorText = {
+                                if (it.salary == null || it.paymentSchedule == null)
+                                    stringResource(id = R.string.msg_job_not_initialized).caps
+                                else null
+                            }
+                        ) {
+                            // We prepare the detail view before navigating away
+                            vm.constructStationJobView(it.jobId)
+                            onStationJobClick(it.jobId)
+                        }
                     }
                 }
-            }
-            item {
-                Divider(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 8.dp)
-                )
-            }
-            //This is the job which can be added at will by the scanner
-            item {
-                ListHeader(
-                    text = stringResource(R.string.lb_available_jobs).titleCase,
-                    modifier = Modifier.padding(bottom = 2.dp),
-                    logoIcon = null,
-                    onVisibilityClick = {
-                        vm.onJobsVisibilityChange(!it)
-                    },
-                    isVisible = uis.isJobsVisible
-                )
-            }
-            items(
-                uis.jobs.filter { job -> uis.stationJobs.find { it.jobId == job.id } != null },
-                key = { item: Job -> item.id }) {
-                AnimatedVisibility(
-                    visible = uis.isJobsVisible, modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(2.dp)
-                ) {
-                    JobItem(job = it, modifier = Modifier.padding(4.dp)) {
-                        vm.addJobToStation(it)
+                item {
+                    Divider(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 8.dp)
+                    )
+                }
+                //This is the job which can be added at will by the scanner
+                item {
+                    ListHeader(
+                        text = stringResource(R.string.lb_available_jobs).titleCase,
+                        modifier = Modifier.padding(bottom = 2.dp),
+                        logoIcon = Icons.Default.Work,
+                        onVisibilityClick = {
+                            vm.onJobsVisibilityChange(!it)
+                        },
+                        isVisible = uis.isJobsVisible
+                    )
+                }
+                if (uis.stationJobs.size == uis.jobs.size) item {
+                    Text(
+                        stringResource(R.string.msg_no_jobs_left),
+                        style = MaterialTheme.typography.caption,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                } else items(
+                    uis.jobs.filter { job -> uis.stationJobs.find { it.jobId == job.id } == null },
+                    key = { item: Job -> item.id }) {
+                    AnimatedVisibility(
+                        visible = uis.isJobsVisible, modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(2.dp)
+                    ) {
+                        JobItem(job = it, modifier = Modifier.padding(4.dp)) {
+                            vm.addJobToStation(it)
+                        }
                     }
                 }
             }
         }
-    }
+    else StationJobDetails(onNavigateBack = {
+
+    }, vm = vm)
 }
 
 @OptIn(ExperimentalMaterialApi::class)
@@ -378,7 +401,7 @@ fun StationJobDetails(
         scaffoldState = scaffoldState,
         topBar = {
             TopAppBar(
-                title = { Text(uis.nameStr.ifBlank { uis.stationJob!!.job!!.name!! }.titleCase) },
+                title = { Text(uis.nameStr.ifBlank { stringResource(id = uis.stationJob!!.job!!.name!!) }.titleCase) },
                 modifier = Modifier.fillMaxWidth(),
                 navigationIcon = {
                     IconButton(onClick = {
@@ -412,11 +435,11 @@ fun StationJobDetails(
                 modifier = Modifier
                     .padding(fieldPadding)
                     .fillMaxWidth(),
-                value = uis.stationJob!!.job!!.name ?: "",
+                value = uis.stationJob!!.name ?: "",
                 errorText = { null },
                 onValueChange = { vm.onNameChange(it) },
                 trailingIcon = {
-                    if (!uis.stationJob!!.job!!.name.isNullOrBlank())
+                    if (!uis.stationJob!!.name.isNullOrBlank())
                         IconButton(onClick = { vm.onNameChange("") }) {
                             Icon(
                                 imageVector = Icons.Outlined.Clear,
@@ -440,7 +463,7 @@ fun StationJobDetails(
                     .padding(fieldPadding)
                     .fillMaxWidth(),
                 value = uis.salaryStr,
-                errorText = { vm.salaryErrorText(it.toDoubleOrNull()) },
+                errorText = { vm.salaryErrorText(it.toLongOrNull()) },
                 onValueChange = { vm.onSalaryChange(it) },
                 trailingIcon = {
                     if (uis.salaryStr.isNotBlank())
@@ -512,7 +535,7 @@ fun StationJobDetails(
             ) {
                 Column {
                     Text(
-                        text = uis.stationJob!!.job!!.wiki!!,
+                        text = stringResource(uis.stationJob!!.job!!.shortWiki!!),
                         style = MaterialTheme.typography.caption,
                         modifier = Modifier
                             .fillMaxWidth()

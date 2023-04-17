@@ -21,13 +21,13 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import tech.xken.tripbook.R
 import tech.xken.tripbook.data.models.Job
-import tech.xken.tripbook.data.models.Job.Companion.DefaultJobs
 import tech.xken.tripbook.data.models.StationJob
 import tech.xken.tripbook.domain.caps
 import tech.xken.tripbook.domain.titleCase
@@ -49,13 +49,14 @@ fun StationJobItem(
         onClick = {
             onClick()
         },
+        elevation = 0.dp
     ) {
-        Column(modifier = Modifier.padding(vertical = 4.dp, horizontal = 4.dp)) {
+        Column(modifier = Modifier.padding(vertical = 2.dp, horizontal = 4.dp)) {
             Row(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Icon(
-                    imageVector = DefaultJobs.valueOf(stationJob.jobId).icon,
+                    imageVector = Job.jobIcon[stationJob.jobId]!!,
                     contentDescription = null,
                     modifier = Modifier
                         .padding(4.dp)
@@ -68,7 +69,7 @@ fun StationJobItem(
                     horizontalAlignment = Alignment.Start
                 ) {
                     Text(
-                        text = stationJob.job!!.name!!.titleCase,
+                        text = stringResource(id = stationJob.job!!.name!!).titleCase,
                         style = MaterialTheme.typography.h6.copy(fontSize = 16.sp),
                         modifier = Modifier.padding(4.dp)
                     )
@@ -80,7 +81,7 @@ fun StationJobItem(
                         style = MaterialTheme.typography.caption.copy(color = color),
                         modifier = Modifier.padding(
                             top = 0.dp,
-                            bottom = 4.dp,
+                            bottom = 0.dp,
                             end = 4.dp,
                             start = 6.dp
                         )
@@ -90,9 +91,9 @@ fun StationJobItem(
             }
             Column(modifier = Modifier.padding(2.dp)) {
                 Text(
-                    stationJob.job!!.wiki!!.caps,
+                    stringResource(id = stationJob.job!!.shortWiki!!).caps,
                     style = MaterialTheme.typography.caption,
-                    modifier = Modifier.padding(2.dp)
+                    modifier = Modifier.padding(2.dp),
                 )
             }
         }
@@ -109,7 +110,7 @@ fun ListHeader(
 ) {
 
     Row(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceAround,
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -117,7 +118,7 @@ fun ListHeader(
             Icon(
                 imageVector = it,
                 contentDescription = null,
-                modifier = Modifier.weight(0.1f),
+                modifier = Modifier.weight(0.1f).size(16.dp),
             )
         }
 
@@ -125,7 +126,7 @@ fun ListHeader(
             text = text,
             modifier = Modifier.weight(0.8f, true),
             fontWeight = FontWeight.Bold,
-            textAlign = TextAlign.Center
+            fontSize = 13.sp,
         )
 
         Icon(
@@ -135,7 +136,6 @@ fun ListHeader(
             imageVector = if (isVisible) Icons.Default.ArrowDropUp else Icons.Default.ArrowDropDown,
             contentDescription = null,
         )
-
     }
 }
 
@@ -160,7 +160,7 @@ fun JobItem(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Icon(
-                    imageVector = DefaultJobs.valueOf(job.id.replace("u_", "")).icon,
+                    imageVector = job.icon!!,
                     contentDescription = null,
                     modifier = Modifier
                 )
@@ -171,7 +171,7 @@ fun JobItem(
                     horizontalAlignment = Alignment.Start
                 ) {
                     Text(
-                        text = job.name!!.titleCase,
+                        text = stringResource(id =job.name!!).titleCase,
                         style = MaterialTheme.typography.h6.copy(fontSize = 16.sp),
                         modifier = Modifier.padding(4.dp)
                     )
@@ -179,7 +179,7 @@ fun JobItem(
 //                        if (errorText() == null) MaterialTheme.typography.caption.color else MaterialTheme.colors.error
 
                     Text(
-                        text = job.wiki!!.caps,
+                        text = stringResource(id = job.shortWiki!!).caps,
                         style = MaterialTheme.typography.caption,
                         modifier = Modifier.padding(
                             top = 0.dp,
