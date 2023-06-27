@@ -4,6 +4,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import kotlinx.serialization.Serializable
 import java.util.*
 
 /**
@@ -42,6 +43,8 @@ data class Planet(
     override val parent: String?
         get() = id
 }
+
+
 
 @Entity(tableName = Continent.TABLE_NAME)
 data class Continent(

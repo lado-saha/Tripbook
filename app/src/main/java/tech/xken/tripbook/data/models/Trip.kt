@@ -3,8 +3,6 @@ package tech.xken.tripbook.data.models
 import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
-
-
 @Entity(tableName = TripSchedule.TABLE_NAME)
 data class TripSchedule(
     @ColumnInfo(name = TRIP) @PrimaryKey val trip: String,

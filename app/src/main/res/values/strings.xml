@@ -135,4 +135,6 @@
     <string name="lb_wiki_long_janitor"></string>
     <string name="msg_no_jobs_left">no job left to be added</string>
     <string name="msg_job_not_initialized">salary and payment schedule needed</string>
+    <string name="lb_my_agency">my agency</string>
+    <string name="lb_stations">stations</string>
 </resources>

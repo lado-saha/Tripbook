@@ -24,18 +24,27 @@ import tech.xken.tripbook.ui.navigation.UniverseArgs.UNIV_SEARCH_HAS_PRESELECTED
 import java.util.UUID
 
 object UnivScreens {
+    const val BASE_UNIV = "agency"
     const val UNIVERSE_SEARCH = "universe_search"
     const val UNIVERSE_EDITOR = "univ_editor"
     const val UNIVERSE_VISUALIZER = "univ_visual"
 }
 
 object AgencyScreens {
+    const val BASE_AGENCY = "agency"
     const val AGENCY_STATION_DASHBOARD = "station_dashboard"
     const val AGENCY_STATION_PROFILE = "station_profile"
     const val AGENCY_STATION_LOCATION = "station_location"
     const val AGENCY_STATION_PERSONNEL = "station_personnel"
     const val AGENCY_STATION_JOBS = "station_jobs"
     const val AGENCY_STATION_JOB_DETAILS = "station_jobs_details"
+}
+
+object BookingScreens {
+    const val BASE_BOOKING = "booking"
+    const val BOOKER_SIGN_IN = "booker_sign_in"
+    const val BOOKER_SIGN_UP = "booker_sign_up"
+    const val BOOKER_DETAILS = "booker_details"
 }
 
 object AgencyArgs {
@@ -74,13 +83,6 @@ object UniverseArgs {
     const val UNIV_SEARCH_FIELDS = "univ_search_fields"
     const val TOWNS_TO_EXCLUDE_BY_IDS = "towns_for_exclusion"
     const val UNIVERSE_SEARCH_RETURN_TOWNS_ONLY = "univ_search_return_towns_only"
-}
-
-
-object BookingScreens {
-    const val BOOKER_SIGN_IN = "booker_sign_in"
-    const val BOOKER_SIGN_UP = "booker_sign_up"
-    const val BOOKER_DETAILS = "booker_details"
 }
 
 object BookingNavArgs {

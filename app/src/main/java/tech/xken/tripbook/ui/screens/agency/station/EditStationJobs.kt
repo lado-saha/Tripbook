@@ -1,12 +1,16 @@
 package tech.xken.tripbook.ui.screens.agency.station
 
+import android.annotation.SuppressLint
 import android.util.Log
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.*
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement.Bottom
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
@@ -14,9 +18,8 @@ import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.Clear
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.platform.LocalFocusManager
@@ -268,6 +271,8 @@ class StationJobsVM @Inject constructor(
     }
 }
 
+@SuppressLint("UnusedMaterialScaffoldPaddingParameter")
+@OptIn(ExperimentalMaterialApi::class)
 @Composable
 fun StationJobs(
     scaffoldState: ScaffoldState = rememberScaffoldState(),
@@ -276,25 +281,61 @@ fun StationJobs(
     onStationJobClick: (id: String) -> Unit,
 ) {
     val uis by vm.uiState.collectAsState()
-    if (!uis.isDetailsView)
-        Scaffold(
-            scaffoldState = scaffoldState,
-            topBar = {
-                TopAppBar(
-                    title = { Text(stringResource(id = R.string.lb_jobs).titleCase) },
-                    modifier = Modifier.fillMaxWidth(),
-                    navigationIcon = {
-                        IconButton(onClick = { onNavigateBack() }) {
-                            Icon(imageVector = Icons.Filled.ArrowBack, contentDescription = null)
+    val coroutineScope = rememberCoroutineScope()
+    val sheetState = rememberModalBottomSheetState(
+        initialValue = ModalBottomSheetValue.Hidden,
+        confirmValueChange = { it == ModalBottomSheetValue.HalfExpanded },
+        skipHalfExpanded = false
+    )
+    var isSheetFullScreen by remember { mutableStateOf(false) }
+
+    val roundedCornerRadius = if (isSheetFullScreen) 12.dp else 12.dp
+    val modifier = if (isSheetFullScreen) Modifier.fillMaxSize() else Modifier.fillMaxWidth()
+    BackHandler(sheetState.isVisible) {
+        coroutineScope.launch { sheetState.hide() }
+    }
+
+    Scaffold(
+        scaffoldState = scaffoldState,
+        topBar = {
+            TopAppBar(
+                title = { Text(stringResource(id = R.string.lb_jobs).titleCase) },
+                modifier = Modifier.fillMaxWidth(),
+                navigationIcon = {
+                    IconButton(onClick = { onNavigateBack() }) {
+                        Icon(imageVector = Icons.Filled.ArrowBack, contentDescription = null)
+                    }
+                },
+            )
+        },
+    ) { paddingValues ->
+        ModalBottomSheetLayout(
+            sheetState = sheetState,
+            sheetShape = RoundedCornerShape(
+                topStart = roundedCornerRadius,
+                topEnd = roundedCornerRadius
+            ),
+            sheetContent = {
+                Column(
+                    modifier = modifier,
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    Button(
+                        onClick = {
+                            isSheetFullScreen = !isSheetFullScreen
                         }
-                    },
-                )
+                    ) {
+                        Text(text = "Hide Sheet")
+                    }
+                }
             },
-        ) { paddingValues ->
+            modifier = Modifier.fillMaxWidth(),
+        ) {
             LazyColumn(
                 contentPadding = paddingValues,
                 modifier = Modifier.fillMaxSize(),
-                state = rememberLazyListState()
+                state = rememberLazyListState(),
             ) {
                 //This is the station jobs and below we have the jobs which can be further added by the scanner
                 item {
@@ -305,7 +346,7 @@ fun StationJobs(
                         onVisibilityClick = {
                             vm.onStationJobsVisibilityChange(!it)
                         },
-                        isVisible = uis.isStationJobsVisible,
+                        isVisible = uis.isStationJobsVisible
                     )
                 }
                 if (uis.stationJobs.isEmpty()) item {
@@ -332,6 +373,7 @@ fun StationJobs(
                                 else null
                             }
                         ) {
+                            coroutineScope.launch { sheetState.show() }
                             // We prepare the detail view before navigating away
                             vm.constructStationJobView(it.jobId)
                             onStationJobClick(it.jobId)
@@ -379,18 +421,20 @@ fun StationJobs(
                 }
             }
         }
-    else StationJobDetails(onNavigateBack = {
+    }
 
-    }, vm = vm)
+
 }
 
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
-fun StationJobDetails(
+fun StationJobDetailsBottomSheet(
     onNavigateBack: () -> Unit,
     vm: StationJobsVM = hiltViewModel(),
     scaffoldState: ScaffoldState = rememberScaffoldState(),
-) {
+
+    ) {
+
     val uis by vm.detailUiState.collectAsState()
 
     if (uis.isDetailViewComplete) onNavigateBack()
@@ -558,3 +602,28 @@ fun StationJobDetails(
         }
     }
 }
+
+
+//fun Auth(app: String, slogan: String, appelerMoiQuandOnVeutChangeriUser: (nouvelValeur: Boolean) -> Unit){
+//    /* ...................*/
+//    appelerMoiQuandOnVeutChangeriUser(true)
+//    /* ...................*/
+//
+//}
+//@Composable
+//fun AppTrip(app: String, slogan: String, modifier: Modifier = Modifier){
+//    var isUser = remember{
+//        mutableStateOf(false)
+//    }
+//
+//    /* ................................. */
+//
+//    if(isUser.value){/*  ......  */}
+//    else {
+//        Auth(app = app, slogan = slogan, onUserStateChange =  { nouvelValeur ->
+//            isUser = nouvelValeur
+//        })
+//    }
+//}
+
+

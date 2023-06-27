@@ -2,6 +2,7 @@ package tech.xken.tripbook.data.models
 
 import androidx.room.ColumnInfo
 import androidx.room.Entity
+import androidx.room.ForeignKey
 import androidx.room.PrimaryKey
 
 @Entity(tableName = AgencyProfile.TABLE_NAME)
@@ -94,4 +95,36 @@ data class AgencyEvent(
     }
 }
 
+//A vi
+@Entity(tableName = "AgencyProfileStats")
+data class AgencyProfileStats(
+     val agencyId: String,
+     val personnelCount: Int,
+     val busCount: Int,
+     val busCountCount: Int,
+     val stationCount: Int,
+     val supportEmailCount: Int,
+     val supportPhoneCount: Int,
+)
 
+@Entity(tableName = "StationStatistics")
+data class StationProfileStats(
+    val stationId: String,
+    val affiliatedTownCount: Int,
+    val personnelCount: Int,
+    val busCount: Int,
+    val stationCount: Int,
+)
+
+/**
+ * Profile
+ * Vehicle
+ * Support Contacts
+ * Stations
+ * Towns
+ * Jobs & Salaries
+ * Locations
+ * Trips
+ * Personnel
+ * Other
+ * */
