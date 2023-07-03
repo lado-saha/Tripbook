@@ -13,10 +13,10 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import tech.xken.tripbook.R
+import tech.xken.tripbook.data.AuthRepo
 import tech.xken.tripbook.data.models.*
 import tech.xken.tripbook.data.models.Gender.Companion.gendersStrRes
-import tech.xken.tripbook.data.sources.booking.BookingRepository
-import tech.xken.tripbook.domain.Async
+import tech.xken.tripbook.data.sources.booker.BookerRepository
 import tech.xken.tripbook.domain.WhileUiSubscribed
 import tech.xken.tripbook.domain.isCodeInvalid
 import tech.xken.tripbook.domain.isPhoneInvalid
@@ -25,7 +25,7 @@ import java.util.*
 import javax.inject.Inject
 
 
-data class BookerSignUpUiState(
+data class BookerProfileUiState(
     val isLoading: Boolean = false,
     val message: Int? = null,
     val booker: Booker = Booker.new(),
@@ -37,16 +37,13 @@ data class BookerSignUpUiState(
     val photoBitmap: Bitmap? = null,
     val isInitComplete: Boolean = false,
     val isComplete: Boolean = false,
-) {
-    val isEditMode get() = if (isInitComplete) when (booker.id) {
-        NEW_ID -> false
-        else -> true
-    } else null
-}
+    val isEditMode: Boolean = false
+)
 
 @HiltViewModel
-class BookerSignUpVM @Inject constructor(
-    private val repo: BookingRepository,
+class BookerProfileVM @Inject constructor(
+    private val repo: BookerRepository,
+    private val authRepo: AuthRepo
 ) : ViewModel() {
     // To know if we are signing in up or checking the booker profile
     private val _isLoading = MutableStateFlow(false)
@@ -58,11 +55,9 @@ class BookerSignUpVM @Inject constructor(
     private val _selectedGender = MutableStateFlow(gendersStrRes[0])
     private val _photoUri = MutableStateFlow<Uri?>(null)
     private val _photoBitmap = MutableStateFlow<Bitmap?>(null)
-    private val _isInitComplete = MutableStateFlow(false)
+    private val _isInitComplete = MutableStateFlow(true)
     private val _isComplete = MutableStateFlow(false)
-
-    private val _currentBookerAsync =
-        repo.getCurrentBookerStream().map { handleResults(it) }.onStart { onLoading(true) }
+    private val _isEditMode = MutableStateFlow(authRepo.hasProfile)
 
     val uiState = combine(
         _isLoading,//0
@@ -74,20 +69,19 @@ class BookerSignUpVM @Inject constructor(
         _selectedGender,//6
         _photoUri,//7
         _photoBitmap,//8
-        _currentBookerAsync,//9
-        _isInitComplete,//10
-        _isComplete//11
+        _isInitComplete,//9
+        _isComplete,//10,
+        _isEditMode//11
     ) { args ->
         if (!_isInitComplete.value) {
-            val currentBookerAsync = args[9] as Async.Success<CurrentBooker?>
+//            val currentBookerAsync = args[9] as Async.Success<CurrentBooker?>
             //If there is a current user(There is a user logged in), we get the id and then continue to ge the full booker details
-            if (currentBookerAsync.data == null) {
-                _isInitComplete.value = true
-                onLoading(false)
-            } else _booker.value = (args[2] as Booker).run { copy(id = currentBookerAsync.data.id) }
+//            if (currentBookerAsync.data == null) {
+//                _isInitComplete.value = true
+//                onLoading(false)
+//            } else _booker.value = (args[2] as Booker).run { copy(id = currentBookerAsync.data.id) }
         }
-
-        BookerSignUpUiState(
+        BookerProfileUiState(
             isLoading = args[0] as Boolean,
             message = args[1] as Int?,
             booker = args[2] as Booker,
@@ -97,11 +91,12 @@ class BookerSignUpVM @Inject constructor(
             selectedGender = args[6] as Int,
             photoUri = args[7] as Uri?,
             photoBitmap = args[8] as Bitmap?,
-            isInitComplete = args[10] as Boolean,
-            isComplete = args[11] as Boolean
-        ).also { loadBookerDetails() }
+            isInitComplete = args[9] as Boolean,
+            isComplete = args[10] as Boolean,
+            isEditMode = args[11] as Boolean
+        ).also { /*loadBookerDetails()*/ }
     }.stateIn(
-        scope = viewModelScope, started = WhileUiSubscribed, initialValue = BookerSignUpUiState()
+        scope = viewModelScope, started = WhileUiSubscribed, initialValue = BookerProfileUiState()
     )
 
     /**
@@ -117,11 +112,12 @@ class BookerSignUpVM @Inject constructor(
                         _isComplete.value = true
                         //TODO: navigate away. This can rarely happen
                     }
+
                     is Results.Success -> {
                         val booker = it.data.first()
                         _booker.value = booker
                         _photoUri.value = booker.photoUrl?.toUri()
-                        _selectedGender.value = Gender.strGenderToGender(booker.genderID).stringResId
+                        _selectedGender.value = Gender.strGenderToGender(booker.gender).stringResId
                         onMessageChange(R.string.msg_welcome_back)
                     }
                 }
@@ -142,11 +138,11 @@ class BookerSignUpVM @Inject constructor(
         loadPhotoBitmap(context)
     }
 
-    private fun handleResults(currentBookerResults: Results<CurrentBooker?>) =
-        when (currentBookerResults) {
-            is Results.Failure -> Async.Success(null)
-            is Results.Success -> Async.Success(currentBookerResults.data)
-        }
+//    private fun handleResults(currentBookerResults: Results<CurrentBooker?>) =
+//        when (currentBookerResults) {
+//            is Results.Failure -> Async.Success(null)
+//            is Results.Success -> Async.Success(currentBookerResults.data)
+//        }
 
     /**
      * If the [_photoUri] is not null we load the [_photoBitmap]
@@ -182,17 +178,17 @@ class BookerSignUpVM @Inject constructor(
         _booker.value = _booker.value.copy(name = new)
     }
 
-    fun onEmailChange(new: String) {
-        _booker.value = _booker.value.copy(email = new)
+    fun onIdCardNumberChange(new: String) {
+        _booker.value = _booker.value.copy(idCardNumber = new)
     }
-
-    fun onPasswordChange(new: String) {
-        _booker.value = _booker.value.copy(password = new)
-    }
-
-    fun invertPasswordPeeking() {
-        _isPeekingPassword.value = !_isPeekingPassword.value
-    }
+//
+//    fun onPasswordChange(new: String) {
+//        _booker.value = _booker.value.copy(name = new)
+//    }
+//
+//    fun invertPasswordPeeking() {
+//        _isPeekingPassword.value = !_isPeekingPassword.value
+//    }
 
     fun onBirthdayChange(new: Long) {
         _booker.value = _booker.value.copy(birthday = new)
@@ -207,7 +203,7 @@ class BookerSignUpVM @Inject constructor(
 
     fun onSelectedGenderChange(new: Int) {
         _selectedGender.value = new
-        _booker.value = _booker.value.copy(genderID = Gender.resIdToGender(new).strGender)
+        _booker.value = _booker.value.copy(gender = Gender.resIdToGender(new).strGender)
     }
 
     fun onGenderExpansionChange(new: Boolean) {
@@ -232,24 +228,24 @@ class BookerSignUpVM @Inject constructor(
         _booker.value = _booker.value.copy(occupation = new)
     }
 
+    fun onJobSeekerChange(new: Boolean) {
+        _booker.value = _booker.value.copy(isJobSeeker = new)
+    }
+
     fun nameErrorText(text: String? = _booker.value.name) =
         if (text.isNullOrBlank()) R.string.msg_required_field else null
 
-    fun emailErrorText(text: String? = _booker.value.email) =
-        if (text.isNullOrBlank()) R.string.msg_required_field else null
+    fun idCardNumberErrorText(text: String? = _booker.value.idCardNumber) =
+        if (text.isNullOrBlank()) R.string.msg_required_field
+        else if (text.length != 19) R.string.msg_invalid_field
+        else null
 
-    fun passwordErrorText(text: String? = _booker.value.password) = when {
-        text.isNullOrBlank() -> R.string.msg_required_field
-        text.length < 8 -> R.string.msg_invalid_password
-        else -> null
-    }
+
 
     fun birthdayErrorText() = when {
         (_booker.value.birthday ?: 0L) > Date().time -> R.string.msg_invalid_field
         else -> null
     }
-
-    val genderErrorText = null
 
     fun phoneCodeErrorText(text: String? = _booker.value.phoneCode) = when {
         text.isNullOrBlank() -> null
@@ -268,7 +264,7 @@ class BookerSignUpVM @Inject constructor(
     val occupationErrorText = null
 
     val isNoError
-        get() = nameErrorText() == null && nationalityErrorText == null && phoneErrorText() == null && emailErrorText() == null && passwordErrorText() == null && genderErrorText == null && occupationErrorText == null && birthdayErrorText() == null
+        get() = nameErrorText() == null && nationalityErrorText == null && phoneErrorText() == null && idCardNumberErrorText() == null && occupationErrorText == null && birthdayErrorText() == null
 
     fun save() {
         if (isNoError) viewModelScope.launch {

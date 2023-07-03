@@ -5,11 +5,11 @@ import kotlinx.coroutines.flow.Flow
 import tech.xken.tripbook.data.models.*
 import tech.xken.tripbook.data.models.Results.Failure
 import tech.xken.tripbook.data.models.Results.Success
-import tech.xken.tripbook.data.sources.booking.BookingRepository
+import tech.xken.tripbook.data.sources.booker.BookerRepository
 
 class AgencyRepositoryImpl(
     private val localAgencySource: AgencyDataSource,
-    private val bookingRepo: BookingRepository,
+    private val bookingRepo: BookerRepository,
     private val ioDispatcher: CoroutineDispatcher,
 ) : AgencyRepository {
 

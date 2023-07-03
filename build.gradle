@@ -1,10 +1,13 @@
+import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+
 buildscript {
     ext {
-        compose_version = '1.4.1'
-        room_version = '2.5.1'
+        compose_version = '1.4.3'
+        room_version = '2.5.2'
         nav_version = '2.5.3'
-        hiltVersion = '2.44'
+        hiltVersion = '2.46.1'
         kt_version = '1.8.10'
+        ktor_version = '2.3.2'
     }
 }// Top-level build file where you can add configuration options common to all sub-projects/modules.
 plugins {
@@ -16,7 +19,7 @@ plugins {
 
 }
 subprojects {
-    tasks.withType(org.jetbrains.kotlin.gradle.tasks.KotlinCompile).configureEach {
+    tasks.withType(KotlinCompile).configureEach {
         kotlinOptions {
             freeCompilerArgs += '-opt-in=kotlin.RequiresOptIn'
             freeCompilerArgs += '-opt-in=kotlin.Experimental'

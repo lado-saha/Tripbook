@@ -10,6 +10,7 @@ import java.util.*
 /**
  * A town is a unit place
  */
+@Entity
 interface UniverseUI {
     val id: String
     val name: String?

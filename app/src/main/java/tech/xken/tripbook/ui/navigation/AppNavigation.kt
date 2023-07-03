@@ -41,10 +41,9 @@ object AgencyScreens {
 }
 
 object BookingScreens {
-    const val BASE_BOOKING = "booking"
+    const val BASE_BOOKER = "booker"
     const val BOOKER_SIGN_IN = "booker_sign_in"
-    const val BOOKER_SIGN_UP = "booker_sign_up"
-    const val BOOKER_DETAILS = "booker_details"
+    const val BOOKER_PROFILE = "booker_profile"
 }
 
 object AgencyArgs {
@@ -164,15 +163,10 @@ class BookingNavActions(private val navController: NavHostController) {
         }
     }
 
-    fun navigateToSignUp() {
-        navController.navigate(BookingScreens.BOOKER_SIGN_UP) {
+    fun navigateToProfile() {
+        navController.navigate(BookingScreens.BOOKER_PROFILE) {
             launchSingleTop = true
         }
     }
 
-    fun navigateToBookerDetails() {
-        navController.navigate(BookingScreens.BOOKER_DETAILS) {
-            launchSingleTop = true
-        }
-    }
 }

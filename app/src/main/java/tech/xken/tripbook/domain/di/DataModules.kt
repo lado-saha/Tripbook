@@ -7,32 +7,41 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import io.github.jan.supabase.createSupabaseClient
+import io.github.jan.supabase.gotrue.GoTrue
+import io.github.jan.supabase.postgrest.Postgrest
+import io.github.jan.supabase.postgrest.PropertyConversionMethod
+import io.github.jan.supabase.realtime.Realtime
+import io.github.jan.supabase.storage.Storage
 import kotlinx.coroutines.CoroutineDispatcher
+import tech.xken.tripbook.data.sources.LocalDatabase
+import tech.xken.tripbook.data.sources.SUPABASE_KEY
+import tech.xken.tripbook.data.sources.SUPABASE_URL
 import tech.xken.tripbook.data.sources.agency.AgencyDataSource
 import tech.xken.tripbook.data.sources.agency.AgencyRepository
 import tech.xken.tripbook.data.sources.agency.AgencyRepositoryImpl
 import tech.xken.tripbook.data.sources.agency.local.AgencyLocalDataSourceImpl
-import tech.xken.tripbook.data.sources.agency.local.AgencyLocalDatabase
-import tech.xken.tripbook.data.sources.booking.BookingDataSource
-import tech.xken.tripbook.data.sources.booking.BookingRepository
-import tech.xken.tripbook.data.sources.booking.BookingRepositoryImpl
-import tech.xken.tripbook.data.sources.booking.local.BookingLocalDatabase
-import tech.xken.tripbook.data.sources.booking.local.BookingLocalDataSourceImpl
+import tech.xken.tripbook.data.sources.agency.remote.AgencyRemoteDataSource
+import tech.xken.tripbook.data.sources.booker.BookerDataSource
+import tech.xken.tripbook.data.sources.booker.BookerRepository
+import tech.xken.tripbook.data.sources.booker.BookerRepositoryImpl
+import tech.xken.tripbook.data.sources.booker.local.BookerLocalDataSourceImpl
+import tech.xken.tripbook.data.sources.booker.remote.BookerRemoteDataSource
 import tech.xken.tripbook.data.sources.caches.CachesDataSource
 import tech.xken.tripbook.data.sources.caches.CachesRepository
 import tech.xken.tripbook.data.sources.caches.CachesRepositoryImpl
 import tech.xken.tripbook.data.sources.caches.local.CachesLocalDataSourceImpl
-import tech.xken.tripbook.data.sources.caches.local.CachesLocalDatabase
+import tech.xken.tripbook.data.sources.caches.remote.CachesRemoteDataSource
 import tech.xken.tripbook.data.sources.init.InitDataSource
 import tech.xken.tripbook.data.sources.init.InitRepository
 import tech.xken.tripbook.data.sources.init.InitRepositoryImpl
 import tech.xken.tripbook.data.sources.init.local.InitLocalDataSourceImpl
-import tech.xken.tripbook.data.sources.init.local.InitLocalDatabase
+import tech.xken.tripbook.data.sources.init.remote.InitRemoteDataSource
 import tech.xken.tripbook.data.sources.universe.UniverseDataSource
 import tech.xken.tripbook.data.sources.universe.UniverseRepository
 import tech.xken.tripbook.data.sources.universe.UniverseRepositoryImpl
 import tech.xken.tripbook.data.sources.universe.local.UniverseLocalDataSourceImpl
-import tech.xken.tripbook.data.sources.universe.local.UniverseLocalDatabase
+import tech.xken.tripbook.data.sources.universe.remote.UniverseRemoteDataSource
 import javax.inject.Qualifier
 import javax.inject.Singleton
 
@@ -43,7 +52,15 @@ annotation class LocalUniverseDataSource
 
 @Qualifier
 @Retention(AnnotationRetention.RUNTIME)
+annotation class RemoteUniverseDataSource
+
+@Qualifier
+@Retention(AnnotationRetention.RUNTIME)
 annotation class LocalInitDataSource
+
+@Qualifier
+@Retention(AnnotationRetention.RUNTIME)
+annotation class RemoteInitDataSource
 
 @Qualifier
 @Retention(AnnotationRetention.RUNTIME)
@@ -51,11 +68,24 @@ annotation class LocalBookingDataSource
 
 @Qualifier
 @Retention(AnnotationRetention.RUNTIME)
+annotation class RemoteBookingDataSource
+
+@Qualifier
+@Retention(AnnotationRetention.RUNTIME)
 annotation class LocalAgencyDataSource
 
 @Qualifier
 @Retention(AnnotationRetention.RUNTIME)
+annotation class RemoteAgencyDataSource
+
+@Qualifier
+@Retention(AnnotationRetention.RUNTIME)
 annotation class LocalCachesDataSource
+
+@Qualifier
+@Retention(AnnotationRetention.RUNTIME)
+annotation class RemoteCachesDataSource
+
 
 /*--------------------------------------------------------*/
 /**
@@ -67,43 +97,48 @@ object RepositoryModule {
     @Singleton//Only one instance per app session
     @Provides // Helps hilt to know that it must use this function to provide an instance of
     fun provideUniverseRepository(
-        @LocalUniverseDataSource localDataSource: UniverseDataSource,
+        @LocalUniverseDataSource local: UniverseDataSource,
+        @RemoteUniverseDataSource remote: UniverseDataSource,
         @IoDispatcher ioDispatcher: CoroutineDispatcher,
     ): UniverseRepository = UniverseRepositoryImpl(
-        localDataSource,
+        local,
         ioDispatcher
     )
 
     @Singleton//Only one instance per app session
     @Provides // Helps hilt to know that it must use this function to provide an instance of
     fun provideCachesRepository(
-        @LocalCachesDataSource localDataSource: CachesDataSource,
+        @LocalCachesDataSource local: CachesDataSource,
+        @RemoteCachesDataSource remote: CachesDataSource,
         @IoDispatcher ioDispatcher: CoroutineDispatcher,
     ): CachesRepository = CachesRepositoryImpl(
-        localDataSource,
+        local,
         ioDispatcher
     )
 
     @Singleton
     @Provides
     fun provideBookingRepository(
-        @LocalBookingDataSource localDataSource: BookingDataSource,
+        @LocalBookingDataSource local: BookerDataSource,
+        @RemoteBookingDataSource remote: BookerDataSource,
         @IoDispatcher ioDispatcher: CoroutineDispatcher,
-    ): BookingRepository = BookingRepositoryImpl(
-        localDataSource,
+    ): BookerRepository = BookerRepositoryImpl(
+        local,
         ioDispatcher
     )
 
     @Singleton
     @Provides
     fun provideAgencyRepository(
-        @LocalBookingDataSource localBookingDataSource: BookingDataSource,
-        @LocalAgencyDataSource localAgencyDataSource: AgencyDataSource,
+        @LocalAgencyDataSource local: AgencyDataSource,
+        @RemoteAgencyDataSource remote: AgencyDataSource,
+        @LocalBookingDataSource localBooker: BookerDataSource,
+        @RemoteBookingDataSource remoteBooker: BookerDataSource,
         @IoDispatcher ioDispatcher: CoroutineDispatcher,
     ): AgencyRepository = AgencyRepositoryImpl(
-        localAgencyDataSource,
-        BookingRepositoryImpl(
-            localBookingDataSource,
+        local,
+        BookerRepositoryImpl(
+            localBooker,
             ioDispatcher
         ),
         ioDispatcher
@@ -112,10 +147,11 @@ object RepositoryModule {
     @Singleton
     @Provides
     fun provideInitRepository(
-        @LocalInitDataSource localInitDataSource: InitDataSource,
+        @LocalInitDataSource local: InitDataSource,
+        @RemoteInitDataSource remote: InitDataSource,
         @IoDispatcher ioDispatcher: CoroutineDispatcher,
     ): InitRepository = InitRepositoryImpl(
-        localInitDataSource,
+        local,
         ioDispatcher
     )
 }
@@ -130,56 +166,81 @@ object DataSourceModule {
     @Provides
     @LocalCachesDataSource
     fun provideLocalCachesDataSource(
-        database: CachesLocalDatabase,
+        database: LocalDatabase,
         @IoDispatcher ioDispatcher: CoroutineDispatcher,
     ): CachesDataSource = CachesLocalDataSourceImpl(
-        database.dao,
+        database.cachesDao,
         ioDispatcher
     )
+
+    @Singleton
+    @Provides
+    @RemoteCachesDataSource
+    fun provideRemoteCachesDataSource(): CachesDataSource = CachesRemoteDataSource
 
     @Singleton
     @Provides
     @LocalInitDataSource
     fun provideLocalInitDataSource(
-        database: InitLocalDatabase,
+        database: LocalDatabase,
         @IoDispatcher ioDispatcher: CoroutineDispatcher,
     ): InitDataSource = InitLocalDataSourceImpl(
-        database.dao,
+        database.initDao,
         ioDispatcher
     )
+
+    @Singleton
+    @Provides
+    @RemoteInitDataSource
+    fun provideRemoteInitDataSource(): InitDataSource = InitRemoteDataSource
 
     @Singleton
     @Provides
     @LocalUniverseDataSource
     fun provideLocalUniverseDataSource(
-        database: UniverseLocalDatabase,
+        database: LocalDatabase,
         @IoDispatcher ioDispatcher: CoroutineDispatcher,
     ): UniverseDataSource = UniverseLocalDataSourceImpl(
-        database.dao,
+        database.universeDao,
         ioDispatcher
     )
+
+    @Singleton
+    @Provides
+    @RemoteUniverseDataSource
+    fun provideRemoteUniverseDataSource(): UniverseDataSource = UniverseRemoteDataSource
 
     @Singleton
     @Provides
     @LocalBookingDataSource
     fun provideLocalBookingDataSource(
-        database: BookingLocalDatabase,
+        database: LocalDatabase,
         @IoDispatcher ioDispatcher: CoroutineDispatcher,
-    ): BookingDataSource = BookingLocalDataSourceImpl(
-        database.dao,
+    ): BookerDataSource = BookerLocalDataSourceImpl(
+        database.bookerDao,
         ioDispatcher
     )
 
     @Singleton
     @Provides
+    @RemoteBookingDataSource
+    fun provideRemoteBookingDataSource(): BookerDataSource = BookerRemoteDataSource
+
+    @Singleton
+    @Provides
     @LocalAgencyDataSource
     fun provideLocalAgencyDataSource(
-        agencyDatabase: AgencyLocalDatabase,
+        agencyDatabase: LocalDatabase,
         @IoDispatcher ioDispatcher: CoroutineDispatcher,
     ): AgencyDataSource = AgencyLocalDataSourceImpl(
-        agencyDatabase.dao,
+        agencyDatabase.agencyDao,
         ioDispatcher
     )
+
+    @Singleton
+    @Provides
+    @RemoteAgencyDataSource
+    fun provideRemoteAgencyDataSource(): AgencyDataSource = AgencyRemoteDataSource
 }
 
 /**
@@ -188,54 +249,78 @@ object DataSourceModule {
 @Module
 @InstallIn(SingletonComponent::class)
 object DatabaseModule {
+    /*
+        @Singleton
+        @Provides//One instance only for the database
+        fun provideCachesDatabase(@ApplicationContext context: Context): CachesLocalDatabase {
+            return Room.databaseBuilder(
+                context.applicationContext,
+                CachesLocalDatabase::class.java,
+                "Caches.db"
+            ).fallbackToDestructiveMigration().build()
+        }
 
+        @Singleton
+        @Provides//One instance only for the database
+        fun provideUniverseDatabase(@ApplicationContext context: Context): UniverseLocalDatabase {
+            return Room.databaseBuilder(
+                context.applicationContext,
+                UniverseLocalDatabase::class.java,
+                "Universe.db"
+            ).fallbackToDestructiveMigration().build()
+        }
+
+        @Singleton
+        @Provides//One instance only for the database
+        fun provideBookingDatabase(@ApplicationContext context: Context): BookingLocalDatabase {
+            return Room.databaseBuilder(
+                context.applicationContext,
+                BookingLocalDatabase::class.java,
+                "Booking.db"
+            ).fallbackToDestructiveMigration().build()
+        }
+
+        @Singleton
+        @Provides
+        fun provideAgencyDatabase(@ApplicationContext context: Context): AgencyLocalDatabase {
+            return Room.databaseBuilder(
+                context.applicationContext,
+                AgencyLocalDatabase::class.java,
+                "Agency.db"
+            ).fallbackToDestructiveMigration().build()
+        }
+
+        @Singleton
+        @Provides
+        fun provideInitDatabase(@ApplicationContext context: Context): InitLocalDatabase {
+            return Room.databaseBuilder(
+                context.applicationContext,
+                InitLocalDatabase::class.java,
+                "init.db"
+            ).fallbackToDestructiveMigration().build()
+        }
+    */
     @Singleton
-    @Provides//One instance only for the database
-    fun provideCachesDatabase(@ApplicationContext context: Context): CachesLocalDatabase {
+    @Provides
+    fun provideLocalDatabase(@ApplicationContext context: Context): LocalDatabase {
         return Room.databaseBuilder(
             context.applicationContext,
-            CachesLocalDatabase::class.java,
-            "Caches.db"
-        ).fallbackToDestructiveMigration().build()
-    }
-
-    @Singleton
-    @Provides//One instance only for the database
-    fun provideUniverseDatabase(@ApplicationContext context: Context): UniverseLocalDatabase {
-        return Room.databaseBuilder(
-            context.applicationContext,
-            UniverseLocalDatabase::class.java,
-            "Universe.db"
-        ).fallbackToDestructiveMigration().build()
-    }
-
-    @Singleton
-    @Provides//One instance only for the database
-    fun provideBookingDatabase(@ApplicationContext context: Context): BookingLocalDatabase {
-        return Room.databaseBuilder(
-            context.applicationContext,
-            BookingLocalDatabase::class.java,
-            "Booking.db"
+            LocalDatabase::class.java,
+            "tripbook_local_db"
         ).fallbackToDestructiveMigration().build()
     }
 
     @Singleton
     @Provides
-    fun provideAgencyDatabase(@ApplicationContext context: Context): AgencyLocalDatabase {
-        return Room.databaseBuilder(
-            context.applicationContext,
-            AgencyLocalDatabase::class.java,
-            "Agency.db"
-        ).fallbackToDestructiveMigration().build()
-    }
-
-    @Singleton
-    @Provides
-    fun provideInitDatabase(@ApplicationContext context: Context): InitLocalDatabase {
-        return Room.databaseBuilder(
-            context.applicationContext,
-            InitLocalDatabase::class.java,
-            "init.db"
-        ).fallbackToDestructiveMigration().build()
+    fun provideSupabaseClient() = createSupabaseClient(
+        supabaseUrl = SUPABASE_URL,
+        supabaseKey = SUPABASE_KEY
+    ) {
+        install(GoTrue)
+        install(Postgrest) {
+            propertyConversionMethod = PropertyConversionMethod.CAMEL_CASE_TO_SNAKE_CASE
+        }
+        install(Storage)
+        install(Realtime)
     }
 }

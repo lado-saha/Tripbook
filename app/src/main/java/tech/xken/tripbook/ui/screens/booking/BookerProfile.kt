@@ -2,13 +2,11 @@ package tech.xken.tripbook.ui.screens.booking
 
 import android.app.DatePickerDialog
 import android.content.Intent
-import android.telephony.PhoneNumberUtils
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.*
@@ -22,7 +20,6 @@ import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.*
 import androidx.compose.ui.unit.dp
@@ -39,13 +36,11 @@ import java.util.*
 
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
-fun BookerSignUpOrDetails(
-    vm: BookerSignUpVM = hiltViewModel(),
+fun BookerProfile(
+    vm: BookerProfileVM = hiltViewModel(),
     scaffoldState: ScaffoldState = rememberScaffoldState(),
     navigateBack: () -> Unit,
-    navigateToSignIn: (() -> Unit)? = null,
-    onSignUpComplete: (() -> Unit)? = null,
-    onBookerDetailsEditComplete: (() -> Unit)? = null,
+    onProfileComplete: (() -> Unit),
 ) {
     val focusManager = LocalFocusManager.current
     //Initialisation Processes
@@ -54,10 +49,9 @@ fun BookerSignUpOrDetails(
     vm.loadPhotoBitmap(context)
     //We navigate away
     if (uis.isComplete) {
-        (if (uis.isEditMode == false) onSignUpComplete else onBookerDetailsEditComplete)!!.invoke()
+        onProfileComplete()
         vm.onCompleteChange(false)
     }
-
     val fieldPadding = PaddingValues(horizontal = 16.dp, vertical = 2.dp)
     //To pick an image from the gallery
     val galleryLauncher =
@@ -91,27 +85,13 @@ fun BookerSignUpOrDetails(
                 title = {
                     Text(
                         text = stringResource(
-                            id = when (uis.isEditMode) {
-                                null -> R.string.empty
-                                false -> R.string.lb_sign_up
-                                true -> R.string.lb_my_account
-                            }
+                            id =  R.string.lb_my_profile
                         ).titleCase,
                         style = LocalTextStyle.current.copy(
                             fontWeight = FontWeight.Bold,
                             fontSize = 24.sp
                         )
                     )
-                },
-                actions = {
-                    if (uis.isEditMode != null)
-                        IconButton(onClick = { vm.save() }) {
-                            Icon(
-                                imageVector = if (uis.isEditMode!!) Icons.Outlined.Check else Icons.Outlined.PersonAdd,
-                                contentDescription = null,
-                                tint = LocalContentColor.current
-                            )
-                        }
                 },
                 navigationIcon = {
                     IconButton(onClick = { navigateBack() }) {
@@ -124,15 +104,6 @@ fun BookerSignUpOrDetails(
                 },
                 modifier = Modifier.fillMaxWidth()
             )
-        },
-        floatingActionButton = {
-            if (uis.isEditMode == false)
-                ExtendedFloatingActionButton(
-                    text = { Text(stringResource(R.string.lb_signin_instead).titleCase) },
-                    onClick = { navigateToSignIn!!.invoke() },
-                    icon = { Icon(imageVector = Icons.Outlined.Login, null) },
-                    shape = RoundedCornerShape(30f)
-                )
         },
     ) { paddingValues ->
         Column(
@@ -186,23 +157,23 @@ fun BookerSignUpOrDetails(
                 leadingIcon = { Icon(imageVector = Icons.Default.Person, contentDescription = "") },
                 label = { Text(stringResource(R.string.lb_name).caps) },
                 singleLine = true,
-                keyboardActions = KeyboardActions (
-                    onNext = {focusManager.moveFocus(FocusDirection.Next)}
+                keyboardActions = KeyboardActions(
+                    onNext = { focusManager.moveFocus(FocusDirection.Next) }
                 ),
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next)
             )
 
-            //Email
+            //nation id card number
             OutTextField(
                 modifier = Modifier
                     .padding(fieldPadding)
                     .fillMaxWidth(),
-                value = uis.booker.email ?: "",
-                errorText = { vm.emailErrorText(it) },
-                onValueChange = { vm.onEmailChange(it) },
+                value = uis.booker.idCardNumber ?: "",
+                errorText = { vm.idCardNumberErrorText(it) },
+                onValueChange = { vm.onIdCardNumberChange(it) },
                 trailingIcon = {
-                    if (!uis.booker.email.isNullOrBlank())
-                        IconButton(onClick = { vm.onEmailChange("") }) {
+                    if (!uis.booker.idCardNumber.isNullOrBlank())
+                        IconButton(onClick = { vm.onIdCardNumberChange("") }) {
                             Icon(
                                 imageVector = Icons.Outlined.Clear,
                                 contentDescription = ""
@@ -210,47 +181,15 @@ fun BookerSignUpOrDetails(
                         }
                 },
                 leadingIcon = {
-                    Icon(imageVector = Icons.Default.Email, contentDescription = "")
+                    Icon(imageVector = Icons.Default.Badge, contentDescription = "")
                 },
-                keyboardActions = KeyboardActions (
-                    onNext = {focusManager.moveFocus(FocusDirection.Next)}
+                keyboardActions = KeyboardActions(
+                    onNext = { focusManager.moveFocus(FocusDirection.Next) }
                 ),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email,imeAction = ImeAction.Next),
-                label = { Text(stringResource(R.string.lb_email).caps) },
+                label = { Text(stringResource(R.string.lb_id_card_number).titleCase) },
                 singleLine = true
             )
 
-            //Password
-            OutTextField(
-                modifier = Modifier
-                    .padding(fieldPadding)
-                    .fillMaxWidth(),
-                value = uis.booker.password ?: "",
-                errorText = { vm.passwordErrorText(it) },
-                onValueChange = { vm.onPasswordChange(it) },
-                visualTransformation = if (uis.isPeekingPassword) VisualTransformation.None else PasswordVisualTransformation(),
-                trailingIcon = {
-                    IconButton(onClick = { vm.invertPasswordPeeking() }) {
-                        Icon(
-                            imageVector = if (uis.isPeekingPassword) Icons.Outlined.VisibilityOff else Icons.Outlined.Visibility,
-                            contentDescription = "",
-                        )
-                    }
-                },
-                leadingIcon = {
-                    Icon(imageVector = Icons.Default.Password, contentDescription = "")
-                },
-                keyboardOptions = KeyboardOptions(
-                    keyboardType = KeyboardType.Password,
-                    autoCorrect = false,
-                    imeAction = ImeAction.Next
-                ),
-                label = { Text(stringResource(R.string.lb_password).caps) },
-                keyboardActions = KeyboardActions (
-                    onNext = {focusManager.moveFocus(FocusDirection.Next)}
-                ),
-                singleLine = true
-            )
             // Birthday
             OutTextField(
                 modifier = Modifier
@@ -314,87 +253,6 @@ fun BookerSignUpOrDetails(
                 }
             }
 
-            Row(
-                modifier = Modifier
-                    .padding(fieldPadding)
-                    .fillMaxWidth(),
-            ) {
-                // Country Code
-                OutTextField(
-                    value = uis.booker.phoneCode ?: "",
-                    modifier = Modifier.fillMaxWidth(0.35f),
-                    leadingIcon = {
-                        Icon(imageVector = Icons.Default.Phone, contentDescription = "")
-                    },
-                    label = { Text(stringResource(R.string.lb_phone_code).caps) },
-                    onValueChange = { vm.onPhoneCodeChange(it) },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number,imeAction = ImeAction.Next),
-                    visualTransformation = {
-                        val offsetMapping = object : OffsetMapping {
-                            override fun originalToTransformed(offset: Int) = offset + 1
-                            override fun transformedToOriginal(offset: Int) =
-                                if (offset < 1) offset else offset - 1//TODO: Donot why it works
-                        }
-                        TransformedText(
-                            text = AnnotatedString("+${it.text}"),
-                            offsetMapping = offsetMapping
-                        )
-                    },
-                    errorText = { vm.phoneCodeErrorText(it) },
-                    keyboardActions = KeyboardActions (
-                        onNext = {focusManager.moveFocus(FocusDirection.Next)}
-                    )
-                )
-
-                // Phone
-                OutTextField(
-                    value = uis.booker.phone ?: "",
-                    singleLine = true,
-                    modifier = Modifier
-                        .padding(start = 2.dp)
-                        .fillMaxWidth(1f),
-                    label = { Text(stringResource(R.string.lb_phone).caps) },
-                    onValueChange = { vm.onPhoneChange(it) },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone, imeAction = ImeAction.Next),
-                    visualTransformation = {
-                        if (vm.phoneErrorText(it.text) == null && vm.phoneCodeErrorText(uis.booker.phoneCode) == null && !uis.booker.phone.isNullOrBlank() && !uis.booker.phoneCode.isNullOrBlank()) {
-                            val offsetMapping = object : OffsetMapping {
-                                override fun originalToTransformed(offset: Int) =
-                                    PhoneNumberUtils.formatNumber(
-                                        it.text,
-                                        vm.countryFromCode
-                                    ).length
-
-                                override fun transformedToOriginal(offset: Int) =
-                                    uis.booker.phone?.length ?: 0
-                            }
-                            TransformedText(
-                                text = AnnotatedString(
-                                    PhoneNumberUtils.formatNumber(
-                                        it.text,
-                                        vm.countryFromCode
-                                    )
-                                ),
-                                offsetMapping = offsetMapping
-                            )
-                        } else TransformedText(it, OffsetMapping.Identity)
-                    },
-                    errorText = { vm.phoneErrorText(it) },
-                    trailingIcon = {
-                        if (!uis.booker.phone.isNullOrBlank())
-                            IconButton(onClick = { vm.onPhoneChange("") }) {
-                                Icon(
-                                    imageVector = Icons.Outlined.Clear,
-                                    contentDescription = ""
-                                )
-                            }
-                    },
-                    keyboardActions = KeyboardActions (
-                        onNext = {focusManager.moveFocus(FocusDirection.Next)}
-                    )
-                )
-            }
-
             //Nationality
             OutTextField(
                 modifier = Modifier
@@ -415,8 +273,8 @@ fun BookerSignUpOrDetails(
                     Icon(imageVector = Icons.Default.Flag, contentDescription = "")
                 },
                 label = { Text(stringResource(R.string.lb_nationality).caps) },
-                keyboardActions = KeyboardActions (
-                    onNext = {focusManager.moveFocus(FocusDirection.Next)}
+                keyboardActions = KeyboardActions(
+                    onNext = { focusManager.moveFocus(FocusDirection.Next) }
                 ),
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
                 singleLine = true
@@ -425,7 +283,7 @@ fun BookerSignUpOrDetails(
             OutTextField(
                 modifier = Modifier
                     .padding(fieldPadding)
-                    .padding(bottom = 128.dp)
+
                     .fillMaxWidth(),
                 value = uis.booker.occupation ?: "",
                 onValueChange = { vm.onOccupationChange(it) },
@@ -443,12 +301,79 @@ fun BookerSignUpOrDetails(
                     Icon(imageVector = Icons.Default.Work, contentDescription = "")
                 },
                 label = { Text(stringResource(R.string.lb_occupation).caps) },
-                keyboardActions = KeyboardActions (
+                keyboardActions = KeyboardActions(
                     onGo = { vm.save() }
                 ),
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Go),
                 singleLine = true
             )
+
+            Divider(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(4.dp), thickness = 1.dp
+            )
+
+            //Is a job seeker
+            Card(
+                modifier = Modifier
+                    .padding(fieldPadding)
+                    .fillMaxWidth()
+            ) {
+                Column(
+                    modifier = Modifier
+                        .padding(4.dp)
+                        .padding(bottom = 4.dp)
+                        .fillMaxWidth()
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .padding(2.dp)
+                            .fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = stringResource(R.string.lb_job_seeker).caps,
+                            modifier = Modifier
+                                .padding(4.dp)
+                                .weight(0.8f)
+                        )
+                        Switch(
+                            checked = uis.booker.isJobSeeker == true,
+                            modifier = Modifier
+                                .padding(horizontal = 8.dp)
+                                .weight(0.2f),
+                            onCheckedChange = { vm.onJobSeekerChange(it) })
+                    }
+                    Text(
+                        text = stringResource(if (uis.booker.isJobSeeker == true) R.string.msg_is_job_seeker else R.string.msg_is_not_job_seeker),
+                        style = MaterialTheme.typography.caption,
+                        modifier = Modifier
+                            .padding(4.dp)
+                            .fillMaxWidth()
+                    )
+                }
+            }
+
+            Button(
+                onClick = {
+                    vm.save()
+                },
+                modifier = Modifier
+                    .padding(vertical = 8.dp)
+                    .padding(fieldPadding)
+                    .fillMaxWidth(),
+            ) {
+                Icon(
+                    imageVector = if (uis.isEditMode) Icons.Outlined.Check else Icons.Outlined.PersonAdd,
+                    contentDescription = null
+                )
+                Text(
+                    stringResource(if (uis.isEditMode) R.string.lb_save else R.string.lb_create).titleCase,
+                    modifier = Modifier.padding(8.dp)
+                )
+            }
+            Spacer(modifier = Modifier.height(8.dp))
         }
     }
 

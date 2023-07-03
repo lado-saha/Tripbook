@@ -17,7 +17,7 @@ import tech.xken.tripbook.data.models.*
 import tech.xken.tripbook.data.models.Results.Failure
 import tech.xken.tripbook.data.models.Results.Success
 import tech.xken.tripbook.data.sources.agency.AgencyRepository
-import tech.xken.tripbook.data.sources.booking.BookingRepository
+import tech.xken.tripbook.data.sources.booker.BookerRepository
 import tech.xken.tripbook.domain.WhileUiSubscribed
 import tech.xken.tripbook.ui.components.Filter
 import tech.xken.tripbook.ui.navigation.AgencyArgs
@@ -51,7 +51,7 @@ data class StationPersonnelUiState(
 @HiltViewModel
 class EditStationPersonnelVM @Inject constructor(
     private val repo: AgencyRepository,
-    private val bookingRepo: BookingRepository,
+    private val bookingRepo: BookerRepository,
     private val savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
     private val _scanners = MutableStateFlow(mapOf<String, Scanner>())
@@ -191,11 +191,12 @@ class EditStationPersonnelVM @Inject constructor(
             val scanner = it.value
             when (_queryFields.value.first()) {
                 R.string.lb_name -> scanner.booker.name!!.contains(_query.value)
-                R.string.lb_email -> scanner.booker.email!!.contains(_query.value)
+
+
                 R.string.lb_phone -> "${scanner.booker.phoneCode}${scanner.booker.phone}".contains(
                     _query.value
                 )
-                R.string.lb_gender -> scanner.booker.genderID!!.contains(_query.value)
+                R.string.lb_gender -> scanner.booker.gender!!.contains(_query.value)
                 else -> false
             }
         }

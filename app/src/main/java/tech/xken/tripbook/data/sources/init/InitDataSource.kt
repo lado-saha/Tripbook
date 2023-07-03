@@ -4,7 +4,6 @@ import androidx.room.Insert
 import androidx.room.Query
 import kotlinx.coroutines.flow.Flow
 import tech.xken.tripbook.data.models.Booker
-import tech.xken.tripbook.data.models.CurrentBooker
 import tech.xken.tripbook.data.models.Job
 import tech.xken.tripbook.data.models.Results
 

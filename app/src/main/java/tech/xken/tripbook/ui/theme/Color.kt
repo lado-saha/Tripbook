@@ -12,7 +12,7 @@ import androidx.compose.ui.graphics.Color
 ////val OnTeal200 = Color(0xFFFC253A)
 
 val MainColorDark = Color(0xFF08111D)
-val SecondaryColorDark = Color(0xFF08111D)
+val SecondaryColorDark = Color(0xFF006AFF)
 val MainColorLight = Color(0xFF006AFF)
 
 //val PrimaryVariant = Color(0xFFFF5722)

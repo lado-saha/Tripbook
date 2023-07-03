@@ -317,7 +317,7 @@ fun ScannerSearchResultItem(
                     modifier = Modifier
                         .padding(horizontal = 4.dp)
                         .size(18.dp),
-                    imageVector = if (scanner.booker.gender == Gender.MALE) Icons.Filled.Male else Icons.Filled.Female,
+                    imageVector = if (scanner.booker.genderX == Gender.MALE) Icons.Filled.Male else Icons.Filled.Female,
                     contentDescription = null
                 )
 
@@ -362,8 +362,8 @@ fun ScannerSearchResultItemPrev(
                 "237",
                 null,
                 null,
-                null,
-                null
+                null,null
+
             )
         },
         onCheckedChange = {},

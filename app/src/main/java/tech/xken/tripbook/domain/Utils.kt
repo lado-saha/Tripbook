@@ -12,6 +12,50 @@ import tech.xken.tripbook.data.models.*
 import java.util.*
 import kotlin.coroutines.CoroutineContext
 
+/*//Password
+            OutTextField(
+                modifier = Modifier
+                    .padding(fieldPadding)
+                    .fillMaxWidth(),
+                value = uis.bookerCredentials.password ?: "",
+                errorText = { vm.passwordErrorText(it) },
+                onValueChange = { vm.onPasswordChange(it) },
+                visualTransformation = if (uis.isPeekingPassword) VisualTransformation.None else PasswordVisualTransformation(),
+                trailingIcon = {
+                    IconButton(onClick = { vm.invertPasswordPeeking() }) {
+                        Icon(
+                            imageVector = if (uis.isPeekingPassword) Icons.Outlined.VisibilityOff else Icons.Outlined.Visibility,
+                            contentDescription = "",
+                        )
+                    }
+                },
+                leadingIcon = {
+                    Icon(imageVector = Icons.Default.Password, contentDescription = "")
+                },
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Password,
+                    autoCorrect = false, imeAction = ImeAction.Go
+                ),
+                label = { Text(stringResource(R.string.lb_password).caps) },
+                keyboardActions = KeyboardActions(
+                    onGo = {
+                        vm.signInBooker()
+                    }
+                )
+            )*/
+/*TextButton(onClick = { *//*TODO*//* }) {
+                Text(
+                    stringResource(id = R.string.lb_forgot_pswd).caps,
+                    style = MaterialTheme.typography.caption
+                )
+            }
+
+            TextButton(onClick = { *//*TODO*//* }, modifier = Modifier.padding(bottom = 4.dp)) {
+                Text(
+                    stringResource(id = R.string.lb_no_account_yet_sign_up).caps,
+                    style = MaterialTheme.typography.caption
+                )
+            }*/
 fun isCodeInvalid(code: String?) = codeCountryMap[code ?: ""] == null
 
 /**
@@ -117,3 +161,4 @@ val DEFAULT_UNIV_QUERY_FIELDS = arrayOf(
     R.string.lb_continent,
     R.string.lb_planet,
 )
+

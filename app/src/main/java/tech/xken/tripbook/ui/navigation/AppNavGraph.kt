@@ -21,7 +21,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import kotlinx.coroutines.CoroutineScope
 import tech.xken.tripbook.ui.navigation.AgencyScreens.BASE_AGENCY
-import tech.xken.tripbook.ui.navigation.BookingScreens.BASE_BOOKING
+import tech.xken.tripbook.ui.navigation.BookingScreens.BASE_BOOKER
 import tech.xken.tripbook.ui.navigation.UnivScreens.BASE_UNIV
 import tech.xken.tripbook.ui.navigation.UnivScreens.UNIVERSE_SEARCH
 import tech.xken.tripbook.ui.navigation.UniverseArgs.UNIVERSE_SEARCH_RETURN_TOWNS_ONLY
@@ -30,14 +30,14 @@ import tech.xken.tripbook.ui.navigation.UniverseArgs.UNIV_SEARCH_FIELDS
 import tech.xken.tripbook.ui.navigation.UniverseArgs.UNIV_SEARCH_HAS_PRESELECTED_FIELDS
 import tech.xken.tripbook.ui.screens.agency.station.*
 import tech.xken.tripbook.ui.screens.booking.BookerSignIn
-import tech.xken.tripbook.ui.screens.booking.BookerSignUpOrDetails
+import tech.xken.tripbook.ui.screens.booking.BookerProfile
 import tech.xken.tripbook.ui.screens.universe.*
 
 @Composable
 fun AppNavGraph(
     modifier: Modifier = Modifier,
     navController: NavHostController = rememberNavController(),
-    startDestination: String = AgencyDestinations.AGENCY_STATION_DASHBOARD_ROUTE,
+    startDestination: String = BookingScreens.BASE_BOOKER,
     coroutineScope: CoroutineScope = rememberCoroutineScope(),
     drawerState: DrawerState = rememberDrawerState(initialValue = DrawerValue.Closed),
     agencyNavActions: AgencyNavActions = remember(navController) {
@@ -145,37 +145,30 @@ fun AppNavGraph(
         }
 
         // Booking
-        navigation(startDestination = "Booking", route = BASE_BOOKING) {
+        navigation(startDestination = BookingScreens.BOOKER_SIGN_IN, route = BASE_BOOKER) {
+
             composable(BookingScreens.BOOKER_SIGN_IN) {
                 BookerSignIn(
                     navigateBack = null,
-                    /*if (navController.backQueue.size == 0) null else {
-                    { navController.popBackStack() }
-                }*/
-                    navigateToSignUp = { bookingNavActions.navigateToSignUp() },
-                    onSignInComplete = { bookingNavActions.navigateToBookerDetails() }
+                    navigateToProfile = {
+                        navController.popBackStack()
+                        bookingNavActions.navigateToProfile()
+                    }
                 )
             }
-            composable(BookingScreens.BOOKER_SIGN_UP) {
-                BookerSignUpOrDetails(
+            composable(BookingScreens.BOOKER_PROFILE) {
+                BookerProfile(
                     navigateBack = { navController.popBackStack() },
-                    navigateToSignIn = { bookingNavActions.navigateToSignIn() },
-                    onSignUpComplete = { bookingNavActions.navigateToSignIn() },
-                    onBookerDetailsEditComplete = null,
+//                    navigate = { bookingNavActions.navigateToSignIn() },
+                    onProfileComplete = { bookingNavActions.navigateToSignIn() },
+//                    onBookerDetailsEditComplete = null,
                 )
             }
-            composable(BookingScreens.BOOKER_DETAILS) {
-                BookerSignUpOrDetails(
-                    navigateBack = { navController.popBackStack() },
-                    navigateToSignIn = null,
-                    onSignUpComplete = null,
-                    onBookerDetailsEditComplete = { navController.popBackStack() },
-                )
-            }
+
         }
 
         //Universe
-        navigation("", route = BASE_UNIV) {
+        navigation("Booking", route = BASE_UNIV) {
             composable(UnivScreens.UNIVERSE_VISUALIZER) {
                 UniverseVisualizer(viewModel = hiltViewModel<UniverseVisualizerVM>().apply {
                     savedStateHandle = it.savedStateHandle
