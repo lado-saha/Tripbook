@@ -1,47 +1,64 @@
 package tech.xken.tripbook.domain.di
 
+
+//import tech.xken.tripbook.data.sources.agency.AgencyDataSource
+//import tech.xken.tripbook.data.sources.agency.AgencyRepository
+//import tech.xken.tripbook.data.sources.agency.AgencyRepositoryImpl
+//import tech.xken.tripbook.data.sources.agency.local.AgencyLocalDataSourceImpl
+//import tech.xken.tripbook.data.sources.agency.remote.AgencyRemoteDataSource
+//import tech.xken.tripbook.data.sources.univ.UniverseDataSource
+//import tech.xken.tripbook.data.sources.univ.UniverseRepository
+//import tech.xken.tripbook.data.sources.univ.UniverseRepositoryImpl
+//import tech.xken.tripbook.data.sources.univ.local.UniverseLocalDataSourceImpl
+//import tech.xken.tripbook.data.sources.univ.remote.UniverseRemoteDataSource
+//import tech.xken.tripbook.data.sources.init.InitDataSource
+//import tech.xken.tripbook.data.sources.init.InitRepository
+//import tech.xken.tripbook.data.sources.init.InitRepositoryImpl
+//import tech.xken.tripbook.data.sources.init.local.InitLocalDataSourceImpl
+//import tech.xken.tripbook.data.sources.init.remote.InitRemoteDataSource
+import UniverseRepositoryImpl
 import android.content.Context
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.PreferenceDataStoreFactory
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.preferencesDataStoreFile
 import androidx.room.Room
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.createSupabaseClient
 import io.github.jan.supabase.gotrue.GoTrue
 import io.github.jan.supabase.postgrest.Postgrest
-import io.github.jan.supabase.postgrest.PropertyConversionMethod
 import io.github.jan.supabase.realtime.Realtime
+import io.github.jan.supabase.realtime.createChannel
+import io.github.jan.supabase.realtime.realtime
 import io.github.jan.supabase.storage.Storage
 import kotlinx.coroutines.CoroutineDispatcher
+import tech.xken.tripbook.data.AuthRepo
+import tech.xken.tripbook.data.models.BookingKeys
 import tech.xken.tripbook.data.sources.LocalDatabase
 import tech.xken.tripbook.data.sources.SUPABASE_KEY
 import tech.xken.tripbook.data.sources.SUPABASE_URL
-import tech.xken.tripbook.data.sources.agency.AgencyDataSource
-import tech.xken.tripbook.data.sources.agency.AgencyRepository
-import tech.xken.tripbook.data.sources.agency.AgencyRepositoryImpl
-import tech.xken.tripbook.data.sources.agency.local.AgencyLocalDataSourceImpl
-import tech.xken.tripbook.data.sources.agency.remote.AgencyRemoteDataSource
 import tech.xken.tripbook.data.sources.booker.BookerDataSource
 import tech.xken.tripbook.data.sources.booker.BookerRepository
 import tech.xken.tripbook.data.sources.booker.BookerRepositoryImpl
-import tech.xken.tripbook.data.sources.booker.local.BookerLocalDataSourceImpl
+import tech.xken.tripbook.data.sources.booker.local.BookerLocalDataSource
 import tech.xken.tripbook.data.sources.booker.remote.BookerRemoteDataSource
 import tech.xken.tripbook.data.sources.caches.CachesDataSource
-import tech.xken.tripbook.data.sources.caches.CachesRepository
-import tech.xken.tripbook.data.sources.caches.CachesRepositoryImpl
 import tech.xken.tripbook.data.sources.caches.local.CachesLocalDataSourceImpl
 import tech.xken.tripbook.data.sources.caches.remote.CachesRemoteDataSource
-import tech.xken.tripbook.data.sources.init.InitDataSource
-import tech.xken.tripbook.data.sources.init.InitRepository
-import tech.xken.tripbook.data.sources.init.InitRepositoryImpl
-import tech.xken.tripbook.data.sources.init.local.InitLocalDataSourceImpl
-import tech.xken.tripbook.data.sources.init.remote.InitRemoteDataSource
-import tech.xken.tripbook.data.sources.universe.UniverseDataSource
-import tech.xken.tripbook.data.sources.universe.UniverseRepository
-import tech.xken.tripbook.data.sources.universe.UniverseRepositoryImpl
-import tech.xken.tripbook.data.sources.universe.local.UniverseLocalDataSourceImpl
-import tech.xken.tripbook.data.sources.universe.remote.UniverseRemoteDataSource
+import tech.xken.tripbook.data.sources.storage.StorageRepository
+import tech.xken.tripbook.data.sources.storage.StorageRepositoryImpl
+import tech.xken.tripbook.data.sources.storage.StorageSource
+import tech.xken.tripbook.data.sources.storage.local.LocalStorageSource
+import tech.xken.tripbook.data.sources.storage.remote.RemoteStorageSource
+import tech.xken.tripbook.data.sources.univ.UniverseDataSource
+import tech.xken.tripbook.data.sources.univ.UniverseRepository
+import tech.xken.tripbook.data.sources.univ.remote.UniverseRemoteDataSource
+import tech.xken.tripbook.domain.NetworkState
 import javax.inject.Qualifier
 import javax.inject.Singleton
 
@@ -52,40 +69,53 @@ annotation class LocalUniverseDataSource
 
 @Qualifier
 @Retention(AnnotationRetention.RUNTIME)
-annotation class RemoteUniverseDataSource
+annotation class RemoteUniverseDataSourceAnnot
 
 @Qualifier
 @Retention(AnnotationRetention.RUNTIME)
-annotation class LocalInitDataSource
+annotation class LocalInitDataSourceAnnot
 
 @Qualifier
 @Retention(AnnotationRetention.RUNTIME)
-annotation class RemoteInitDataSource
+annotation class RemoteInitDataSourceAnnot
 
 @Qualifier
 @Retention(AnnotationRetention.RUNTIME)
-annotation class LocalBookingDataSource
+annotation class LocalBookingDataSourceAnnot
 
 @Qualifier
 @Retention(AnnotationRetention.RUNTIME)
-annotation class RemoteBookingDataSource
+annotation class RemoteBookingDataSourceAnnot
+
 
 @Qualifier
 @Retention(AnnotationRetention.RUNTIME)
-annotation class LocalAgencyDataSource
+annotation class LocalAgencyDataSourceAnnot
 
 @Qualifier
 @Retention(AnnotationRetention.RUNTIME)
-annotation class RemoteAgencyDataSource
+annotation class RemoteAgencyDataSourceAnnot
 
 @Qualifier
 @Retention(AnnotationRetention.RUNTIME)
-annotation class LocalCachesDataSource
+annotation class LocalCachesDataSourceAnnot
 
 @Qualifier
 @Retention(AnnotationRetention.RUNTIME)
-annotation class RemoteCachesDataSource
+annotation class RemoteCachesDataSourceAnnot
 
+@Qualifier
+@Retention(AnnotationRetention.RUNTIME)
+annotation class NetworkStateFlowAnnot
+
+// Storage---
+@Qualifier
+@Retention(AnnotationRetention.RUNTIME)
+annotation class LocalStorageSourceAnnot
+
+@Qualifier
+@Retention(AnnotationRetention.RUNTIME)
+annotation class RemoteStorageSourceAnnot
 
 /*--------------------------------------------------------*/
 /**
@@ -94,66 +124,91 @@ annotation class RemoteCachesDataSource
 @Module
 @InstallIn(SingletonComponent::class)
 object RepositoryModule {
-    @Singleton//Only one instance per app session
-    @Provides // Helps hilt to know that it must use this function to provide an instance of
-    fun provideUniverseRepository(
-        @LocalUniverseDataSource local: UniverseDataSource,
-        @RemoteUniverseDataSource remote: UniverseDataSource,
+    @Singleton
+    @Provides
+    fun provideStorageRepository(
+        @LocalStorageSourceAnnot local: StorageSource,
+        @RemoteStorageSourceAnnot remote: StorageSource,
         @IoDispatcher ioDispatcher: CoroutineDispatcher,
-    ): UniverseRepository = UniverseRepositoryImpl(
-        local,
-        ioDispatcher
+        authRepo: AuthRepo,
+        @NetworkStateFlowAnnot networkState: NetworkState
+    ): StorageRepository = StorageRepositoryImpl(
+        lStorage = local,
+        rStorage = remote,
+        authRepo = authRepo,
+        ioDispatcher = ioDispatcher,
+        networkState = networkState
     )
 
     @Singleton//Only one instance per app session
     @Provides // Helps hilt to know that it must use this function to provide an instance of
-    fun provideCachesRepository(
-        @LocalCachesDataSource local: CachesDataSource,
-        @RemoteCachesDataSource remote: CachesDataSource,
+    fun provideUniverseRepository(
+//        @LocalUniverseDataSource local: UniverseDataSource,
+        @RemoteUniverseDataSourceAnnot remote: UniverseDataSource,
         @IoDispatcher ioDispatcher: CoroutineDispatcher,
-    ): CachesRepository = CachesRepositoryImpl(
-        local,
+    ): UniverseRepository = UniverseRepositoryImpl(
+        remote,
         ioDispatcher
     )
+
+//    @Singleton//Only one instance per app session
+//    @Provides // Helps hilt to know that it must use this function to provide an instance of
+//    fun provideCachesRepository(
+//        @LocalCachesDataSource local: CachesDataSource,
+//        @RemoteCachesDataSource remote: CachesDataSource,
+//        @IoDispatcher ioDispatcher: CoroutineDispatcher,
+//    ): CachesRepository = CachesRepositoryImpl(
+//        local,
+//        ioDispatcher
+//    )
 
     @Singleton
     @Provides
     fun provideBookingRepository(
-        @LocalBookingDataSource local: BookerDataSource,
-        @RemoteBookingDataSource remote: BookerDataSource,
+        @LocalBookingDataSourceAnnot local: BookerDataSource,
+        @RemoteBookingDataSourceAnnot remote: BookerDataSource,
         @IoDispatcher ioDispatcher: CoroutineDispatcher,
+        @NetworkStateFlowAnnot networkState: NetworkState,
+        authRepo: AuthRepo,
+        client: SupabaseClient,
     ): BookerRepository = BookerRepositoryImpl(
         local,
-        ioDispatcher
+        remote,
+        authRepo,
+        ioDispatcher,
+        networkState,
     )
 
-    @Singleton
-    @Provides
-    fun provideAgencyRepository(
-        @LocalAgencyDataSource local: AgencyDataSource,
-        @RemoteAgencyDataSource remote: AgencyDataSource,
-        @LocalBookingDataSource localBooker: BookerDataSource,
-        @RemoteBookingDataSource remoteBooker: BookerDataSource,
-        @IoDispatcher ioDispatcher: CoroutineDispatcher,
-    ): AgencyRepository = AgencyRepositoryImpl(
-        local,
-        BookerRepositoryImpl(
-            localBooker,
-            ioDispatcher
-        ),
-        ioDispatcher
-    )
+//    @Singleton
+//    @Provides
+//    fun provideAgencyRepository(
+//        @LocalAgencyDataSource local: AgencyDataSource,
+//        @RemoteAgencyDataSource remote: AgencyDataSource,
+//        @LocalBookingDataSource localBooker: BookerDataSource,
+//        @RemoteBookingDataSource remoteBooker: BookerDataSource,
+//        @IoDispatcher ioDispatcher: CoroutineDispatcher,
+//        @NetworkStateFlowAnot networkState: NetworkState
+//    ): AgencyRepository = AgencyRepositoryImpl(
+//        local,
+//        BookerRepositoryImpl(
+//            localBooker,
+//            remoteBooker,
+//            ioDispatcher,
+//            networkState
+//        ),
+//        ioDispatcher
+//    )
 
-    @Singleton
-    @Provides
-    fun provideInitRepository(
-        @LocalInitDataSource local: InitDataSource,
-        @RemoteInitDataSource remote: InitDataSource,
-        @IoDispatcher ioDispatcher: CoroutineDispatcher,
-    ): InitRepository = InitRepositoryImpl(
-        local,
-        ioDispatcher
-    )
+//    @Singleton
+//    @Provides
+//    fun provideInitRepository(
+//        @LocalInitDataSourceAnnot local: InitDataSource,
+//        @RemoteInitDataSourceAnnot remote: InitDataSource,
+//        @IoDispatcher ioDispatcher: CoroutineDispatcher,
+//    ): InitRepository = InitRepositoryImpl(
+//        local,
+//        ioDispatcher
+//    )
 }
 
 /**
@@ -164,7 +219,24 @@ object RepositoryModule {
 object DataSourceModule {
     @Singleton
     @Provides
-    @LocalCachesDataSource
+    @LocalStorageSourceAnnot
+    fun provideLocalStorageSource(
+        @IoDispatcher ioDispatcher: CoroutineDispatcher,
+        @ApplicationContext context: Context
+    ): StorageSource = LocalStorageSource(ioDispatcher, context)
+
+    @Singleton
+    @Provides
+    @RemoteStorageSourceAnnot
+    fun provideRemoteStorageSource(
+        @IoDispatcher ioDispatcher: CoroutineDispatcher,
+        client: SupabaseClient
+    ): StorageSource = RemoteStorageSource(ioDispatcher, client)
+
+
+    @Singleton
+    @Provides
+    @LocalCachesDataSourceAnnot
     fun provideLocalCachesDataSource(
         database: LocalDatabase,
         @IoDispatcher ioDispatcher: CoroutineDispatcher,
@@ -175,72 +247,85 @@ object DataSourceModule {
 
     @Singleton
     @Provides
-    @RemoteCachesDataSource
+    @RemoteCachesDataSourceAnnot
     fun provideRemoteCachesDataSource(): CachesDataSource = CachesRemoteDataSource
 
+//    @Singleton
+//    @Provides
+//    @LocalInitDataSourceAnnot
+//    fun provideLocalInitDataSource(
+//        database: LocalDatabase,
+//        @IoDispatcher ioDispatcher: CoroutineDispatcher,
+//    ): InitDataSource = InitLocalDataSourceImpl(
+//        database.initDao,
+//        ioDispatcher
+//    )
+
+//    @Singleton
+//    @Provides
+//    @RemoteInitDataSourceAnnot
+//    fun provideRemoteInitDataSource(): InitDataSource = InitRemoteDataSource
+
+    //
+//    @Singleton
+//    @Provides
+//    @LocalUniverseDataSource
+//    fun provideLocalUniverseDataSource(
+//        database: LocalDatabase,
+//        @IoDispatcher ioDispatcher: CoroutineDispatcher,
+//    ): UniverseDataSource = UniverseLocalDataSourceImpl(
+//        database.universeDao,
+//        ioDispatcher
+//    )
+//
     @Singleton
     @Provides
-    @LocalInitDataSource
-    fun provideLocalInitDataSource(
-        database: LocalDatabase,
+    @RemoteUniverseDataSourceAnnot
+    fun provideRemoteUniverseDataSource(
         @IoDispatcher ioDispatcher: CoroutineDispatcher,
-    ): InitDataSource = InitLocalDataSourceImpl(
-        database.initDao,
-        ioDispatcher
-    )
+        supabaseClient: SupabaseClient
+    ): UniverseDataSource = UniverseRemoteDataSource(ioDispatcher, supabaseClient)
+
 
     @Singleton
     @Provides
-    @RemoteInitDataSource
-    fun provideRemoteInitDataSource(): InitDataSource = InitRemoteDataSource
-
-    @Singleton
-    @Provides
-    @LocalUniverseDataSource
-    fun provideLocalUniverseDataSource(
-        database: LocalDatabase,
-        @IoDispatcher ioDispatcher: CoroutineDispatcher,
-    ): UniverseDataSource = UniverseLocalDataSourceImpl(
-        database.universeDao,
-        ioDispatcher
-    )
-
-    @Singleton
-    @Provides
-    @RemoteUniverseDataSource
-    fun provideRemoteUniverseDataSource(): UniverseDataSource = UniverseRemoteDataSource
-
-    @Singleton
-    @Provides
-    @LocalBookingDataSource
+    @LocalBookingDataSourceAnnot
     fun provideLocalBookingDataSource(
         database: LocalDatabase,
         @IoDispatcher ioDispatcher: CoroutineDispatcher,
-    ): BookerDataSource = BookerLocalDataSourceImpl(
+    ): BookerDataSource = BookerLocalDataSource(
         database.bookerDao,
         ioDispatcher
     )
 
-    @Singleton
-    @Provides
-    @RemoteBookingDataSource
-    fun provideRemoteBookingDataSource(): BookerDataSource = BookerRemoteDataSource
 
     @Singleton
     @Provides
-    @LocalAgencyDataSource
-    fun provideLocalAgencyDataSource(
-        agencyDatabase: LocalDatabase,
+    @RemoteBookingDataSourceAnnot
+    fun provideRemoteBookingDataSource(
         @IoDispatcher ioDispatcher: CoroutineDispatcher,
-    ): AgencyDataSource = AgencyLocalDataSourceImpl(
-        agencyDatabase.agencyDao,
-        ioDispatcher
+        supabaseClient: SupabaseClient
+    ): BookerDataSource = BookerRemoteDataSource(
+        ioDispatcher,
+        supabaseClient
     )
 
-    @Singleton
-    @Provides
-    @RemoteAgencyDataSource
-    fun provideRemoteAgencyDataSource(): AgencyDataSource = AgencyRemoteDataSource
+
+//    @Singleton
+//    @Provides
+//    @LocalAgencyDataSource
+//    fun provideLocalAgencyDataSource(
+//        agencyDatabase: LocalDatabase,
+//        @IoDispatcher ioDispatcher: CoroutineDispatcher,
+//    ): AgencyDataSource = AgencyLocalDataSourceImpl(
+//        agencyDatabase.agencyDao,
+//        ioDispatcher
+//    )
+//
+//    @Singleton
+//    @Provides
+//    @RemoteAgencyDataSource
+//    fun provideRemoteAgencyDataSource(): AgencyDataSource = AgencyRemoteDataSource
 }
 
 /**
@@ -303,11 +388,15 @@ object DatabaseModule {
     @Singleton
     @Provides
     fun provideLocalDatabase(@ApplicationContext context: Context): LocalDatabase {
-        return Room.databaseBuilder(
+        val db = Room.databaseBuilder(
             context.applicationContext,
             LocalDatabase::class.java,
             "tripbook_local_db"
-        ).fallbackToDestructiveMigration().build()
+        ).fallbackToDestructiveMigration()
+            .build()
+
+        db.openHelper.writableDatabase.execSQL("PRAGMA case_sensitive_like=OFF;")
+        return db
     }
 
     @Singleton
@@ -317,10 +406,22 @@ object DatabaseModule {
         supabaseKey = SUPABASE_KEY
     ) {
         install(GoTrue)
-        install(Postgrest) {
-            propertyConversionMethod = PropertyConversionMethod.CAMEL_CASE_TO_SNAKE_CASE
-        }
+        install(Postgrest)
         install(Storage)
         install(Realtime)
     }
+}
+
+@Module
+@InstallIn(SingletonComponent::class)
+object ServiceModules {
+    @Singleton
+    @Provides
+    @NetworkStateFlowAnnot
+    fun provideNetworkState(@ApplicationContext context: Context) = NetworkState(context)
+
+    @Provides
+    @Singleton
+    fun provideDataStore(@ApplicationContext context: Context): DataStore<Preferences> =
+        PreferenceDataStoreFactory.create { context.preferencesDataStoreFile(BookingKeys.name) }
 }

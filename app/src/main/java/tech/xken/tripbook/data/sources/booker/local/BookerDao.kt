@@ -4,44 +4,54 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy.Companion.REPLACE
 import androidx.room.Query
+import androidx.room.Update
 import kotlinx.coroutines.flow.Flow
-import tech.xken.tripbook.data.models.Booker
-
+import tech.xken.tripbook.data.models.booker.Booker
+import tech.xken.tripbook.data.models.booker.BookerMoMoAccount
+import tech.xken.tripbook.data.models.booker.BookerOMAccount
 
 @Dao
 interface BookerDao {
-    //Current Booker
-//    @Query("SELECT * FROM CurrentBookers")
-//    fun currentBooker(): Flow<CurrentBooker?>
-//
-//    @Query("DELETE FROM CurrentBookers")
-//    fun deleteCurrentBooker()
-//
-//    @Insert(onConflict = REPLACE)
-//    fun saveCurrentBooker(booker: CurrentBooker)
-
-    //Booker
     @Insert(onConflict = REPLACE)
-    fun saveBooker(booker: Booker)
+    fun createBooker(booker: Booker)
 
-    @Query("SELECT * FROM Bookers")
-    fun bookers(): List<Booker>
+    @Update
+    fun updateBooker(booker: Booker)
 
-    @Query("SELECT * FROM Bookers WHERE id IN (:ids)")
-    fun bookersFromIDs(ids: List<String>): List<Booker>
+    @Query("SELECT * FROM booker WHERE booker_id = :id")
+    fun bookerFromId(id: String): Booker
 
-    @Query("SELECT * FROM Bookers WHERE name IN (:phones)")
-    fun bookersFromPhones(phones: List<String>): List<Booker>
+    @Query("DELETE FROM booker WHERE booker_id = :bookerId")
+    fun deleteBooker(bookerId: String)
 
-    @Query("SELECT * FROM Bookers WHERE name IN (:names)")
-    fun bookersFromName(names: List<String>): List<Booker>
+    @Insert(onConflict = REPLACE)
+    fun createBookerMoMoAccounts(accounts: List<BookerMoMoAccount>)
 
-//    @Query("SELECT * FROM Bookers WHERE email = :email AND password = :password")
-//    fun bookerFromEmailCredentials(email: String, password: String): Booker
-//
-//    @Query("SELECT * FROM Bookers WHERE name = :name AND password = :password")
-//    fun bookerFromNameCredentials(name: String, password: String): Booker
-//
-//    @Query("SELECT * FROM Bookers WHERE phone = :phone AND password =:password")
-//    fun bookerFromPhoneCredentials(phone: String, password: String): Booker
+    @Update
+    fun updateBookerMoMoAccount(account: BookerMoMoAccount)
+
+    @Insert(onConflict = REPLACE)
+    fun createBookerOMAccount(accounts: List<BookerOMAccount>)
+
+    @Update
+    fun updateBookerOMAccount(account: BookerOMAccount)
+
+    @Query("SELECT COUNT(phone_number) FROM booker_momo_account WHERE booker_id = :bookerId")
+    fun countBookerMoMoAccounts(bookerId: String): Flow<Long>
+
+    @Query("SELECT COUNT(phone_number) FROM booker_om_account WHERE booker_id = :bookerId")
+    fun countBookerOMAccounts(bookerId: String): Flow<Long>
+
+    @Query("SELECT * FROM booker_momo_account WHERE booker_id = :bookerId")
+    fun bookerMoMoAccounts(bookerId: String): Flow<List<BookerMoMoAccount>>
+
+    @Query("SELECT * FROM booker_om_account WHERE booker_id = :bookerId")
+    fun bookerOMAccounts(bookerId: String): Flow<List<BookerOMAccount>>
+
+    @Query("DELETE FROM booker_momo_account WHERE booker_id = :bookerId AND phone_number IN (:phoneNumbers)")
+    suspend fun deleteBookerMoMoAccounts(bookerId: String, phoneNumbers: List<String>)
+
+    @Query("DELETE FROM booker_om_account WHERE booker_id = :bookerId AND phone_number IN (:phoneNumbers)")
+    suspend fun deleteBookerOMAccounts(bookerId: String, phoneNumbers: List<String>)
 }
+

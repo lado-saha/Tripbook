@@ -13,7 +13,7 @@ class AgencyActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             TripbookTheme {
-                AppNavGraph()
+//                AppNavGraph()
             }
         }
     }

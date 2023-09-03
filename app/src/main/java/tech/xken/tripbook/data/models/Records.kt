@@ -17,7 +17,6 @@ data class AgencyEditionRecord(
         const val TIMESTAMP = "timestamp"
         const val EDITION_DETAILS = "EDITOR_DETAILS"
         const val EDITOR = "EDITOR"
-
     }
 }
 

@@ -1,58 +1,177 @@
 package tech.xken.tripbook.data.sources.booker
 
+import io.github.jan.supabase.realtime.RealtimeChannel
 import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.flow.Flow
-import tech.xken.tripbook.data.models.Booker
-//import tech.xken.tripbook.data.models.CurrentBooker
+import tech.xken.tripbook.data.AuthRepo
 import tech.xken.tripbook.data.models.Results
-import java.util.*
+import tech.xken.tripbook.data.models.Results.Failure
+import tech.xken.tripbook.data.models.Results.Success
+import tech.xken.tripbook.data.models.booker.Booker
+import tech.xken.tripbook.data.models.booker.BookerMoMoAccount
+import tech.xken.tripbook.data.models.booker.BookerOMAccount
+import tech.xken.tripbook.domain.NetworkState
+import tech.xken.tripbook.ui.CacheSyncUiState
 
 class BookerRepositoryImpl(
-    private val localDataSource: BookerDataSource,
+    private val localDS: BookerDataSource,
+    private val remoteDS: BookerDataSource,
+    private val authRepo: AuthRepo,
     private val ioDispatcher: CoroutineDispatcher,
+    private val networkState: NetworkState,
 ) : BookerRepository {
 
-//    override suspend fun saveCurrentBooker(currentBooker: CurrentBooker) =
-//        localDataSource.signInBooker(currentBooker)
+    //    private val momoAccounts = channel.postgresChangeFlow<PostgresAction.Insert>("sc_booker") {
+//        table = "booker_momo_account"
+//    }.map {
+//        it.serializer.decode(it.record.jsonObject)
+//    }
+    override suspend fun syncCache(
+        onAccountComplete: (Results<Booker?>) -> Unit,
+        onMoMoAccountComplete: (Results<List<BookerMoMoAccount?>>) -> Unit,
+        onOMAccountComplete: (Results<List<BookerOMAccount?>>) -> Unit,
+        syncUis: CacheSyncUiState
+    ) {
+        if (!syncUis.syncAccountDone && syncUis.hasSyncAccount != true) onAccountComplete(
+            remoteDS.bookerFromId(authRepo.bookerId!!).run {
+                when (this) {
+                    is Failure -> Failure(exception)
+                    is Success -> {
+                        localDS.createBooker(data)
+                    }
+                }
+            }
+        )
 
-    override suspend fun signOutBooker() = localDataSource.signOutBooker()
+        if (!syncUis.syncOMDone && syncUis.hasSyncOM != true) onOMAccountComplete(
+            remoteDS.bookerOMAccounts(authRepo.bookerId!!).run {
+                when (this) {
+                    is Failure -> Failure(exception)
+                    is Success -> {
+                        localDS.createBookerOMAccounts(data)
+                    }
+                }
+            }
+        )
 
-//    override fun getCurrentBookerStream(): Flow<Results<CurrentBooker?>> = localDataSource.getCurrentBookerStream()
+        if (!syncUis.syncMoMoDone && syncUis.hasSyncMoMo != true) onMoMoAccountComplete(
+            remoteDS.bookerMoMoAccounts(authRepo.bookerId!!).run {
+                when (this) {
+                    is Failure -> Failure(exception)
+                    is Success -> {
+                        localDS.createBookerMoMoAccounts(data)
+                    }
+                }
+            }
+        )
 
-    override suspend fun saveBooker(booker: Booker) = localDataSource.saveBooker(booker)
-
-    override suspend fun bookers() = localDataSource.bookers()
-
-    override suspend fun bookersFromIds(ids: List<String>) = localDataSource.bookersFromIds(ids)
-
-    override suspend fun bookersFromPhones(phones: List<String>) =
-        localDataSource.bookersFromPhones(phones)
-
-    override suspend fun signInBookerFromNameCredentials(name: String, password: String) {
-        TODO("Not yet implemented")
     }
 
-    /*override suspend fun signInBookerFromEmailCredentials(email: String, password: String) =
-        localDataSource.bookerFromEmailCredentials(email, password)
-    override suspend fun signInBookerFromPhoneCredentials(phone: String, password: String) =
-        localDataSource.bookerFromPhoneCredentials(phone, password)*/
+    override suspend fun createBooker(booker: Booker) =
+        when (val rBooker = remoteDS.createBooker(booker)) {
+            is Success -> {
+                localDS.createBooker(rBooker.data!!)
+                rBooker
+            }
 
-    /**
-     * We could logout first in case there is any current user which is not required as the signIn screen
-     * only shows after logout signOutBooker()
-     * Then we get the booker which matches the credentials
-     */
-//    override suspend fun signInBookerFromNameCredentials(name: String, password: String) =
-//        when (val booker = localDataSource.bookerFromNameCredentials(name, password)) {
-//            //If the user exists, we save it as the current booker
-//            is Results.Success -> {
-//                saveCurrentBooker(CurrentBooker(id = booker.data.id, signInTimestamp = Date().time))
-//            }
-//            //Else we throw the exception and cancel the signIn process. One cause may be the fact that
-//            // this booker has not yet created an account
-//            is Results.Failure -> {
-//                throw booker.exception
-//            }
-//        }
+            else -> rBooker
+        }
+
+    override suspend fun updateBooker(booker: Booker) =
+        when (val rBooker = remoteDS.updateBooker(booker)) {
+            is Success -> {
+                localDS.updateBooker(rBooker.data!!)
+                rBooker
+            }
+
+            is Failure -> rBooker
+        }
+
+    override suspend fun bookerFromId(bookerId: String, columns: List<String>) =
+        localDS.bookerFromId(bookerId)
+
+    override suspend fun deleteBooker(bookerId: String) =
+        when (val rBooker = remoteDS.deleteBooker(bookerId)) {
+            is Success -> {
+                localDS.deleteBooker(bookerId)
+                rBooker
+            }
+
+            else -> rBooker
+        }
+
+    override suspend fun createBookerMoMoAccounts(accounts: List<BookerMoMoAccount>) =
+        when (val result = remoteDS.createBookerMoMoAccounts(accounts)) {
+            is Success -> {
+                localDS.createBookerMoMoAccounts(accounts)
+                result
+            }
+
+            else -> result
+        }
+
+    override suspend fun createBookerOMAccounts(accounts: List<BookerOMAccount>) =
+        when (val result = remoteDS.createBookerOMAccounts(accounts)) {
+            is Success -> {
+                localDS.createBookerOMAccounts(accounts)
+                result
+            }
+
+            else -> result
+        }
+
+    override suspend fun updateBookerMoMoAccount(account: BookerMoMoAccount) =
+        when (val result = remoteDS.updateBookerMoMoAccount(account)) {
+            is Success -> {
+                localDS.updateBookerMoMoAccount(result.data!!)
+                result
+            }
+
+            else -> result
+        }
+
+    override suspend fun updateBookerOMAccount(account: BookerOMAccount) =
+        when (val result = remoteDS.updateBookerOMAccount(account)) {
+            is Success -> {
+                localDS.updateBookerOMAccount(account)
+                result
+            }
+
+            else -> result
+        }
+
+    override fun countBookerMoMoAccounts(bookerId: String) =
+        localDS.countBookerMoMoAccountsStream(bookerId)
+
+    override fun countBookerOMAccounts(bookerId: String) =
+        localDS.countBookerOMAccountsStream(bookerId)
+
+    override fun bookerMoMoAccounts(bookerId: String) =
+        localDS.bookerMoMoAccountsStream(bookerId)
+
+    override fun bookerOMAccounts(bookerId: String) =
+        localDS.bookerOMAccountsStream(bookerId)
+
+    override suspend fun deleteBookerMoMoAccounts(
+        bookerId: String, phoneNumbers: List<String>
+    ) = when (val result = remoteDS.deleteBookerMoMoAccounts(bookerId, phoneNumbers)) {
+        is Success -> {
+            localDS.deleteBookerMoMoAccounts(bookerId, phoneNumbers)
+            result
+        }
+
+        else -> result
+    }
+
+    override suspend fun deleteBookerOMAccounts(
+        bookerId: String, phoneNumbers: List<String>
+    ) = when (val result = remoteDS.deleteBookerOMAccounts(bookerId, phoneNumbers)) {
+        is Success -> {
+            localDS.deleteBookerOMAccounts(bookerId, phoneNumbers)
+            result
+        }
+
+        else -> result
+    }
+
 
 }

@@ -1,32 +1,67 @@
 package tech.xken.tripbook.data
 
+import android.util.Log
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.gotrue.OtpType
+import io.github.jan.supabase.gotrue.SessionStatus
 import io.github.jan.supabase.gotrue.gotrue
 import io.github.jan.supabase.gotrue.providers.builtin.Phone
+import io.github.jan.supabase.network.KtorSupabaseHttpClient
+import io.github.jan.supabase.postgrest.postgrest
+import io.github.jan.supabase.realtime.RealtimeChannel
+import io.github.jan.supabase.realtime.createChannel
+import io.github.jan.supabase.realtime.realtime
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import tech.xken.tripbook.data.models.BookerCredentials
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.decodeFromJsonElement
+import kotlinx.serialization.json.put
 import tech.xken.tripbook.data.models.Results
+import tech.xken.tripbook.data.models.booker.BookerCredentials
 import javax.inject.Inject
 
 
 class AuthRepo @Inject constructor(
-    private val client: SupabaseClient,
-
+    private val client: SupabaseClient
     ) {
+
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO
     val authClient = client.gotrue
+    val dbClient = client.postgrest
 
+    val bookerId get() = authClient.currentSessionOrNull()?.user?.id
+
+    val isSignedIn get() = authClient.currentUserOrNull() != null
 
     init {
+        val x: RealtimeChannel = client.realtime.createChannel(""){
+        }
         CoroutineScope(ioDispatcher).launch {
-            if(authClient.currentSessionOrNull() != null)
-                authClient.startAutoRefreshForCurrentSession()
+            when (authClient.sessionStatus.value) {
+                is SessionStatus.Authenticated -> {
+                    Log.e("AuthRepo", "You're online and authenticated")
+                    authClient.startAutoRefreshForCurrentSession()
+                    authClient.sessionManager.saveSession(authClient.currentSessionOrNull()!!)
+                }
+
+                is SessionStatus.LoadingFromStorage -> {
+                    Log.e("AuthRepo", "You're offline and loading from storage")
+                }
+
+                is SessionStatus.NetworkError -> {
+                    Log.e("AuthRepo", "You're offline")
+                    authClient.loadFromStorage(true)
+                }
+
+                is SessionStatus.NotAuthenticated -> {
+                    Log.e("AuthRepo", "You're not authenticated")
+                    Log.e("Auth repo", authClient.loadFromStorage(true).toString())
+                }
+            }
         }
     }
 
@@ -51,8 +86,54 @@ class AuthRepo @Inject constructor(
     /**
      * Tells us if a booker has already created a profile or not
      */
-    val hasProfile get() = authClient.currentSessionOrNull()?.user?.userMetadata?.get("has_profile") != null
+    val hasAccount
+        get() = authClient.currentSessionOrNull()?.user?.userMetadata?.get(
+            "has_account"
+        )?.let { Json.decodeFromJsonElement<Boolean>(it) } ?: false
 
+    val hasAccountPhoto
+        get() = authClient.currentSessionOrNull()?.user?.userMetadata?.get(
+            "has_account_photo"
+        )?.let { Json.decodeFromJsonElement<Boolean>(it) } ?: false
+
+    suspend fun forceRefreshUser() = withContext(ioDispatcher) {
+        return@withContext try {
+            authClient.retrieveUserForCurrentSession(true)
+        } catch (_: Exception) {
+
+        }
+    }
+
+    suspend fun updateHasAccountFlag(new: Boolean) = withContext(ioDispatcher) {
+        return@withContext try {
+            authClient.modifyUser {
+                data { put("has_account", new) }
+            }
+            Results.Success(new)
+        } catch (e: Exception) {
+            Results.Failure(e)
+        }
+    }
+
+    suspend fun updateHasAccountPhotoFlag(new: Boolean) = withContext(ioDispatcher) {
+        return@withContext try {
+            authClient.modifyUser {
+                data { put("has_account_photo", new) }
+            }
+            authClient.refreshCurrentSession()
+        } catch (e: Exception) {
+            Results.Failure(e)
+        }
+    }
+
+    suspend fun deleteBooker(bookerId: String) = withContext(ioDispatcher){
+        return@withContext try {
+            authClient
+            authClient.refreshCurrentSession()
+        } catch (e: Exception) {
+            Results.Failure(e)
+        }
+    }
 
     /**
      * Sign in a user to database
@@ -75,13 +156,13 @@ class AuthRepo @Inject constructor(
     suspend fun bookerPhoneVerification(credentials: BookerCredentials) =
         withContext(ioDispatcher) {
             return@withContext try {
-                Results.Success(
-                    authClient.verifyPhoneOtp(
-                        type = OtpType.Phone.SMS,
-                        phoneNumber = credentials.formattedPhone,
-                        token = credentials.token!!,
-                    )
-                )
+                Results.Success(authClient.verifyPhoneOtp(
+                    type = OtpType.Phone.SMS,
+                    phoneNumber = credentials.formattedPhone,
+                    token = credentials.token!!,
+                ).also {
+                    authClient.refreshCurrentSession()
+                })
             } catch (e: Exception) {
                 Results.Failure(e)
             }
@@ -90,9 +171,17 @@ class AuthRepo @Inject constructor(
     suspend fun resendPhoneToken(credentials: BookerCredentials) = withContext(ioDispatcher) {
         return@withContext try {
             Results.Success(
-                authClient.sendOtpTo(Phone, createUser = false) {
-                    phoneNumber = credentials.formattedPhone
-                }
+                authClient.resendPhone(OtpType.Phone.SMS, credentials.formattedPhone)
+            )
+        } catch (e: Exception) {
+            Results.Failure(e)
+        }
+    }
+
+    suspend fun signOut() = withContext(ioDispatcher) {
+        return@withContext try {
+            Results.Success(
+                authClient.logout()
             )
         } catch (e: Exception) {
             Results.Failure(e)

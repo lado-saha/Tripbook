@@ -14,7 +14,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.ArrowDropUp
 import androidx.compose.material.icons.outlined.Add
-import androidx.compose.material.icons.outlined.Group
 import androidx.compose.material.icons.outlined.InsertPhoto
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -25,12 +24,10 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import tech.xken.tripbook.R
-import tech.xken.tripbook.data.models.Job
-import tech.xken.tripbook.data.models.StationJob
+import tech.xken.tripbook.data.models.agency.Job
+import tech.xken.tripbook.data.models.agency.StationJob
 import tech.xken.tripbook.domain.caps
 import tech.xken.tripbook.domain.titleCase
 
@@ -57,24 +54,24 @@ fun StationJobItem(
             Row(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Icon(
-                    imageVector = Job.jobIcon[stationJob.jobId]!!,
-                    contentDescription = null,
-                    modifier = Modifier
-                        .padding(4.dp)
-                        .weight(0.1f)
-                )
+//                Icon(
+//                    imageVector = Job.jobIcon[stationJob.jobId]!!,
+//                    contentDescription = null,
+//                    modifier = Modifier
+//                        .padding(4.dp)
+//                        .weight(0.1f)
+//                )
                 Column(
                     modifier = Modifier
                         .padding(2.dp)
                         .weight(0.9f, true),
                     horizontalAlignment = Alignment.Start
                 ) {
-                    Text(
-                        text = stringResource(id = stationJob.job!!.name!!).titleCase,
-                        style = MaterialTheme.typography.h6.copy(fontSize = 16.sp),
-                        modifier = Modifier.padding(4.dp)
-                    )
+//                    Text(
+//                        text = stringResource(id = stationJob.job!!.name!!).titleCase,
+//                        style = MaterialTheme.typography.h6.copy(fontSize = 16.sp),
+//                        modifier = Modifier.padding(4.dp)
+//                    )
                     val color =
                         if (errorText() == null) MaterialTheme.typography.caption.color else MaterialTheme.colors.error
 
@@ -92,11 +89,11 @@ fun StationJobItem(
                 }
             }
             Column(modifier = Modifier.padding(2.dp)) {
-                Text(
-                    stringResource(id = stationJob.job!!.shortWiki!!).caps,
-                    style = MaterialTheme.typography.caption,
-                    modifier = Modifier.padding(2.dp),
-                )
+//                Text(
+//                    stringResource(id = stationJob.job!!.shortWiki!!).caps,
+//                    style = MaterialTheme.typography.caption,
+//                    modifier = Modifier.padding(2.dp),
+//                )
             }
         }
     }
@@ -163,35 +160,35 @@ fun JobItem(
             Row(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Icon(
-                    imageVector = job.icon!!,
-                    contentDescription = null,
-                    modifier = Modifier
-                )
+//                Icon(
+//                    imageVector = job.icon!!,
+//                    contentDescription = null,
+//                    modifier = Modifier
+//                )
                 Column(
                     modifier = Modifier
                         .padding(2.dp)
                         .weight(0.8f, true),
                     horizontalAlignment = Alignment.Start
                 ) {
-                    Text(
-                        text = stringResource(id = job.name!!).titleCase,
-                        style = MaterialTheme.typography.h6.copy(fontSize = 16.sp),
-                        modifier = Modifier.padding(4.dp)
-                    )
+//                    Text(
+//                        text = stringResource(id = job.name!!).titleCase,
+//                        style = MaterialTheme.typography.h6.copy(fontSize = 16.sp),
+//                        modifier = Modifier.padding(4.dp)
+//                    )
 //                    val color =
 //                        if (errorText() == null) MaterialTheme.typography.caption.color else MaterialTheme.colors.error
 
-                    Text(
-                        text = stringResource(id = job.shortWiki!!).caps,
-                        style = MaterialTheme.typography.caption,
-                        modifier = Modifier.padding(
-                            top = 0.dp,
-                            bottom = 4.dp,
-                            end = 4.dp,
-                            start = 6.dp
-                        )
-                    )
+//                    Text(
+//                        text = stringResource(id = job.shortWiki!!).caps,
+//                        style = MaterialTheme.typography.caption,
+//                        modifier = Modifier.padding(
+//                            top = 0.dp,
+//                            bottom = 4.dp,
+//                            end = 4.dp,
+//                            start = 6.dp
+//                        )
+//                    )
 
                 }
                 IconButton(

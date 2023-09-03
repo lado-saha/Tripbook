@@ -1,81 +1,362 @@
 package tech.xken.tripbook.ui.screens.booking
 
-import android.app.DatePickerDialog
-import android.content.Intent
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.foundation.*
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.*
+import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.Icon
+import androidx.compose.material.IconButton
+import androidx.compose.material.LocalContentColor
+import androidx.compose.material.MaterialTheme
+import androidx.compose.material.Scaffold
+import androidx.compose.material.ScaffoldState
+import androidx.compose.material.Text
+import androidx.compose.material.TopAppBar
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material.icons.outlined.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.filled.Badge
+import androidx.compose.material.icons.filled.Business
+import androidx.compose.material.icons.filled.Payments
+import androidx.compose.material.icons.outlined.Badge
+import androidx.compose.material.icons.outlined.Business
+import androidx.compose.material.icons.outlined.CreditCard
+import androidx.compose.material.icons.outlined.Dangerous
+import androidx.compose.material.icons.outlined.DeleteForever
+import androidx.compose.material.icons.outlined.ErrorOutline
+import androidx.compose.material.icons.outlined.HelpOutline
+import androidx.compose.material.icons.outlined.Menu
+import androidx.compose.material.icons.outlined.Person
+import androidx.compose.material.rememberScaffoldState
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.*
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import tech.xken.tripbook.R
-import tech.xken.tripbook.data.models.Gender
-import tech.xken.tripbook.domain.caps
-import tech.xken.tripbook.domain.disableComposable
 import tech.xken.tripbook.domain.titleCase
-import tech.xken.tripbook.ui.components.OutTextField
-import tech.xken.tripbook.ui.components.PhotoPicker
-import java.util.*
+import tech.xken.tripbook.ui.components.DashboardItem
+import tech.xken.tripbook.ui.components.DashboardItemUiState
+import tech.xken.tripbook.ui.components.DashboardSubItem
+import tech.xken.tripbook.ui.components.InfoDialog
+import tech.xken.tripbook.ui.components.InfoDialogUiState
+import tech.xken.tripbook.ui.components.NetworkStateIndicator
+import tech.xken.tripbook.ui.screens.booking.BookerProfileDialogStatus.DELETE_ACCOUNT_1
 
-@OptIn(ExperimentalMaterialApi::class)
+import tech.xken.tripbook.ui.screens.booking.BookerProfileDialogStatus.DELETE_ACCOUNT_2
+import tech.xken.tripbook.ui.screens.booking.BookerProfileDialogStatus.DELETE_ACCOUNT_3
+import tech.xken.tripbook.ui.screens.booking.BookerProfileDialogStatus.FAILED_GET_ACCOUNT
+import tech.xken.tripbook.ui.screens.booking.BookerProfileDialogStatus.FAILED_GET_AGENCY_SETTINGS
+import tech.xken.tripbook.ui.screens.booking.BookerProfileDialogStatus.FAILED_GET_MOMO
+import tech.xken.tripbook.ui.screens.booking.BookerProfileDialogStatus.FAILED_GET_OM
+import tech.xken.tripbook.ui.screens.booking.BookerProfileDialogStatus.HELP_ACCOUNT
+import tech.xken.tripbook.ui.screens.booking.BookerProfileDialogStatus.HELP_AGENCY_SETTINGS
+import tech.xken.tripbook.ui.screens.booking.BookerProfileDialogStatus.HELP_CREDIT_CARD
+import tech.xken.tripbook.ui.screens.booking.BookerProfileDialogStatus.HELP_MAIN_PAGE
+import tech.xken.tripbook.ui.screens.booking.BookerProfileDialogStatus.HELP_MOMO
+import tech.xken.tripbook.ui.screens.booking.BookerProfileDialogStatus.HELP_OM
+import tech.xken.tripbook.ui.screens.booking.BookerProfileDialogStatus.NONE
+
+
 @Composable
 fun BookerProfile(
-    vm: BookerProfileVM = hiltViewModel(),
+    modifier: Modifier = Modifier,
     scaffoldState: ScaffoldState = rememberScaffoldState(),
-    navigateBack: () -> Unit,
-    onProfileComplete: (() -> Unit),
+    vm: BookerProfileDashboardVM = hiltViewModel(),
+    onNavigateToAccount: () -> Unit,
+    onNavigateToMoMoAccount: () -> Unit,
+    onNavigateToOMAccount: () -> Unit,
+    onNavigateToBookerAgencySettings: () -> Unit,
+    onNavigateToCreditCardAccount: () -> Unit,
+    navigateUp: () -> Unit,
+    openDrawer: () -> Unit,
 ) {
-    val focusManager = LocalFocusManager.current
-    //Initialisation Processes
+    val statusMap = remember {
+        mapOf(
+            HELP_MAIN_PAGE to InfoDialogUiState(
+                mainIcon = Icons.Outlined.Person,
+                title = "My Booking Profile",
+                text = buildAnnotatedString {
+                    append("Text") //TODO: Add profile page hel text
+                },
+                positiveText = "I understand"
+            ),
+            HELP_ACCOUNT to InfoDialogUiState(
+                mainIcon = Icons.Outlined.Badge,
+                title = "Me",
+                text = buildAnnotatedString {
+                    append("Text") //TODO: Add profile page hel text
+                },
+                positiveText = "I understand"
+            ),
+            HELP_AGENCY_SETTINGS to InfoDialogUiState(
+                mainIcon = Icons.Outlined.Business,
+                title = "My Agency Settings",
+                text = buildAnnotatedString {
+                    append("Text here")//TODO: Add profile page is job seeker help text
+                },
+                positiveText = "I understand"
+            ),
+            HELP_OM to InfoDialogUiState(
+                mainIcon = Icons.Filled.Payments,
+                title = "Orange Money Accounts",
+                text = buildAnnotatedString {
+                    append("Text here")
+                },
+                positiveText = "I understand",
+            ),
+            HELP_MOMO to InfoDialogUiState(
+                mainIcon = Icons.Filled.Payments,
+                title = "MTN MoMo Accounts",
+                text = buildAnnotatedString {
+                    append("Text here")
+                },
+                positiveText = "I understand",
+            ),
+            HELP_CREDIT_CARD to InfoDialogUiState(
+                mainIcon = Icons.Outlined.CreditCard,
+                title = "Credit Cards",
+                text = buildAnnotatedString {
+                    append("Text here")
+                },
+                positiveText = "I understand",
+            ),
+            FAILED_GET_ACCOUNT to InfoDialogUiState(
+                mainIcon = Icons.Outlined.ErrorOutline,
+                title = "Could not get account",
+                text = buildAnnotatedString {
+                    append("Text here")
+                },
+                positiveText = "Retry",
+            ),
+
+            FAILED_GET_OM to InfoDialogUiState(
+                mainIcon = Icons.Outlined.ErrorOutline,
+                title = "Could not get OM account",
+                text = buildAnnotatedString {
+                    append("Text here")
+                },
+                positiveText = "Retry",
+            ),
+
+            FAILED_GET_MOMO to InfoDialogUiState(
+                mainIcon = Icons.Outlined.ErrorOutline,
+                title = "Could not get MoMo account",
+                text = buildAnnotatedString {
+                    append("Text here")
+                },
+                positiveText = "Retry",
+            ),
+
+            FAILED_GET_AGENCY_SETTINGS to InfoDialogUiState(
+                mainIcon = Icons.Outlined.ErrorOutline,
+                title = "Could not Agency Settings",
+                text = buildAnnotatedString {
+                    append("Text here")
+                },
+                positiveText = "Retry",
+            ),
+            DELETE_ACCOUNT_1 to InfoDialogUiState(
+                mainIcon = Icons.Outlined.Dangerous,
+                title = "Danger zone! Want to delete account?",
+                text = buildAnnotatedString {
+                    append("Text here")
+                },
+                positiveText = "No",
+                isNegative = true,
+                otherText = "I want"
+            ),
+            DELETE_ACCOUNT_2 to InfoDialogUiState(
+                mainIcon = Icons.Outlined.DeleteForever,
+                title = "Warning! Want to delete account?",
+                text = buildAnnotatedString {
+                    append("Text here")
+                },
+                positiveText = "No",
+                isNegative = true,
+                otherText = "I really want"
+            ),
+            DELETE_ACCOUNT_3 to InfoDialogUiState(
+                mainIcon = Icons.Outlined.DeleteForever,
+                title = "Final Warning! Do you want to delete your Account?",
+                text = buildAnnotatedString {
+                    append("Text here")
+                },
+                positiveText = "Nooooo!",
+                isNegative = true,
+                otherText = "I really really want!"
+            )
+        )
+    }
+
     val uis by vm.uiState.collectAsState()
     val context = LocalContext.current
-    vm.loadPhotoBitmap(context)
-    //We navigate away
-    if (uis.isComplete) {
-        onProfileComplete()
-        vm.onCompleteChange(false)
-    }
-    val fieldPadding = PaddingValues(horizontal = 16.dp, vertical = 2.dp)
-    //To pick an image from the gallery
-    val galleryLauncher =
-        rememberLauncherForActivityResult(contract = ActivityResultContracts.OpenDocument()) { uri ->
-            uri?.let {
-                val persistentUri = it
-                context.contentResolver.takePersistableUriPermission(
-                    persistentUri,
-                    Intent.FLAG_GRANT_READ_URI_PERMISSION
-                )
-                vm.onPhotoUriChange(context, persistentUri)
-            }
-        }
+    val fieldPadding = PaddingValues(horizontal = 4.dp, vertical = 4.dp)
+    val scrollState = rememberScrollState()
 
-    val dialog = remember {
-        DatePickerDialog(
-            context,
-            { _, y, m, d ->
-                vm.onBirthdayChange(Calendar.getInstance().apply { set(y, m, d) }.timeInMillis)
-            },
-            uis.calendar[Calendar.YEAR],
-            uis.calendar[Calendar.MONTH],
-            uis.calendar[Calendar.DAY_OF_MONTH]
+    when (val status = uis.dialogStatus) {
+        HELP_ACCOUNT -> InfoDialog(
+            uis = statusMap[status]!!,
+            onCloseClick = {
+                vm.onDialogStatusChange(NONE)
+            }, onPositiveClick = {
+                vm.onDialogStatusChange(NONE)
+            }
         )
+
+        HELP_MOMO -> InfoDialog(
+            uis = statusMap[status]!!,
+            onCloseClick = {
+                vm.onDialogStatusChange(NONE)
+            }, onPositiveClick = {
+                vm.onDialogStatusChange(NONE)
+            }
+        )
+
+        HELP_OM -> InfoDialog(
+            uis = statusMap[status]!!,
+            onCloseClick = {
+                vm.onDialogStatusChange(NONE)
+            }, onPositiveClick = {
+                vm.onDialogStatusChange(NONE)
+            }
+        )
+
+        HELP_CREDIT_CARD -> InfoDialog(
+            uis = statusMap[status]!!,
+            onCloseClick = {
+                vm.onDialogStatusChange(NONE)
+            }, onPositiveClick = {
+                vm.onDialogStatusChange(NONE)
+            }
+        )
+
+        HELP_AGENCY_SETTINGS -> InfoDialog(
+            uis = statusMap[status]!!,
+            onCloseClick = {
+                vm.onDialogStatusChange(NONE)
+
+            }, onPositiveClick = {
+                vm.onDialogStatusChange(NONE)
+            }
+        )
+
+        HELP_MAIN_PAGE ->
+            InfoDialog(
+                uis = statusMap[status]!!,
+                onCloseClick = {
+                    vm.onDialogStatusChange(NONE)
+                }, onPositiveClick = {
+                    vm.onDialogStatusChange(NONE)
+                }
+            )
+
+        NONE -> {}
+        FAILED_GET_ACCOUNT -> InfoDialog(
+            uis = statusMap[status]!!,
+            onCloseClick = {
+                vm.onDialogStatusChange(NONE)
+            },
+
+            onPositiveClick = {
+                vm.onAccountCompleteChange(null)
+                vm.onDialogStatusChange(NONE)
+            },
+        )
+
+        FAILED_GET_OM -> InfoDialog(
+            uis = statusMap[status]!!,
+            onCloseClick = {
+                vm.onDialogStatusChange(NONE)
+            },
+            onPositiveClick = {
+                vm.onOMCompleteChange(null)
+                vm.onDialogStatusChange(NONE)
+            },
+
+            )
+
+        FAILED_GET_MOMO -> InfoDialog(
+            uis = statusMap[status]!!,
+            onCloseClick = {
+                vm.onDialogStatusChange(NONE)
+            },
+            onPositiveClick = {
+                vm.onMoMoCompleteChange(null)
+                vm.onDialogStatusChange(NONE)
+            },
+
+            )
+
+        FAILED_GET_AGENCY_SETTINGS -> InfoDialog(
+            uis = statusMap[status]!!,
+            onCloseClick = {
+                vm.onDialogStatusChange(NONE)
+                navigateUp()
+            },
+            onPositiveClick = {
+                vm.onAgencySettingsCompleteChange(null)
+                vm.onDialogStatusChange(NONE)
+            },
+        )
+
+        DELETE_ACCOUNT_1 -> InfoDialog(
+            uis = statusMap[status]!!,
+            onCloseClick = {
+                vm.onDialogStatusChange(NONE)
+            },
+            onPositiveClick = {
+                vm.onDialogStatusChange(NONE)
+            },
+            onOtherClick = {
+                vm.onDialogStatusChange(DELETE_ACCOUNT_2)
+            },
+            mainIconTint = MaterialTheme.colors.error
+        )
+
+        DELETE_ACCOUNT_2 -> InfoDialog(
+            uis = statusMap[status]!!,
+            onCloseClick = {
+                vm.onDialogStatusChange(NONE)
+            },
+            onPositiveClick = {
+                vm.onDialogStatusChange(NONE)
+            },
+            onOtherClick = {
+                vm.onDialogStatusChange(DELETE_ACCOUNT_3)
+            },
+            mainIconTint = MaterialTheme.colors.error
+        )
+
+        DELETE_ACCOUNT_3 -> InfoDialog(
+            uis = statusMap[status]!!,
+            onCloseClick = {
+                vm.onDialogStatusChange(NONE)
+            },
+            onPositiveClick = {
+                vm.onDialogStatusChange(NONE)
+            },
+            onOtherClick = {
+                vm.onDialogStatusChange(NONE)
+            }, mainIconTint = MaterialTheme.colors.error
+        )
+    }
+
+    BackHandler(true) {
+//            if (vm.changeDetected()) {
+//                vm.onDialogStatusChange(BookerAccountDialogStatus.LEAVING_WITHOUT_SAVING)
+//            } else {
+//                vm.onCompleteChange(true)
+//            }
     }
 
     Scaffold(
@@ -84,314 +365,198 @@ fun BookerProfile(
             TopAppBar(
                 title = {
                     Text(
-                        text = stringResource(
-                            id =  R.string.lb_my_profile
-                        ).titleCase,
-                        style = LocalTextStyle.current.copy(
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 24.sp
-                        )
+                        text = stringResource(id = R.string.lb_my_profile).titleCase,
+                        style = MaterialTheme.typography.h5.copy(fontWeight = FontWeight.SemiBold)
                     )
                 },
                 navigationIcon = {
-                    IconButton(onClick = { navigateBack() }) {
+                    IconButton(onClick = { openDrawer() }) {
                         Icon(
-                            Icons.Outlined.ArrowBack,
+                            Icons.Outlined.Menu,
                             contentDescription = null,
                             tint = LocalContentColor.current
                         )
                     }
                 },
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier.fillMaxWidth(),
+                actions = {
+                    IconButton(onClick = {
+                        vm.onDialogStatusChange(
+                            HELP_MAIN_PAGE
+                        )
+                    }) {
+                        Icon(
+                            Icons.Outlined.HelpOutline,
+                            contentDescription = stringResource(id = R.string.desc_help),
+                            tint = LocalContentColor.current
+
+                        )
+                    }
+                }
             )
         },
     ) { paddingValues ->
         Column(
             modifier = Modifier
-                //We disable content when we are loading or we are still determining the mode
-                .disableComposable(uis.isLoading || !uis.isInitComplete)
                 .padding(paddingValues)
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState()),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            AnimatedVisibility(
-                visible = uis.isLoading,
-                modifier = Modifier.padding(4.dp)
-            ) {
-                CircularProgressIndicator()
-            }
-
-            PhotoPicker(
-                photoBitmap = uis.photoBitmap,
-                placeholder = Icons.Filled.AccountCircle,
-                onDeletePhotoClick = { vm.onPhotoUriChange(context, null) },
+//
+            NetworkStateIndicator(
+                onClick = { /*TODO*/ },
+                isOnline = { uis.isOnline },
                 modifier = Modifier
-                    .padding(4.dp)
-                    .size(150.dp),
-                onBrowseGalleryClick = {
-                    galleryLauncher.launch(arrayOf("image/*"))
+                    .padding(bottom = 4.dp)
+                    .fillMaxWidth()
+            )
+
+            DashboardItem(
+                modifier = Modifier
+                    .padding(fieldPadding)
+                    .fillMaxWidth(),
+                uis = DashboardItemUiState(
+                    mainIcon = Icons.Default.Badge,
+                    title = "My Account Details",
+                    isClickable = true,
+                    isHelpable = true,
+                    isLoading = uis.isAccountComplete == null,
+                    isFailure = uis.isAccountComplete == false,
+                    isDeletable = true
+                ),
+                onClick = { onNavigateToAccount() },
+                onHelpClick = {
+                    vm.onDialogStatusChange(HELP_ACCOUNT)
                 },
-                onLaunchCameraClick = {
-                    //TODO: Launch camera
+                mainIconColor = MaterialTheme.colors.onSurface,
+                onRetryClick = {
+                    vm.onAccountCompleteChange(null)
+                },
+                onDeleteClick = {
+                    vm.onDialogStatusChange(DELETE_ACCOUNT_1)
                 }
-            )
-
-            //Name
-            OutTextField(
-                modifier = Modifier
-                    .padding(fieldPadding)
-                    .fillMaxWidth(),
-                value = uis.booker.name ?: "",
-                errorText = { vm.nameErrorText(it) },
-                onValueChange = { vm.onNameChange(it) },
-                trailingIcon = {
-                    if (!uis.booker.name.isNullOrBlank())
-                        IconButton(onClick = { vm.onNameChange("") }) {
-                            Icon(
-                                imageVector = Icons.Outlined.Clear,
-                                contentDescription = ""
-                            )
-                        }
-                },
-                leadingIcon = { Icon(imageVector = Icons.Default.Person, contentDescription = "") },
-                label = { Text(stringResource(R.string.lb_name).caps) },
-                singleLine = true,
-                keyboardActions = KeyboardActions(
-                    onNext = { focusManager.moveFocus(FocusDirection.Next) }
-                ),
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next)
-            )
-
-            //nation id card number
-            OutTextField(
-                modifier = Modifier
-                    .padding(fieldPadding)
-                    .fillMaxWidth(),
-                value = uis.booker.idCardNumber ?: "",
-                errorText = { vm.idCardNumberErrorText(it) },
-                onValueChange = { vm.onIdCardNumberChange(it) },
-                trailingIcon = {
-                    if (!uis.booker.idCardNumber.isNullOrBlank())
-                        IconButton(onClick = { vm.onIdCardNumberChange("") }) {
-                            Icon(
-                                imageVector = Icons.Outlined.Clear,
-                                contentDescription = ""
-                            )
-                        }
-                },
-                leadingIcon = {
-                    Icon(imageVector = Icons.Default.Badge, contentDescription = "")
-                },
-                keyboardActions = KeyboardActions(
-                    onNext = { focusManager.moveFocus(FocusDirection.Next) }
-                ),
-                label = { Text(stringResource(R.string.lb_id_card_number).titleCase) },
-                singleLine = true
-            )
-
-            // Birthday
-            OutTextField(
-                modifier = Modifier
-                    .padding(fieldPadding)
-                    .fillMaxWidth(),
-                value = vm.formattedBirthday(),
-                trailingIcon = {
-                    IconButton(onClick = { dialog.show() }) {
-                        Icon(imageVector = Icons.Outlined.EditCalendar, contentDescription = "")
-                    }
-                },
-                leadingIcon = {
-                    Icon(imageVector = Icons.Default.Cake, contentDescription = "")
-                },
-                label = { Text(stringResource(R.string.lb_birthday).caps) },
-                onValueChange = { },
-                readOnly = true,
-                singleLine = true,
-                errorText = { vm.birthdayErrorText() }, keyboardActions = KeyboardActions.Default,
-            )
-
-            //Gender
-            ExposedDropdownMenuBox(
-                expanded = uis.isGenderExpanded,
-                onExpandedChange = { vm.onGenderExpansionChange(it) },
-                modifier = Modifier
-                    .padding(fieldPadding)
-                    .fillMaxWidth()
-            ) {
-                OutTextField(
-                    modifier = Modifier.fillMaxWidth(),
-                    value = stringResource(id = uis.selectedGender).caps,
-                    trailingIcon = {
-                        ExposedDropdownMenuDefaults.TrailingIcon(
-                            expanded = uis.isGenderExpanded
-                        )
-                    },
-                    leadingIcon = {
-                        Icon(imageVector = Icons.Default.Transgender, contentDescription = "")
-                    },
-                    label = { Text(stringResource(R.string.lb_gender).caps) },
-                    onValueChange = {},
-                    readOnly = true,
-                    colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(),
-                    keyboardActions = KeyboardActions.Default,
-                    singleLine = true,
-                )
-                ExposedDropdownMenu(
-                    expanded = uis.isGenderExpanded,
-                    onDismissRequest = { vm.onGenderExpansionChange(false) },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Gender.gendersStrRes.forEach { gender ->
-                        DropdownMenuItem(onClick = {
-                            vm.onSelectedGenderChange(gender)
-                            vm.onGenderExpansionChange(false)
-                        }) {
-                            Text(text = stringResource(gender).caps)
-                        }
-                    }
-                }
-            }
-
-            //Nationality
-            OutTextField(
-                modifier = Modifier
-                    .padding(fieldPadding)
-                    .fillMaxWidth(),
-                value = uis.booker.nationality ?: "",
-                onValueChange = { vm.onNationalityChange(it) },
-                trailingIcon = {
-                    if (!uis.booker.nationality.isNullOrBlank())
-                        IconButton(onClick = { vm.onNationalityChange("") }) {
-                            Icon(
-                                imageVector = Icons.Outlined.Clear,
-                                contentDescription = ""
-                            )
-                        }
-                },
-                leadingIcon = {
-                    Icon(imageVector = Icons.Default.Flag, contentDescription = "")
-                },
-                label = { Text(stringResource(R.string.lb_nationality).caps) },
-                keyboardActions = KeyboardActions(
-                    onNext = { focusManager.moveFocus(FocusDirection.Next) }
-                ),
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-                singleLine = true
-            )
-            //Occupation
-            OutTextField(
-                modifier = Modifier
-                    .padding(fieldPadding)
-
-                    .fillMaxWidth(),
-                value = uis.booker.occupation ?: "",
-                onValueChange = { vm.onOccupationChange(it) },
-                trailingIcon = {
-                    if (!uis.booker.occupation.isNullOrBlank())
-                        IconButton(onClick = { vm.onOccupationChange("") }) {
-                            Icon(
-                                imageVector = Icons.Outlined.Clear,
-                                contentDescription = ""
-                            )
-                        }
-
-                },
-                leadingIcon = {
-                    Icon(imageVector = Icons.Default.Work, contentDescription = "")
-                },
-                label = { Text(stringResource(R.string.lb_occupation).caps) },
-                keyboardActions = KeyboardActions(
-                    onGo = { vm.save() }
-                ),
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Go),
-                singleLine = true
-            )
-
-            Divider(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(4.dp), thickness = 1.dp
-            )
-
-            //Is a job seeker
-            Card(
-                modifier = Modifier
-                    .padding(fieldPadding)
-                    .fillMaxWidth()
             ) {
                 Column(
-                    modifier = Modifier
-                        .padding(4.dp)
-                        .padding(bottom = 4.dp)
-                        .fillMaxWidth()
+                    modifier = Modifier.padding(start = 4.dp)
                 ) {
-                    Row(
-                        modifier = Modifier
-                            .padding(2.dp)
-                            .fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = stringResource(R.string.lb_job_seeker).caps,
-                            modifier = Modifier
-                                .padding(4.dp)
-                                .weight(0.8f)
-                        )
-                        Switch(
-                            checked = uis.booker.isJobSeeker == true,
-                            modifier = Modifier
-                                .padding(horizontal = 8.dp)
-                                .weight(0.2f),
-                            onCheckedChange = { vm.onJobSeekerChange(it) })
-                    }
-                    Text(
-                        text = stringResource(if (uis.booker.isJobSeeker == true) R.string.msg_is_job_seeker else R.string.msg_is_not_job_seeker),
-                        style = MaterialTheme.typography.caption,
-                        modifier = Modifier
-                            .padding(4.dp)
-                            .fillMaxWidth()
+//                    Divider()
+                    DashboardSubItem(
+                        modifier = Modifier.padding(2.dp),
+                        isError = !uis.hasAccount,
+                        positiveText = "Account found",
+                        negativeText = "No account found. Please add"
+                    )
+                    DashboardSubItem(
+                        modifier = Modifier.padding(2.dp),
+                        isError = !uis.hasAccountPhoto,
+                        positiveText = "Account photo found",
+                        negativeText = "No account photo found. Please add"
                     )
                 }
             }
 
-            Button(
-                onClick = {
-                    vm.save()
-                },
+            DashboardItem(
                 modifier = Modifier
-                    .padding(vertical = 8.dp)
                     .padding(fieldPadding)
                     .fillMaxWidth(),
+                uis = DashboardItemUiState(
+                    mainIcon = Icons.Filled.Payments,
+                    title = "MTN MoMo Accounts",
+                    isClickable = true,
+                    isHelpable = true,
+
+                    isLoading = uis.isMoMoAccountComplete == null,
+                    isFailure = uis.isMoMoAccountComplete == false,
+                ),
+                onRetryClick = {
+                    vm.onMoMoCompleteChange(null)
+                },
+                mainIconColor = MaterialTheme.colors.onSurface,
+                onClick = {
+                    onNavigateToMoMoAccount()
+                },
+                onHelpClick = {
+                    vm.onDialogStatusChange(HELP_MOMO)
+                })
+            {
+                Column(
+                    modifier = Modifier.padding(start = 4.dp)
+                ) {
+                    DashboardSubItem(
+                        modifier = Modifier.padding(2.dp),
+                        isError = uis.bookerMoMoPhoneCount == 0L,
+                        positiveText = "MoMo Accounts found: ${uis.bookerMoMoPhoneCount}",
+                        negativeText = "No MoMo account found"
+                    )
+                }
+            }
+
+            DashboardItem(
+                modifier = Modifier
+                    .padding(fieldPadding)
+                    .fillMaxWidth(),
+                uis = DashboardItemUiState(
+                    mainIcon = Icons.Filled.Payments,
+                    title = "Orange Money Accounts",
+                    isClickable = true,
+                    isHelpable = true,
+                    isLoading = uis.isOMAccountComplete == null,
+                    isFailure = uis.isOMAccountComplete == false,
+                ),
+                onClick = {
+                    onNavigateToOMAccount()
+                },
+                onHelpClick = {
+                    vm.onDialogStatusChange(HELP_OM)
+                },
+                mainIconColor = MaterialTheme.colors.onSurface,
+                onRetryClick = {
+                    vm.onOMCompleteChange(null)
+                }
             ) {
-                Icon(
-                    imageVector = if (uis.isEditMode) Icons.Outlined.Check else Icons.Outlined.PersonAdd,
-                    contentDescription = null
-                )
-                Text(
-                    stringResource(if (uis.isEditMode) R.string.lb_save else R.string.lb_create).titleCase,
-                    modifier = Modifier.padding(8.dp)
-                )
+                Column(
+                    modifier = Modifier.padding(start = 4.dp)
+                ) {
+                    DashboardSubItem(
+                        modifier = Modifier.padding(2.dp),
+                        isError = uis.bookerOMPhoneCount == 0L,
+                        positiveText = "OM Accounts found: ${uis.bookerOMPhoneCount}",
+                        negativeText = "No OM account found"
+                    )
+                }
             }
-            Spacer(modifier = Modifier.height(8.dp))
+
+
+            DashboardItem(
+                modifier = Modifier
+                    .padding(fieldPadding)
+                    .fillMaxWidth(),
+                uis = DashboardItemUiState(
+                    mainIcon = Icons.Default.Business,
+                    title = "My Agency Settings",
+                    isClickable = true,
+                    isHelpable = true,
+                    isLoading = uis.isAgencySettingsComplete == null,
+                    isFailure = uis.isAgencySettingsComplete == false,
+                ),
+                onClick = {
+
+                },
+                onHelpClick = {
+                    vm.onDialogStatusChange(HELP_AGENCY_SETTINGS)
+                },
+                mainIconColor = MaterialTheme.colors.onSurface,
+                onRetryClick = {
+                    vm.onAgencySettingsCompleteChange(null)
+                }
+
+            ) {
+
+            }
+
         }
     }
 
-    // Check for user messages to display on the screen
-    if (uis.message != null) {
-        val message = stringResource(id = uis.message!!).caps
-        val retryActionLabel = stringResource(R.string.lb_retry).caps
 
-        LaunchedEffect(scaffoldState, vm, uis.message) {
-            scaffoldState.snackbarHostState.showSnackbar(
-                message = message, /*actionLabel = retryActionLabel*/
-            ).also {
-                if (it == SnackbarResult.ActionPerformed)
-                    when (uis.message) {
-
-                    }
-            }
-            vm.onMessageChange(null)
-        }
-    }
 }
