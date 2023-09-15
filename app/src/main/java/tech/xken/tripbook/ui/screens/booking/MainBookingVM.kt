@@ -1,4 +1,4 @@
-package tech.xken.tripbook.ui
+package tech.xken.tripbook.ui.screens.booking
 
 import android.util.Log
 import androidx.datastore.core.DataStore
@@ -18,9 +18,9 @@ import tech.xken.tripbook.data.sources.booker.BookerRepository
 import tech.xken.tripbook.domain.NetworkState
 import tech.xken.tripbook.domain.WhileUiSubscribed
 import tech.xken.tripbook.domain.di.NetworkStateFlowAnnot
-import tech.xken.tripbook.ui.SheetState.NETWORK_STATUS_MINIMAL_OFFLINE
-import tech.xken.tripbook.ui.SheetState.NETWORK_STATUS_MINIMAL_ONLINE
-import tech.xken.tripbook.ui.SheetState.NONE
+import tech.xken.tripbook.ui.screens.booking.SheetState.NETWORK_STATUS_MINIMAL_OFFLINE
+import tech.xken.tripbook.ui.screens.booking.SheetState.NETWORK_STATUS_MINIMAL_ONLINE
+import tech.xken.tripbook.ui.screens.booking.SheetState.NONE
 import javax.inject.Inject
 import tech.xken.tripbook.data.models.BookingKeys as BK
 
@@ -48,7 +48,7 @@ data class CacheSyncUiState(
 }
 
 @HiltViewModel
-class MainViewModel @Inject constructor(
+class MainBookingVM @Inject constructor(
     val authRepo: AuthRepo,
     private val bookerRepo: BookerRepository,
     @NetworkStateFlowAnnot val networkState: NetworkState,
@@ -61,15 +61,19 @@ class MainViewModel @Inject constructor(
     private val _syncOMDone = MutableStateFlow(false)
     private val _syncAccountDone = MutableStateFlow(false)
 
+    init{
+
+    }
 
     val integrityUiState = combine(
         datastore.data.map { value -> value[BK.HAS_SYNC_ACCOUNT] },
         datastore.data.map { value -> value[BK.HAS_SYNC_MOMO_ACCOUNTS] },
         datastore.data.map { value -> value[BK.HAS_SYNC_OM_ACCOUNTS] },
         _syncDialogStatus,
+        _syncAccountDone,
         _syncMoMoDone,
         _syncOMDone,
-        _syncAccountDone,
+        authRepo.isSignedInFlow
     ) { it ->
         CacheSyncUiState(
             hasSyncAccount = it[0] as Boolean?,
@@ -79,35 +83,35 @@ class MainViewModel @Inject constructor(
             syncAccountDone = it[4] as Boolean,
             syncMoMoDone = it[5] as Boolean,
             syncOMDone = it[6] as Boolean,
-            isSignedIn = authRepo.isSignedIn
-        ).also { state ->
+            isSignedIn = it[7] as Boolean
+        ).also{ state ->
             Log.d("MainActivity", state.toString())
             if (!state.syncDone) {
                 bookerRepo.syncCache(
                     syncUis = state,
                     onAccountComplete = {
-                        _syncAccountDone.value = true
                         viewModelScope.launch {
                             datastore.edit { pref ->
                                 pref[BK.HAS_SYNC_ACCOUNT] = it is Results.Success
                             }
                         }
+                        _syncAccountDone.value = true
                     },
                     onMoMoAccountComplete = {
-                        _syncMoMoDone.value = true
                         viewModelScope.launch {
                             datastore.edit { pref ->
                                 pref[BK.HAS_SYNC_MOMO_ACCOUNTS] = it is Results.Success
                             }
                         }
+                        _syncMoMoDone.value = true
                     },
                     onOMAccountComplete = {
-                        _syncOMDone.value = true
                         viewModelScope.launch {
                             datastore.edit { pref ->
                                 pref[BK.HAS_SYNC_OM_ACCOUNTS] = it is Results.Success
                             }
                         }
+                        _syncOMDone.value = true
                     }
                 )
             }

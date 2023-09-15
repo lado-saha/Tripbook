@@ -1,12 +1,11 @@
 package tech.xken.tripbook.data.sources.booker
 
-import io.github.jan.supabase.realtime.RealtimeChannel
 import kotlinx.coroutines.flow.Flow
 import tech.xken.tripbook.data.models.Results
 import tech.xken.tripbook.data.models.booker.Booker
 import tech.xken.tripbook.data.models.booker.BookerMoMoAccount
 import tech.xken.tripbook.data.models.booker.BookerOMAccount
-import tech.xken.tripbook.ui.CacheSyncUiState
+import tech.xken.tripbook.ui.screens.booking.CacheSyncUiState
 
 interface BookerRepository {
     suspend fun createBooker(booker: Booker): Results<Booker?>

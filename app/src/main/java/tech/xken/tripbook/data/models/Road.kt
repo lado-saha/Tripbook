@@ -41,7 +41,6 @@ data class Road(
     // Contains all towns which make up the road
     @Ignore
     var town1: Town? = null
-
     @Ignore
     var town2: Town? = null
 

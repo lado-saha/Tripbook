@@ -25,7 +25,7 @@ import tech.xken.tripbook.data.models.booker.Booker
 import tech.xken.tripbook.data.models.booker.Sex
 import tech.xken.tripbook.data.sources.booker.BookerRepository
 import tech.xken.tripbook.data.sources.storage.StorageRepository
-import tech.xken.tripbook.domain.NOW
+import tech.xken.tripbook.domain.DATE_NOW
 import tech.xken.tripbook.domain.WhileUiSubscribed
 import tech.xken.tripbook.domain.diffFields
 import javax.inject.Inject
@@ -41,11 +41,15 @@ data class BookerAccountUiState(
     val isComplete: Boolean = false,
     val isEditMode: Boolean = false,
     val isLoadingPhoto: Boolean = false,
-    val dialogStatus: BookerAccountDialogStatus = BookerAccountDialogStatus.NONE,
+    val dialogStatus: BookerAccountDialogState = BookerAccountDialogState.NONE,
     val isPhotoFailed: Boolean = false,
-    val isPhotoInitComplete: Boolean = false
+    val isPhotoInitComplete: Boolean = false,
+    val sheetStatus: BookerAccountSheetState = BookerAccountSheetState.NONE,
 )
 
+enum class BookerAccountSheetState {
+    ACTIONS, NONE
+}
 
 @HiltViewModel
 class BookerAccountVM @Inject constructor(
@@ -64,9 +68,10 @@ class BookerAccountVM @Inject constructor(
     private val _isComplete = MutableStateFlow(false)
     private val _isEditMode = MutableStateFlow(authRepo.hasAccount)
     private val _isPhotoLoading = MutableStateFlow(false)
-    private val _dialogStatus = MutableStateFlow(BookerAccountDialogStatus.NONE)
+    private val _dialogStatus = MutableStateFlow(BookerAccountDialogState.NONE)
     private val _isPhotoFailed = MutableStateFlow(false)
     private val _isPhotoInitComplete = MutableStateFlow(false)
+    private val _sheetState = MutableStateFlow(BookerAccountSheetState.NONE)
 
     // Stores the old copy of the booker to be used during comparisons after updates
     private var oldBookerCopy: Booker? = null
@@ -84,7 +89,8 @@ class BookerAccountVM @Inject constructor(
         _isPhotoLoading,//9
         _dialogStatus,
         _isPhotoFailed,
-        _isPhotoInitComplete
+        _isPhotoInitComplete,
+        _sheetState,
     ) { args ->
         BookerAccountUiState(
             isLoading = args[0] as Boolean,
@@ -97,13 +103,19 @@ class BookerAccountVM @Inject constructor(
             isComplete = args[7] as Boolean,
             isEditMode = args[8] as Boolean,
             isLoadingPhoto = args[9] as Boolean,
-            dialogStatus = args[10] as BookerAccountDialogStatus,
+            dialogStatus = args[10] as BookerAccountDialogState,
             isPhotoFailed = args[11] as Boolean,
-            isPhotoInitComplete = args[12] as Boolean
+            isPhotoInitComplete = args[12] as Boolean,
+            sheetStatus = args[14] as BookerAccountSheetState
         ).also { loadBookerAccount() }
     }.stateIn(
         scope = viewModelScope, started = WhileUiSubscribed, initialValue = BookerAccountUiState()
     )
+
+    fun onSheetStateChange(new: BookerAccountSheetState){
+        _sheetState.value = new
+    }
+
 
     /**
      * Returns True if there
@@ -133,7 +145,7 @@ class BookerAccountVM @Inject constructor(
                     when (it) {
                         is Failure -> {
                             onAccountInitComplete(true)
-                            _dialogStatus.value = BookerAccountDialogStatus.COULD_NOT_GET_ACCOUNT
+                            _dialogStatus.value = BookerAccountDialogState.COULD_NOT_GET_ACCOUNT
                             Log.e("$TAG Load_Account", it.exception.message!!)
                         }
 
@@ -141,7 +153,7 @@ class BookerAccountVM @Inject constructor(
                             null -> {
                                 onAccountInitComplete(true)
                                 _dialogStatus.value =
-                                    BookerAccountDialogStatus.COULD_NOT_GET_ACCOUNT
+                                    BookerAccountDialogState.COULD_NOT_GET_ACCOUNT
                             }
 
                             else -> {
@@ -171,7 +183,7 @@ class BookerAccountVM @Inject constructor(
                                     "$TAG Load_Photo",
                                     "${photoArray.exception}"
                                 )
-                                onDialogStatusChange(BookerAccountDialogStatus.COULD_NOT_GET_PHOTO)
+                                onDialogStateChange(BookerAccountDialogState.COULD_NOT_GET_PHOTO)
                                 _isPhotoFailed.value = true
                                 onPhotoInitComplete(true)
                             }
@@ -228,7 +240,7 @@ class BookerAccountVM @Inject constructor(
     }
 
 
-    fun onDialogStatusChange(new: BookerAccountDialogStatus) {
+    fun onDialogStateChange(new: BookerAccountDialogState) {
         _dialogStatus.value = new
     }
 
@@ -286,7 +298,7 @@ class BookerAccountVM @Inject constructor(
         else null
 
     fun birthdayErrorText() = when {
-        _booker.value.birthday > NOW -> R.string.msg_invalid_field
+        _booker.value.birthday > DATE_NOW -> R.string.msg_invalid_field
         else -> null
     }
 
@@ -390,6 +402,6 @@ class BookerAccountVM @Inject constructor(
     }
 }
 
-enum class BookerAccountDialogStatus {
-    COULD_NOT_GET_PHOTO, COULD_NOT_GET_ACCOUNT, HELP_MAIN_PAGE, HELP_ON_JOB_SEEKING, LEAVING_WITHOUT_SAVING, LEAVING_WITH_EMPTY_PROFILE, WELCOME, NONE
+enum class BookerAccountDialogState {
+    COULD_NOT_GET_PHOTO, COULD_NOT_GET_ACCOUNT, ABOUT_MAIN_PAGE, ABOUT_ON_JOB_SEEKING, LEAVING_WITHOUT_SAVING, LEAVING_WITH_EMPTY_PROFILE, WELCOME, NONE
 }

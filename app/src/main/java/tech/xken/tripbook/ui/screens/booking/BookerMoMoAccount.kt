@@ -1,8 +1,10 @@
 package tech.xken.tripbook.ui.screens.booking
 
+
 import android.telephony.PhoneNumberUtils
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.Crossfade
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -17,18 +19,24 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.Button
 import androidx.compose.material.CircularProgressIndicator
+import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.ExtendedFloatingActionButton
 import androidx.compose.material.Icon
 import androidx.compose.material.IconButton
 import androidx.compose.material.LocalContentColor
 import androidx.compose.material.MaterialTheme
+import androidx.compose.material.ModalBottomSheetDefaults
+import androidx.compose.material.ModalBottomSheetLayout
+import androidx.compose.material.ModalBottomSheetValue
 import androidx.compose.material.Scaffold
 import androidx.compose.material.ScaffoldState
+import androidx.compose.material.SnackbarDuration
 import androidx.compose.material.SnackbarResult
 import androidx.compose.material.Switch
 import androidx.compose.material.Text
@@ -46,9 +54,14 @@ import androidx.compose.material.icons.outlined.Clear
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.ErrorOutline
 import androidx.compose.material.icons.outlined.HelpOutline
+import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.material.icons.outlined.Payments
 import androidx.compose.material.icons.outlined.Save
+import androidx.compose.material.icons.outlined.Search
+import androidx.compose.material.icons.outlined.Sort
 import androidx.compose.material.icons.outlined.ToggleOn
+import androidx.compose.material.rememberModalBottomSheetState
 import androidx.compose.material.rememberScaffoldState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -70,14 +83,19 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.OffsetMapping
 import androidx.compose.ui.text.input.TransformedText
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModelStoreOwner
 import androidx.lifecycle.viewmodel.compose.LocalViewModelStoreOwner
 import tech.xken.tripbook.R
+import tech.xken.tripbook.data.models.ActionItem
+import tech.xken.tripbook.data.models.ActionSheet
+import tech.xken.tripbook.data.models.MainAction
 import tech.xken.tripbook.data.models.codeCountryMap
 import tech.xken.tripbook.domain.caps
 import tech.xken.tripbook.domain.disableComposable
+import tech.xken.tripbook.domain.subsetOf
 import tech.xken.tripbook.domain.titleCase
 import tech.xken.tripbook.ui.components.DashboardItemNoIcon
 import tech.xken.tripbook.ui.components.DashboardItemNoIconUiState
@@ -85,8 +103,11 @@ import tech.xken.tripbook.ui.components.DashboardSubItem
 import tech.xken.tripbook.ui.components.InfoDialog
 import tech.xken.tripbook.ui.components.InfoDialogUiState
 import tech.xken.tripbook.ui.components.OutTextField
+import tech.xken.tripbook.ui.components.SearchBar
+import tech.xken.tripbook.ui.components.SortingDialog
 
 
+@OptIn(ExperimentalMaterialApi::class)
 @Composable
 fun BookerMoMoAccounts(
     modifier: Modifier = Modifier,
@@ -96,7 +117,7 @@ fun BookerMoMoAccounts(
 ) {
     val uis by vm.uiState.collectAsState()
     val stateMap = mapOf(
-        BookerMoMoAccountsDialogState.HELP_MAIN_PAGE to InfoDialogUiState(
+        BookerMoMoAccountsDialogState.ABOUT_MAIN_PAGE to InfoDialogUiState(
             mainIcon = Icons.Filled.Payments,
             title = "My MoMo accounts",
             text = buildAnnotatedString {
@@ -137,7 +158,7 @@ fun BookerMoMoAccounts(
     when (val status = uis.dialogState) {
         BookerMoMoAccountsDialogState.NONE -> {}
 
-        BookerMoMoAccountsDialogState.HELP_MAIN_PAGE -> InfoDialog(
+        BookerMoMoAccountsDialogState.ABOUT_MAIN_PAGE -> InfoDialog(
             uis = stateMap[status]!!,
             onCloseClick = { vm.onDialogStateChange(BookerMoMoAccountsDialogState.NONE) },
             onPositiveClick = { vm.onDialogStateChange(BookerMoMoAccountsDialogState.NONE) }
@@ -185,7 +206,17 @@ fun BookerMoMoAccounts(
             },
             onOtherClick = {
                 vm.onDialogStateChange(BookerMoMoAccountsDialogState.NONE)
-                vm.deleteAccounts()
+                vm.deleteObjects()
+            }
+        )
+
+        BookerMoMoAccountsDialogState.SORTING -> SortingDialog(
+            onDismiss = { vm.onDialogStateChange(BookerMoMoAccountsDialogState.NONE) },
+            sortFields = uis.sortFields,
+            selectedField = uis.selectedSortField,
+            onFieldClick = {
+                vm.onSelectedSortFieldChange(it)
+//                vm.onDialogStateChange(BookerOMAccountsDialogState.NONE)/**/
             }
         )
     }
@@ -195,126 +226,261 @@ fun BookerMoMoAccounts(
     val scrollState = rememberLazyListState()
     val scaffoldState = rememberScaffoldState()
 
-    Scaffold(
-        scaffoldState = scaffoldState,
-        floatingActionButton = {
-            AnimatedVisibility(visible = uis.toDelete.isEmpty() && !uis.isLoading) {
-                ExtendedFloatingActionButton(
-                    text = { Text(text = stringResource(id = R.string.lb_account)) },
-                    onClick = {
-                        vm.onNavigateToNew()
-                        navigateToDetails()
-                    },
-                    icon = {
-                        Icon(imageVector = Icons.Outlined.Add, contentDescription = null)
-                    }
-                )
+    val sheetState = rememberModalBottomSheetState(
+        initialValue = ModalBottomSheetValue.Hidden,
+        confirmValueChange = {
+            when (it) {
+                ModalBottomSheetValue.Hidden -> {
+                    vm.onSheetStateChange(BookerMoMoAccountsSheetState.NONE)
+                }
+
+                ModalBottomSheetValue.Expanded -> {}
+                ModalBottomSheetValue.HalfExpanded -> {}
             }
-        },
-        topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        text = if (uis.toDelete.isEmpty()) stringResource(id = R.string.lb_my_momo_accounts).titleCase else "${uis.toDelete.size}",
-                        style = MaterialTheme.typography.h5.copy(fontWeight = FontWeight.SemiBold)
+            true
+        }
+    )
+
+    LaunchedEffect(uis.sheetStatus) {
+        if (uis.sheetStatus != BookerMoMoAccountsSheetState.NONE) {
+            sheetState.show()
+        } else if (sheetState.targetValue != ModalBottomSheetValue.Hidden || sheetState.currentValue != ModalBottomSheetValue.Hidden) {
+            sheetState.hide()
+        }
+    }
+
+    ModalBottomSheetLayout(
+        sheetContent = {
+            when (uis.sheetStatus) {
+                BookerMoMoAccountsSheetState.ACTIONS -> {
+                    ActionSheet(
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        if (uis.toDelete.isNotEmpty())
+                            ActionItem(
+                                action = MainAction(
+                                    R.string.lb_delete_sel_accounts,
+                                    Icons.Outlined.Delete
+                                ),
+                                onClick = {
+                                    vm.onDialogStateChange(
+                                        BookerMoMoAccountsDialogState.DELETE_ACCOUNTS_WARNING
+                                    )
+                                    vm.onSheetStateChange(BookerMoMoAccountsSheetState.NONE)
+                                },
+                            )
+
+                        ActionItem(
+                            action = MainAction(
+                                R.string.lb_sort_by,
+                                Icons.Outlined.Sort
+                            ),
+                            onClick = {
+                                vm.onDialogStateChange(BookerMoMoAccountsDialogState.SORTING)
+                                vm.onSheetStateChange(BookerMoMoAccountsSheetState.NONE)
+                            },
+                        )
+
+
+                        ActionItem(
+                            action = MainAction(R.string.lb_about_page, Icons.Outlined.Info),
+                            onClick = {
+                                vm.onDialogStateChange(BookerMoMoAccountsDialogState.ABOUT_MAIN_PAGE)
+                                vm.onSheetStateChange(BookerMoMoAccountsSheetState.NONE)
+                            },
+                        )
+
+                    }
+                }
+
+                BookerMoMoAccountsSheetState.NONE -> {}
+            }
+        }, sheetShape = MaterialTheme.shapes.medium.copy(
+            topEnd = CornerSize(10), topStart = CornerSize(10),
+        ), sheetState = sheetState,
+        sheetElevation = 1.dp,
+        scrimColor = ModalBottomSheetDefaults.scrimColor.copy(alpha = 0.1f)
+    ) {
+        Scaffold(
+            scaffoldState = scaffoldState,
+            floatingActionButton = {
+                AnimatedVisibility(visible = uis.toDelete.isEmpty() && !uis.isLoading) {
+                    ExtendedFloatingActionButton(
+                        text = { Text(text = stringResource(id = R.string.lb_account)) },
+                        onClick = {
+                            vm.onNavigateToNew()
+                            navigateToDetails()
+                        },
+                        icon = {
+                            Icon(imageVector = Icons.Outlined.Add, contentDescription = null)
+                        }
                     )
-                },
-                navigationIcon = {
-                    IconButton(onClick = {
-                        if (uis.toDelete.isEmpty())
-                            navigateBack()
-                        else
-                            vm.clearOnToDelete()
-                    }) {
-                        Icon(
-                            Icons.Outlined.ArrowBack,
-                            contentDescription = null,
-                            tint = LocalContentColor.current
+                }
+            },
+            topBar = {
+                Crossfade(targetState = uis.isSearching, label = "do") { state ->
+                    when (state) {
+                        true -> SearchBar(
+                            query = uis.query,
+                            onQueryChange = { vm.onQueryChanged(it) },
+                            fields = uis.searchFields,
+                            onFieldClick = { vm.onSearchFieldChange(it) },
+                            onBackClick = { vm.onIsSearchingChange(false) },
+                            onClearQueryClick = { vm.onQueryChanged("") },
+                            onMoreClick = {
+                                vm.onSheetStateChange(BookerMoMoAccountsSheetState.ACTIONS)
+                            }
+                        )
+
+                        false -> TopAppBar(
+                            title = {
+                                Text(
+                                    text = if (uis.toDelete.isEmpty()) stringResource(id = R.string.lb_my_momo_accounts).titleCase else "${uis.toDelete.size}",
+                                    style = MaterialTheme.typography.h5.copy(fontWeight = FontWeight.SemiBold), overflow = TextOverflow.Ellipsis, softWrap = false
+                                )
+                            },
+                            navigationIcon = {
+                                IconButton(onClick = {
+                                    if (uis.toDelete.isEmpty())
+                                        navigateBack()
+                                    else
+                                        vm.clearOnToDelete()
+                                }) {
+                                    Icon(
+                                        Icons.Outlined.ArrowBack,
+                                        contentDescription = null,
+                                        tint = LocalContentColor.current
+                                    )
+                                }
+                            },
+                            modifier = Modifier.fillMaxWidth(),
+                            actions = {
+                                if (uis.toDelete.isEmpty())
+                                    IconButton(onClick = {
+                                        vm.onIsSearchingChange(true)
+                                    }) {
+                                        Icon(
+                                            Icons.Outlined.Search,
+                                            contentDescription = null,
+                                            tint = LocalContentColor.current
+                                        )
+                                    }
+
+                                IconButton(onClick = {
+                                    vm.onSheetStateChange(
+                                        BookerMoMoAccountsSheetState.ACTIONS
+                                    )
+                                }) {
+                                    Icon(
+                                        Icons.Outlined.MoreVert,
+                                        contentDescription = null,
+                                        tint = LocalContentColor.current
+                                    )
+                                }
+                            }
                         )
                     }
-                },
-                modifier = Modifier.fillMaxWidth(),
-                actions = {
-                    if (uis.toDelete.isNotEmpty())
-                        IconButton(onClick = {
-                            vm.onDialogStateChange(
-                                BookerMoMoAccountsDialogState.DELETE_ACCOUNTS_WARNING
-                            )
-                        }) {
-                            Icon(
-                                Icons.Outlined.Delete,
-                                contentDescription = stringResource(id = R.string.desc_delete_all),
-                                tint = MaterialTheme.colors.error
-                            )
-                        }
-                    else
-                        IconButton(onClick = {
-                            vm.onDialogStateChange(
-                                BookerMoMoAccountsDialogState.HELP_MAIN_PAGE
-                            )
-                        }) {
-                            Icon(
-                                Icons.Outlined.HelpOutline,
-                                contentDescription = stringResource(id = R.string.desc_help),
-                                tint = LocalContentColor.current
-                            )
-                        }
                 }
-            )
-        },
-    ) { paddingValues ->
-        LazyColumn(
-            modifier = Modifier
-                .animateContentSize()
-                .padding(paddingValues)
-                .fillMaxSize(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            state = scrollState,
-            contentPadding = fieldPadding
-        ) {
-            item {
-                AnimatedVisibility(
-                    visible = uis.isLoading,
-                    modifier = Modifier.padding(4.dp)
-                ) {
-                    CircularProgressIndicator()
-                }
-            }
-//            if (!uis.isLoading)
-            items(uis.accounts, key = { it.phoneNumber }) { account ->
-                DashboardItemNoIcon(
-                    modifier = Modifier
-                        .padding(4.dp)
-                        .fillMaxWidth(),
-                    uis = DashboardItemNoIconUiState(
-                        title = PhoneNumberUtils.formatNumber(
-                            account.phoneNumber,
-                            codeCountryMap["237"]!!
-                        ),
-                        isClickable = true,
-                        isDeletable = true,
-                        isLoading = false,
-                        isMarkable = true,
-                        isMarked = uis.toDelete.contains(account.phoneNumber)
-                    ),
-                    onClick = {
-                        vm.onNavigateToEdit(account)
-                        navigateToDetails()
-                    },
-                    onDeleteClick = {
-                        vm.onToDeleteChange(account.phoneNumber)
-                        vm.onDialogStateChange(BookerMoMoAccountsDialogState.DELETE_ACCOUNTS_WARNING)
-                    },
-                    onLongClick = {
-                        vm.onToDeleteChange(account.phoneNumber)
+
+            },
+        ) { paddingValues ->
+            LazyColumn(
+                modifier = Modifier
+                    .animateContentSize()
+                    .padding(paddingValues)
+                    .fillMaxSize(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                state = scrollState,
+                contentPadding = fieldPadding
+            ) {
+                item {
+                    AnimatedVisibility(
+                        visible = uis.isLoading,
+                        modifier = Modifier.padding(4.dp)
+                    ) {
+                        CircularProgressIndicator()
                     }
-                ) {
-                    DashboardSubItem(
-                        modifier = Modifier.padding(start = 8.dp, bottom = 4.dp),
-                        isError = !account.isActive,
-                        positiveText = "Enabled",
-                        negativeText = "Disabled"
-                    )
+                }
+                if (!uis.isLoading)
+                    items(
+                        uis.objects.run {
+                            when (uis.selectedSortField?.ascending) {
+                                true -> sortedBy {
+                                    it.backingField(uis.selectedSortField!!.nameRes)
+                                }
+
+                                false -> sortedBy {
+                                    it.backingField(uis.selectedSortField!!.nameRes)
+                                }.reversed()
+
+                                else -> this
+                            }
+                        }.run {
+                            when (uis.isSearching) {
+                                false -> this
+                                else -> {
+                                    filter {
+                                        uis.query subsetOf it.backingField(uis.searchFields[0].nameRes)
+                                    }
+                                }
+                            }
+                        },
+                        key = { it.phoneNumber }
+                    ) { account ->
+                        DashboardItemNoIcon(
+                            modifier = Modifier
+                                .padding(4.dp)
+                                .fillMaxWidth(),
+                            uis = DashboardItemNoIconUiState(
+                                title = PhoneNumberUtils.formatNumber(
+                                    account.phoneNumber,
+                                    codeCountryMap["237"]!!
+                                ),
+                                isClickable = true,
+                                isDeletable = true,
+                                isLoading = false,
+                                isMarkable = true,
+                                isMarked = uis.toDelete.contains(account.phoneNumber)
+                            ),
+                            onClick = {
+
+                                vm.onNavigateToEdit(account)
+                                navigateToDetails()
+                            },
+                            onDeleteClick = {
+                                vm.onToDeleteChange(account.phoneNumber)
+                                vm.onDialogStateChange(BookerMoMoAccountsDialogState.DELETE_ACCOUNTS_WARNING)
+                            },
+                            onLongClick = {
+                                vm.onToDeleteChange(account.phoneNumber)
+                            }
+                        ) {
+                            DashboardSubItem(
+                                modifier = Modifier.padding(start = 8.dp, bottom = 4.dp),
+                                isError = !account.isActive,
+                                positiveText = "Enabled",
+                                errorText = "Disabled"
+                            )
+                        }
+                    }
+            }
+        }
+    }
+
+    // Check for user messages to display on the screen
+    if (uis.message != null) {
+        val message = stringResource(id = uis.message!!).caps
+        val closeLabel = stringResource(id = R.string.lb_close)
+
+        LaunchedEffect(uis.message) {
+            scaffoldState.snackbarHostState.showSnackbar(
+                message = message,
+                duration = SnackbarDuration.Short,
+                actionLabel = closeLabel
+            ).also {
+                when (it) {
+                    SnackbarResult.Dismissed -> vm.onMessageChange(null)
+                    SnackbarResult.ActionPerformed -> vm.onMessageChange(null)
                 }
             }
         }
@@ -337,7 +503,7 @@ fun BookerMoMoAccountDetails(
     if (uis.isDetailsComplete) {
 //        vm.doBeforeNavBackToAccounts()
         navigateBack()
-        vm.onDetailsCompleteChange(false)
+        vm.onAccountCompleteChange(false)
     }
     val fieldPadding = PaddingValues(horizontal = 16.dp, vertical = 2.dp)
     //To pick an image from the gallery
@@ -346,9 +512,9 @@ fun BookerMoMoAccountDetails(
 
     fun handleBackNav() {
         if (vm.hasAnyFieldChanged)
-            vm.onDetailsDialogStateChange(BookerMoMoAccountDetailsDialogState.LEAVING_WITHOUT_SAVING)
-        else if (!uis.isEditMode) vm.onDetailsDialogStateChange(BookerMoMoAccountDetailsDialogState.LEAVING_WITH_EMPTY_ACCOUNT)
-        else vm.onDetailsCompleteChange(true)
+            vm.onAccountDialogStateChange(BookerMoMoAccountDialogState.LEAVING_WITHOUT_SAVING)
+        else if (!uis.isEditMode) vm.onAccountDialogStateChange(BookerMoMoAccountDialogState.LEAVING_WITH_EMPTY_ACCOUNT)
+        else vm.onAccountCompleteChange(true)
     }
 
     BackHandler(true) {
@@ -356,19 +522,19 @@ fun BookerMoMoAccountDetails(
     }
 
     val statusMap = mapOf(
-        BookerMoMoAccountDetailsDialogState.HELP_IS_ENABLED to InfoDialogUiState(
+        BookerMoMoAccountDialogState.HELP_IS_ENABLED to InfoDialogUiState(
             Icons.Outlined.ToggleOn,
             title = "Enable or disable account",
             buildAnnotatedString { append("text") },
             positiveText = stringResource(id = R.string.lb_i_understand)
         ),
-        BookerMoMoAccountDetailsDialogState.HELP_MAIN_PAGE to InfoDialogUiState(
+        BookerMoMoAccountDialogState.ABOUT_MAIN_PAGE to InfoDialogUiState(
             Icons.Outlined.Payments,
             "My MoMo Account",
             buildAnnotatedString { append("text") },
             positiveText = stringResource(id = R.string.lb_i_understand)
         ),
-        BookerMoMoAccountDetailsDialogState.LEAVING_WITHOUT_SAVING to InfoDialogUiState(
+        BookerMoMoAccountDialogState.LEAVING_WITHOUT_SAVING to InfoDialogUiState(
             Icons.Outlined.Save,
             "Leaving without saving changes?",
             buildAnnotatedString { append("text") },
@@ -376,7 +542,7 @@ fun BookerMoMoAccountDetails(
             otherText = "Discard",
             isNegative = true
         ),
-        BookerMoMoAccountDetailsDialogState.LEAVING_WITH_EMPTY_ACCOUNT to InfoDialogUiState(
+        BookerMoMoAccountDialogState.LEAVING_WITH_EMPTY_ACCOUNT to InfoDialogUiState(
             Icons.Outlined.ErrorOutline,
             "Leaving with empty account",
             buildAnnotatedString { append("text") },
@@ -387,21 +553,20 @@ fun BookerMoMoAccountDetails(
     )
 
     when (val status = uis.detailsDialogState) {
-        BookerMoMoAccountDetailsDialogState.NONE -> {}
-        BookerMoMoAccountDetailsDialogState.HELP_MAIN_PAGE -> InfoDialog(
+        BookerMoMoAccountDialogState.NONE -> {}
+        BookerMoMoAccountDialogState.ABOUT_MAIN_PAGE -> InfoDialog(
             uis = statusMap[status]!!,
-            onCloseClick = { vm.onDetailsDialogStateChange(BookerMoMoAccountDetailsDialogState.NONE) },
+            onCloseClick = { vm.onAccountDialogStateChange(BookerMoMoAccountDialogState.NONE) },
             onPositiveClick = {
-                vm.onDetailsDialogStateChange(BookerMoMoAccountDetailsDialogState.NONE)
-
+                vm.onAccountDialogStateChange(BookerMoMoAccountDialogState.NONE)
             }
         )
 
-        BookerMoMoAccountDetailsDialogState.LEAVING_WITHOUT_SAVING -> InfoDialog(
+        BookerMoMoAccountDialogState.LEAVING_WITHOUT_SAVING -> InfoDialog(
             uis = statusMap[status]!!,
-            onCloseClick = { vm.onDetailsDialogStateChange(BookerMoMoAccountDetailsDialogState.NONE) },
+            onCloseClick = { vm.onAccountDialogStateChange(BookerMoMoAccountDialogState.NONE) },
             onPositiveClick = {
-                vm.onDetailsDialogStateChange(BookerMoMoAccountDetailsDialogState.NONE)
+                vm.onAccountDialogStateChange(BookerMoMoAccountDialogState.NONE)
                 vm.saveOrUpdateAccount(
                     doOnStart = {
                         focusManager.clearFocus(true)
@@ -410,28 +575,28 @@ fun BookerMoMoAccountDetails(
                 )
             },
             onOtherClick = {
-                vm.onDetailsDialogStateChange(BookerMoMoAccountDetailsDialogState.NONE)
-                vm.onDetailsCompleteChange(true)
+                vm.onAccountDialogStateChange(BookerMoMoAccountDialogState.NONE)
+                vm.onAccountCompleteChange(true)
             }
         )
 
-        BookerMoMoAccountDetailsDialogState.LEAVING_WITH_EMPTY_ACCOUNT -> InfoDialog(
+        BookerMoMoAccountDialogState.LEAVING_WITH_EMPTY_ACCOUNT -> InfoDialog(
             uis = statusMap[status]!!,
-            onCloseClick = { vm.onDetailsDialogStateChange(BookerMoMoAccountDetailsDialogState.NONE) },
+            onCloseClick = { vm.onAccountDialogStateChange(BookerMoMoAccountDialogState.NONE) },
             onPositiveClick = {
-                vm.onDetailsDialogStateChange(BookerMoMoAccountDetailsDialogState.NONE)
+                vm.onAccountDialogStateChange(BookerMoMoAccountDialogState.NONE)
             },
             onOtherClick = {
-                vm.onDetailsDialogStateChange(BookerMoMoAccountDetailsDialogState.NONE)
-                vm.onDetailsCompleteChange(true)
+                vm.onAccountDialogStateChange(BookerMoMoAccountDialogState.NONE)
+                vm.onAccountCompleteChange(true)
             }
         )
 
-        BookerMoMoAccountDetailsDialogState.HELP_IS_ENABLED -> InfoDialog(
+        BookerMoMoAccountDialogState.HELP_IS_ENABLED -> InfoDialog(
             uis = statusMap[status]!!,
-            onCloseClick = { vm.onDetailsDialogStateChange(BookerMoMoAccountDetailsDialogState.NONE) },
+            onCloseClick = { vm.onAccountDialogStateChange(BookerMoMoAccountDialogState.NONE) },
             onPositiveClick = {
-                vm.onDetailsDialogStateChange(BookerMoMoAccountDetailsDialogState.NONE)
+                vm.onAccountDialogStateChange(BookerMoMoAccountDialogState.NONE)
             }
         )
     }
@@ -460,8 +625,8 @@ fun BookerMoMoAccountDetails(
                 modifier = Modifier.fillMaxWidth(),
                 actions = {
                     IconButton(onClick = {
-                        vm.onDetailsDialogStateChange(
-                            BookerMoMoAccountDetailsDialogState.HELP_MAIN_PAGE
+                        vm.onAccountDialogStateChange(
+                            BookerMoMoAccountDialogState.ABOUT_MAIN_PAGE
                         )
                     }) {
                         Icon(
@@ -494,6 +659,7 @@ fun BookerMoMoAccountDetails(
                     }
             }
             Spacer(modifier = Modifier.height(16.dp))
+
             DashboardItemNoIcon(
                 modifier = Modifier
                     .padding(fieldPadding)
@@ -504,7 +670,7 @@ fun BookerMoMoAccountDetails(
                     isHelpable = true
                 ),
                 onHelpClick = {
-                    vm.onDetailsDialogStateChange(BookerMoMoAccountDetailsDialogState.HELP_IS_ENABLED)
+                    vm.onAccountDialogStateChange(BookerMoMoAccountDialogState.HELP_IS_ENABLED)
                 }
             ) {
                 Row(
@@ -541,6 +707,8 @@ fun BookerMoMoAccountDetails(
                     onValueChange = { },
                     enabled = false
                 )
+
+                Spacer(modifier = Modifier.height(16.dp))
 
                 // Phone
                 OutTextField(
@@ -580,7 +748,7 @@ fun BookerMoMoAccountDetails(
                     },
                     errorText = { vm.phoneErrorText(it) },
                     trailingIcon = {
-                        if (!uis.account.phoneNumber.isNullOrBlank())
+                        if (uis.account.phoneNumber.isNotBlank())
                             IconButton(onClick = { vm.onPhoneChange("") }) {
                                 Icon(
                                     imageVector = Icons.Outlined.Clear,
@@ -596,6 +764,7 @@ fun BookerMoMoAccountDetails(
             }
 
             Spacer(modifier = Modifier.height(64.dp))
+
             Button(
                 onClick = {
                     vm.saveOrUpdateAccount(
@@ -627,17 +796,19 @@ fun BookerMoMoAccountDetails(
 // Check for user messages to display on the screen
     if (uis.message != null) {
         val message = stringResource(id = uis.message!!).caps
+        val closeLabel = stringResource(id = R.string.lb_close)
 
-        LaunchedEffect(scaffoldState, vm, uis.message) {
+        LaunchedEffect(uis.message) {
             scaffoldState.snackbarHostState.showSnackbar(
-                message = message, /*actionLabel = retryActionLabel*/
+                message = message,
+                duration = SnackbarDuration.Short,
+                actionLabel = closeLabel
             ).also {
-                if (it == SnackbarResult.ActionPerformed)
-                    when (uis.message) {
-
-                    }
+                when (it) {
+                    SnackbarResult.Dismissed -> vm.onMessageChange(null)
+                    SnackbarResult.ActionPerformed -> vm.onMessageChange(null)
+                }
             }
-            vm.onMessageChange(null)
         }
     }
 }

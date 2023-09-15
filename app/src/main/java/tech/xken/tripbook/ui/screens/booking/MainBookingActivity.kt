@@ -1,6 +1,6 @@
 @file:OptIn(ExperimentalMaterialApi::class)
 
-package tech.xken.tripbook
+package tech.xken.tripbook.ui.screens.booking
 
 
 import android.os.Bundle
@@ -48,7 +48,6 @@ import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.rememberModalBottomSheetState
 import androidx.compose.material.rememberScaffoldState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -64,23 +63,20 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import dagger.hilt.android.AndroidEntryPoint
+import tech.xken.tripbook.R
 import tech.xken.tripbook.domain.caps
 import tech.xken.tripbook.domain.titleCase
-import tech.xken.tripbook.ui.CacheSyncDialogStatus
-import tech.xken.tripbook.ui.CacheSyncUiState
-import tech.xken.tripbook.ui.MainViewModel
-import tech.xken.tripbook.ui.SheetState
 import tech.xken.tripbook.ui.components.DashboardItem
 import tech.xken.tripbook.ui.components.DashboardItemUiState
 import tech.xken.tripbook.ui.components.DashboardSubItem
 import tech.xken.tripbook.ui.components.InfoDialog
 import tech.xken.tripbook.ui.components.InfoDialogUiState
-import tech.xken.tripbook.ui.navigation.AppNavGraph
+import tech.xken.tripbook.ui.navigation.BookingNavGraph
 import tech.xken.tripbook.ui.theme.TripbookTheme
 
 @AndroidEntryPoint
-class MainActivity : ComponentActivity() {
-    private lateinit var vm: MainViewModel
+class BookingActivity : ComponentActivity() {
+    private lateinit var vm: MainBookingVM
 
     @OptIn(ExperimentalMaterialApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -94,14 +90,14 @@ class MainActivity : ComponentActivity() {
                 initialValue = ModalBottomSheetValue.Hidden,
                 confirmValueChange = { true }
             )
-            LaunchedEffect(uis.sheetState, uis.isConnected) {
-                when (uis.sheetState) {
-                    SheetState.NETWORK_STATUS_MINIMAL_OFFLINE -> sheetState.show()
-                    SheetState.NETWORK_STATUS_EXPANDED_OFFLINE -> sheetState.show()
-                    SheetState.NONE -> sheetState.hide()
-                    SheetState.NETWORK_STATUS_MINIMAL_ONLINE -> sheetState.show()
-                }
-            }
+//            LaunchedEffect(uis.sheetState, /*uis.isConnected*/) {
+//                when (uis.sheetState) {
+//                    SheetState.NETWORK_STATUS_MINIMAL_OFFLINE -> sheetState.show()
+//                    SheetState.NETWORK_STATUS_EXPANDED_OFFLINE -> sheetState.show()
+//                    SheetState.NONE -> sheetState.hide()
+//                    SheetState.NETWORK_STATUS_MINIMAL_ONLINE -> sheetState.show()
+//                }
+//            }
 
             TripbookTheme {
                 ModalBottomSheetLayout(
@@ -245,7 +241,7 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                 ) {
                     if (syncUis.syncDone)
-                        AppNavGraph(
+                        BookingNavGraph(
                             authRepo = vm.authRepo,
                             modifier = Modifier.fillMaxSize()
                         )
@@ -266,7 +262,7 @@ class MainActivity : ComponentActivity() {
 fun CacheSync(
     modifier: Modifier = Modifier,
     scaffoldState: ScaffoldState = rememberScaffoldState(),
-    vm: MainViewModel,
+    vm: MainBookingVM,
     uis: CacheSyncUiState
 ) {
     val statusMap = remember {
@@ -514,7 +510,7 @@ fun CacheSync(
                         modifier = Modifier.padding(2.dp),
                         isError = uis.hasSyncAccount != true,
                         positiveText = "Synchronized",
-                        negativeText = "Unable to Synchronize"
+                        errorText = "Unable to Synchronize"
                     )
                 }
             }
@@ -546,7 +542,7 @@ fun CacheSync(
                         modifier = Modifier.padding(2.dp),
                         isError = uis.hasSyncMoMo != true,
                         positiveText = "Synchronized",
-                        negativeText = "Unable to Synchronize"
+                        errorText = "Unable to Synchronize"
                     )
                 }
             }
@@ -578,7 +574,7 @@ fun CacheSync(
                         modifier = Modifier.padding(2.dp),
                         isError = uis.hasSyncOM != true,
                         positiveText = "Synchronized",
-                        negativeText = "Unable to Synchronize"
+                        errorText = "Unable to Synchronize"
                     )
                 }
             }

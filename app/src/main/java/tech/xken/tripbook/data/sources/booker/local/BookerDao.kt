@@ -19,7 +19,7 @@ interface BookerDao {
     fun updateBooker(booker: Booker)
 
     @Query("SELECT * FROM booker WHERE booker_id = :id")
-    fun bookerFromId(id: String): Booker
+    fun bookerFromId(id: String): Booker?
 
     @Query("DELETE FROM booker WHERE booker_id = :bookerId")
     fun deleteBooker(bookerId: String)

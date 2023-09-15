@@ -4,18 +4,17 @@ package tech.xken.tripbook.ui.navigation
 
 
 import androidx.compose.animation.ExperimentalAnimationApi
-import androidx.compose.animation.slideInHorizontally
-import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.foundation.layout.Column
 import androidx.compose.material.DrawerState
 import androidx.compose.material.DrawerValue
 import androidx.compose.material.ExperimentalMaterialApi
+import androidx.compose.material.Text
 import androidx.compose.material.rememberDrawerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -28,31 +27,31 @@ import kotlinx.coroutines.launch
 import tech.xken.tripbook.data.AuthRepo
 import tech.xken.tripbook.ui.navigation.AgencyScreens.BASE_AGENCY
 import tech.xken.tripbook.ui.navigation.BookingDestinations.BOOKER_MOMO_ACCOUNTS_ROUTE
+import tech.xken.tripbook.ui.navigation.BookingDestinations.BOOKER_MOMO_ACCOUNT_DETAILS_ROUTE
 import tech.xken.tripbook.ui.navigation.BookingDestinations.BOOKER_OM_ACCOUNTS_ROUTE
+import tech.xken.tripbook.ui.navigation.BookingDestinations.BOOKER_OM_ACCOUNT_DETAILS_ROUTE
 import tech.xken.tripbook.ui.navigation.BookingScreens.BASE_BOOKER
 import tech.xken.tripbook.ui.screens.agency.station.*
+import tech.xken.tripbook.ui.screens.booking.AgencyPortal
 import tech.xken.tripbook.ui.screens.booking.BookerAccount
+import tech.xken.tripbook.ui.screens.booking.BookerAuthentication
 import tech.xken.tripbook.ui.screens.booking.BookerMoMoAccountDetails
 import tech.xken.tripbook.ui.screens.booking.BookerMoMoAccounts
 import tech.xken.tripbook.ui.screens.booking.BookerOMAccountDetails
 import tech.xken.tripbook.ui.screens.booking.BookerOMAccounts
 import tech.xken.tripbook.ui.screens.booking.BookerProfile
-import tech.xken.tripbook.ui.screens.booking.BookerSignIn
 import tech.xken.tripbook.ui.screens.booking.TripSearch
 
 //import tech.xken.tripbook.ui.screens.universe.*
 
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
-fun AppNavGraph(
+fun BookingNavGraph(
     modifier: Modifier = Modifier,
     navController: NavHostController = rememberNavController(),
     startDestination: String = BASE_BOOKER,
     scope: CoroutineScope = rememberCoroutineScope(),
     drawerState: DrawerState = rememberDrawerState(initialValue = DrawerValue.Closed),
-    agencyNavActions: AgencyNavActions = remember(navController) {
-        AgencyNavActions(navController)
-    },
     authRepo: AuthRepo,
     bookingNavActions: BookingNavActions = remember(navController) {
         BookingNavActions(navController, authRepo)
@@ -74,51 +73,48 @@ fun AppNavGraph(
         startDestination = startDestination,
         modifier = modifier
     ) {
-
-
         navigation(
             startDestination = BookingDestinations.BOOKER_TRIP_SEARCH_ROUTE,
             route = BASE_BOOKER
-//            enterTransition = {
-//                // Check to see if the previous screen is in the login graph
-//                if (initialState.destination.hierarchy.any { it.route == BASE_BOOKER }) {
-//                    slideInHorizontally(initialOffsetX = { 1000 })
-//                } else null // use the defaults
-//            },
-//            exitTransition = {
-//                // Check to see if the new screen is in the login graph
-//                if (targetState.destination.hierarchy.any { it.route == BASE_BOOKER }) {
-//                    slideOutHorizontally(targetOffsetX = { -1000 })
-//                } else
-//                    null // use the defaults
-//            },
-//            popEnterTransition = {
-//                // Check to see if the previous screen is in the login graph
-//                if (initialState.destination.hierarchy.any { it.route == BASE_BOOKER }) {
-//                    // Note how we animate from the opposite direction on a pop
-//                    slideInHorizontally(initialOffsetX = { -1000 })
-//                } else
-//                    null // use the defaults
-//            },
-//            popExitTransition = {
-//                // Check to see if the new screen is in the login graph
-//                if (targetState.destination.hierarchy.any { it.route == BASE_BOOKER }) {
-//                    // Note how we animate from the opposite direction on a pop
-//                    slideOutHorizontally(targetOffsetX = { 1000 })
-//                } else
-//                    null // use the defaults
-//            }
+            /*            enterTransition = {
+                            // Check to see if the previous screen is in the login graph
+                            if (initialState.destination.hierarchy.any { it.route == BASE_BOOKER }) {
+                                slideInHorizontally(initialOffsetX = { 1000 })
+                            } else null // use the defaults
+                        },
+                        exitTransition = {
+                            // Check to see if the new screen is in the login graph
+                            if (targetState.destination.hierarchy.any { it.route == BASE_BOOKER }) {
+                                slideOutHorizontally(targetOffsetX = { -1000 })
+                            } else
+                                null // use the defaults
+                        },
+                        popEnterTransition = {
+                            // Check to see if the previous screen is in the login graph
+                            if (initialState.destination.hierarchy.any { it.route == BASE_BOOKER }) {
+                                // Note how we animate from the opposite direction on a pop
+                                slideInHorizontally(initialOffsetX = { -1000 })
+                            } else
+                                null // use the defaults
+                        },
+                        popExitTransition = {
+                            // Check to see if the new screen is in the login graph
+                            if (targetState.destination.hierarchy.any { it.route == BASE_BOOKER }) {
+                                // Note how we animate from the opposite direction on a pop
+                                slideOutHorizontally(targetOffsetX = { 1000 })
+                            } else
+                                null // use the defaults
+                        }*/
         ) {
 //            this
             composable(
                 BookingDestinations.BOOKER_TRIP_SEARCH_ROUTE
             ) {
-                AppModalDrawer(
+                BookingModalDrawer(
                     drawerState = drawerState,
                     currentRoute = navController.currentBackStackEntry?.destination?.route ?: "",
                     bookerNavActions = bookingNavActions,
-                    agencyNavActions = agencyNavActions,
-                    isSignedIn = { authRepo.isSignedIn },
+                    isSignedIn = { authRepo.isSignedIn.value },
                 ) {
                     TripSearch(
                         onComplete = {
@@ -134,20 +130,19 @@ fun AppNavGraph(
             }
 
             composable(
-                BookingDestinations.BOOKER_SIGN_IN_ROUTE,
+                BookingDestinations.BOOKER_AUTHENTICATION_ROUTE,
                 arguments = listOf(navArgument(BookingNavArgs.SHOULD_SIGN_OUT) {
                     type = NavType.BoolType
                     defaultValue = false
                 }),
             ) {
-                AppModalDrawer(
+                BookingModalDrawer(
                     drawerState = drawerState,
                     currentRoute = navController.currentBackStackEntry?.destination?.route ?: "",
                     bookerNavActions = bookingNavActions,
-                    agencyNavActions = agencyNavActions,
-                    isSignedIn = { authRepo.isSignedIn },
+                    isSignedIn = { authRepo.isSignedIn.value },
                 ) {
-                    BookerSignIn(
+                    BookerAuthentication(
                         navigateBack = null,
                         navigateToProfile = {
                             navController.popBackStack()
@@ -172,12 +167,11 @@ fun AppNavGraph(
             composable(
                 BookingScreens.BOOKER_PROFILE
             ) {
-                AppModalDrawer(
+                BookingModalDrawer(
                     drawerState = drawerState,
                     currentRoute = navController.currentBackStackEntry?.destination?.route ?: "",
                     bookerNavActions = bookingNavActions,
-                    agencyNavActions = agencyNavActions,
-                    isSignedIn = { authRepo.isSignedIn },
+                    isSignedIn = { authRepo.isSignedIn.value },
                 ) {
                     BookerProfile(
                         onNavigateToAccount = { bookingNavActions.navigateToAccount() },
@@ -195,6 +189,33 @@ fun AppNavGraph(
             }
 
             composable(
+                BookingDestinations.AGENCY_PORTAL_ROUTE
+            ) {
+                BookingModalDrawer(
+                    drawerState = drawerState,
+                    currentRoute = navController.currentBackStackEntry?.destination?.route ?: "",
+                    bookerNavActions = bookingNavActions,
+                    isSignedIn = { authRepo.isSignedIn.value },
+                ) {
+                    AgencyPortal(
+                        onNavigateToAccount = { bookingNavActions.navigateToAccount() },
+                        onNavigateToAgency = {
+
+                        },
+//                        onNavigateToMoMoAccount = { bookingNavActions.navigateToMoMoAccounts() },
+//                        onNavigateToOMAccount = { bookingNavActions.navigateToOMAccounts() },
+//                        onNavigateToBookerAgencySettings = { bookingNavActions.navigateToAgencySettings() },
+//                        onNavigateToCreditCardAccount = { bookingNavActions.navigateToCreditCardAccounts() },
+                        navigateUp = {
+                            defaultNavigateUp()
+                        },
+                    ) {
+                        scope.launch { drawerState.open() }
+                    }
+                }
+            }
+
+            composable(
                 BookingDestinations.BOOKER_ACCOUNT_ROUTE
             ) {
                 BookerAccount(
@@ -203,15 +224,17 @@ fun AppNavGraph(
                 )
             }
 
-            composable(BookingDestinations.BOOKER_MOMO_ACCOUNTS_ROUTE)
+            composable(BOOKER_MOMO_ACCOUNTS_ROUTE)
             {
-                BookerMoMoAccounts(navigateBack = { defaultNavigateUp() }, navigateToDetails = {
-                    bookingNavActions.navigateToMoMoAccountDetails()
-                })
+                BookerMoMoAccounts(navigateBack = { defaultNavigateUp() },
+                    navigateToDetails = {
+                        bookingNavActions.navigateToMoMoAccountDetails()
+                    }
+                )
             }
 
             composable(
-                BookingDestinations.BOOKER_MOMO_ACCOUNT_DETAILS_ROUTE
+                BOOKER_MOMO_ACCOUNT_DETAILS_ROUTE
             ) { backStackEntry ->
                 val parentEntry = remember(backStackEntry) {
                     navController.getBackStackEntry(BOOKER_MOMO_ACCOUNTS_ROUTE)
@@ -223,7 +246,7 @@ fun AppNavGraph(
                 )
             }
 
-            composable(BookingDestinations.BOOKER_OM_ACCOUNTS_ROUTE)
+            composable(BOOKER_OM_ACCOUNTS_ROUTE)
             {
                 BookerOMAccounts(navigateBack = { defaultNavigateUp() }, navigateToDetails = {
                     bookingNavActions.navigateToOMAccountDetails()
@@ -231,7 +254,7 @@ fun AppNavGraph(
             }
 
             composable(
-                BookingDestinations.BOOKER_OM_ACCOUNT_DETAILS_ROUTE
+                BOOKER_OM_ACCOUNT_DETAILS_ROUTE
             ) { backStackEntry ->
                 val parentEntry = remember(backStackEntry) {
                     navController.getBackStackEntry(BOOKER_OM_ACCOUNTS_ROUTE)
@@ -245,38 +268,69 @@ fun AppNavGraph(
 
         }
 
-        navigation(
-            startDestination = AgencyDestinations.AGENCY_CREATION_WELCOME_ROUTE,
-            route = BASE_AGENCY
+    }
+}
+
+
+@Composable
+fun AgencyNavGraph(
+    modifier: Modifier = Modifier,
+    navController: NavHostController = rememberNavController(),
+    startDestination: String = AgencyDestinations.AGENCY_PROFILE_ROUTE,
+    scope: CoroutineScope = rememberCoroutineScope(),
+    drawerState: DrawerState = rememberDrawerState(initialValue = DrawerValue.Closed),
+    agencyNavActions: AgencyNavActions = remember(navController) {
+        AgencyNavActions(navController)
+    },
+    authRepo: AuthRepo,
+
+    /* univNavActions: UnivNavActions = remember(navController){
+         UnivNavActions(navController)
+     }*/
+) {
+    fun defaultNavigateUp() {
+        try {
+            navController.navigateUp()
+        } catch (e: Exception) {
+            agencyNavActions.navigateToAgencyProfile()
+        }
+    }
+
+    NavHost(
+        navController = navController,
+        startDestination = startDestination,
+        modifier = modifier, route = BASE_AGENCY
+    ) {
+        composable(
+            AgencyDestinations.AGENCY_PROFILE_ROUTE
         ) {
-            composable(
-                route = AgencyDestinations.AGENCY_CREATION_WELCOME_ROUTE
+            AgencyModalDrawer(
+                drawerState = drawerState,
+                currentRoute = navController.currentBackStackEntry?.destination?.route ?: "",
+                agencyNavActions = agencyNavActions,
+                isSignedIn = { authRepo.isSignedIn.value },
             ) {
-                AppModalDrawer(
-                    drawerState = drawerState,
-                    currentRoute = navController.currentBackStackEntry?.destination?.route ?: "",
-                    bookerNavActions = bookingNavActions,
-                    agencyNavActions = agencyNavActions,
-                    isSignedIn = { authRepo.isSignedIn },
-                ) {
-
-                }
-            }
-
-            composable(
-                route = AgencyDestinations.AGENCY_CREATION_WELCOME_PROFILE_ROUTE
-            ) {
-                AppModalDrawer(
-                    drawerState = drawerState,
-                    currentRoute = navController.currentBackStackEntry?.destination?.route ?: "",
-                    bookerNavActions = bookingNavActions,
-                    agencyNavActions = agencyNavActions,
-                    isSignedIn = { authRepo.isSignedIn },
-                ) {
-
+                Column {
+                    Text("This is it")
                 }
             }
         }
+
+        composable(
+            AgencyDestinations.AGENCY_HELP_CENTER_ROUTE,
+        ) {
+            AgencyModalDrawer(
+                drawerState = drawerState,
+                currentRoute = navController.currentBackStackEntry?.destination?.route ?: "",
+                agencyNavActions = agencyNavActions,
+                isSignedIn = { authRepo.isSignedIn.value },
+            ) {
+                Column {
+                    Text("This is it")
+                }
+            }
+        }
+
 
         /*               Agency navigations
                navigation(

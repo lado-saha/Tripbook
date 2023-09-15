@@ -37,7 +37,7 @@ class BookerLocalDataSource internal constructor(
     override suspend fun bookerFromId(
         bookerId: String,
         columns: List<String>
-    ): Results<Booker> = withContext(ioDispatcher) {
+    ): Results<Booker?> = withContext(ioDispatcher) {
         return@withContext try {
             Success(dao.bookerFromId(bookerId))
         } catch (e: Exception) {

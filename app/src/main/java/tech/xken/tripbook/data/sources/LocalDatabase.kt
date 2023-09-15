@@ -28,7 +28,7 @@ import java.util.UUID
 
 @Database(
     entities = [/*Station::class, StationTownMap::class, StationScannerMap::class, *//*Scanner::class,*//* StationJob::class,*/ BookerMoMoAccount::class, BookerOMAccount::class, Booker::class, Country::class, Region::class, Division::class, Subdivision::class, Town::class, Road::class, TownPair::class, UnivSelection::class /*Job::class*/],
-    version = 4,
+    version = 5,
     exportSchema = false
 )
 @TypeConverters(LocalConverters::class)

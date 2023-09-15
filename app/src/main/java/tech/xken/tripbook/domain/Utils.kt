@@ -27,7 +27,8 @@ import kotlin.reflect.full.findAnnotation
 
 
 
-val NOW
+
+val DATE_NOW
     get() = Calendar.getInstance().run {
         LocalDate(
             this[Calendar.YEAR],
@@ -117,10 +118,10 @@ val <A, B> Pair<A, B>.reverse: Pair<B, A>
 /**
  * A generic class that holds a loading signal or a [Results].
  */
-sealed class Async<out T> {
-    object Loading : Async<Nothing>()
-    data class Success<out T>(val data: T) : Async<T>()
-}
+//sealed class Async<out T> {
+//    object Loading : Async<Nothing>()
+//    data class Success<out T>(val data: T) : Async<T>()
+//}
 
 /**
  * Maximum time after which the state observers must stop observing any flow
@@ -165,8 +166,8 @@ val String.propre
  * @param inputStr is the supposed shorter string which is usually the input we want to compare with [str2
  * @param referenceStr is the supposed longer reference string.
  */
-fun strAreTheSame(inputStr: String, referenceStr: String): Boolean {
-    val inputStr1 = inputStr.filterNot { it == ' ' }
+infix fun String.subsetOf(referenceStr: String): Boolean {
+    val inputStr1 = filterNot { it == ' ' }
     val referenceStr1 = referenceStr.filterNot { it == ' ' }
     return if (inputStr1.length > referenceStr1.length) false
     else
@@ -306,6 +307,9 @@ class NetworkState(private val context: Context) {
 //    }
 //
 //
+//}
+//fun passwordStrength(password: String): Int {
+//    val containsNumbers = password.indexOfAny(list())
 //}
 
 /**

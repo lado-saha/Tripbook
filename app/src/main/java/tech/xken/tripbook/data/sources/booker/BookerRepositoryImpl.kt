@@ -1,6 +1,6 @@
 package tech.xken.tripbook.data.sources.booker
 
-import io.github.jan.supabase.realtime.RealtimeChannel
+import android.util.Log
 import kotlinx.coroutines.CoroutineDispatcher
 import tech.xken.tripbook.data.AuthRepo
 import tech.xken.tripbook.data.models.Results
@@ -10,7 +10,7 @@ import tech.xken.tripbook.data.models.booker.Booker
 import tech.xken.tripbook.data.models.booker.BookerMoMoAccount
 import tech.xken.tripbook.data.models.booker.BookerOMAccount
 import tech.xken.tripbook.domain.NetworkState
-import tech.xken.tripbook.ui.CacheSyncUiState
+import tech.xken.tripbook.ui.screens.booking.CacheSyncUiState
 
 class BookerRepositoryImpl(
     private val localDS: BookerDataSource,
@@ -34,9 +34,15 @@ class BookerRepositoryImpl(
         if (!syncUis.syncAccountDone && syncUis.hasSyncAccount != true) onAccountComplete(
             remoteDS.bookerFromId(authRepo.bookerId!!).run {
                 when (this) {
-                    is Failure -> Failure(exception)
+                    is Failure -> {
+                        Log.e("SYNC Account", "$exception")
+                        Failure(exception)
+                    }
+
                     is Success -> {
-                        localDS.createBooker(data)
+                        if (data != null) {
+                            localDS.createBooker(data)
+                        } else Success(null)
                     }
                 }
             }
@@ -45,7 +51,11 @@ class BookerRepositoryImpl(
         if (!syncUis.syncOMDone && syncUis.hasSyncOM != true) onOMAccountComplete(
             remoteDS.bookerOMAccounts(authRepo.bookerId!!).run {
                 when (this) {
-                    is Failure -> Failure(exception)
+                    is Failure -> {
+                        Log.e("SYNC OM", "$exception")
+                        Failure(exception)
+                    }
+
                     is Success -> {
                         localDS.createBookerOMAccounts(data)
                     }
@@ -56,7 +66,11 @@ class BookerRepositoryImpl(
         if (!syncUis.syncMoMoDone && syncUis.hasSyncMoMo != true) onMoMoAccountComplete(
             remoteDS.bookerMoMoAccounts(authRepo.bookerId!!).run {
                 when (this) {
-                    is Failure -> Failure(exception)
+                    is Failure -> {
+                        Log.e("SYNC MOMO", "$exception")
+                        Failure(exception)
+                    }
+
                     is Success -> {
                         localDS.createBookerMoMoAccounts(data)
                     }

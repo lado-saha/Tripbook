@@ -1,14 +1,11 @@
 package tech.xken.tripbook.ui.screens.booking
 
-import android.telephony.PhoneNumberUtils
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
 import androidx.compose.animation.animateContentSize
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -19,10 +16,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CornerSize
-import androidx.compose.foundation.text.KeyboardActions
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.Button
 import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.ExtendedFloatingActionButton
@@ -37,19 +31,15 @@ import androidx.compose.material.Scaffold
 import androidx.compose.material.ScaffoldState
 import androidx.compose.material.SnackbarDuration
 import androidx.compose.material.SnackbarResult
-import androidx.compose.material.Switch
 import androidx.compose.material.Text
 import androidx.compose.material.TopAppBar
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.ErrorOutline
 import androidx.compose.material.icons.filled.Payments
-import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.outlined.Add
 import androidx.compose.material.icons.outlined.ArrowBack
-import androidx.compose.material.icons.outlined.Check
-import androidx.compose.material.icons.outlined.Clear
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.ErrorOutline
 import androidx.compose.material.icons.outlined.HelpOutline
@@ -69,19 +59,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.SoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.ImeAction
-import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.OffsetMapping
-import androidx.compose.ui.text.input.TransformedText
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.ViewModelStoreOwner
@@ -90,32 +74,26 @@ import tech.xken.tripbook.R
 import tech.xken.tripbook.data.models.ActionItem
 import tech.xken.tripbook.data.models.ActionSheet
 import tech.xken.tripbook.data.models.MainAction
-import tech.xken.tripbook.data.models.codeCountryMap
 import tech.xken.tripbook.domain.caps
 import tech.xken.tripbook.domain.disableComposable
 import tech.xken.tripbook.domain.subsetOf
 import tech.xken.tripbook.domain.titleCase
-import tech.xken.tripbook.ui.components.DashboardItemNoIcon
-import tech.xken.tripbook.ui.components.DashboardItemNoIconUiState
-import tech.xken.tripbook.ui.components.DashboardSubItem
 import tech.xken.tripbook.ui.components.InfoDialog
 import tech.xken.tripbook.ui.components.InfoDialogUiState
-import tech.xken.tripbook.ui.components.OutTextField
 import tech.xken.tripbook.ui.components.SearchBar
 import tech.xken.tripbook.ui.components.SortingDialog
 
-
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
-fun BookerOMAccounts(
+fun EntitiesView(
     modifier: Modifier = Modifier,
-    vm: BookerOMAccountsVM = hiltViewModel(LocalViewModelStoreOwner.current as ViewModelStoreOwner),
+    vm: ClassObjectsVM = hiltViewModel(LocalViewModelStoreOwner.current as ViewModelStoreOwner),
     navigateBack: () -> Unit,
     navigateToDetails: () -> Unit,
 ) {
     val uis by vm.uiState.collectAsState()
     val stateMap = mapOf(
-        BookerOMAccountsDialogState.ABOUT_MAIN_PAGE to InfoDialogUiState(
+        ObjectsDialogState.ABOUT_MAIN_PAGE to InfoDialogUiState(
             mainIcon = Icons.Filled.Payments,
             title = "My OM accounts",
             text = buildAnnotatedString {
@@ -123,7 +101,7 @@ fun BookerOMAccounts(
             },
             positiveText = stringResource(id = R.string.lb_i_understand)
         ),
-        BookerOMAccountsDialogState.COULD_NOT_GET_ACCOUNTS to InfoDialogUiState(
+        ObjectsDialogState.COULD_NOT_GET_OBJECTS to InfoDialogUiState(
             mainIcon = Icons.Filled.ErrorOutline,
             title = "Could not get your accounts",
             text = buildAnnotatedString {
@@ -132,7 +110,7 @@ fun BookerOMAccounts(
             positiveText = "Retry",
             otherText = "Leave",
         ),
-        BookerOMAccountsDialogState.LEAVING_WITHOUT_ACCOUNTS to InfoDialogUiState(
+        ObjectsDialogState.LEAVING_WITHOUT_OBJECTS to InfoDialogUiState(
             mainIcon = Icons.Filled.Warning,
             title = "Leaving without adding accounts?",
             text = buildAnnotatedString {
@@ -142,7 +120,7 @@ fun BookerOMAccounts(
             otherText = "Leave",
             isNegative = true
         ),
-        BookerOMAccountsDialogState.DELETE_ACCOUNTS_WARNING to InfoDialogUiState(
+        ObjectsDialogState.DELETE_OBJECTS_WARNING to InfoDialogUiState(
             mainIcon = Icons.Filled.Delete,
             title = "Are you want to delete?",
             text = buildAnnotatedString {
@@ -154,66 +132,66 @@ fun BookerOMAccounts(
         )
     )
     when (val status = uis.dialogState) {
-        BookerOMAccountsDialogState.NONE -> {}
+        ObjectsDialogState.NONE -> {}
 
-        BookerOMAccountsDialogState.ABOUT_MAIN_PAGE -> InfoDialog(
+        ObjectsDialogState.ABOUT_MAIN_PAGE -> InfoDialog(
             uis = stateMap[status]!!,
-            onCloseClick = { vm.onDialogStateChange(BookerOMAccountsDialogState.NONE) },
-            onPositiveClick = { vm.onDialogStateChange(BookerOMAccountsDialogState.NONE) }
+            onCloseClick = { vm.onDialogStateChange(ObjectsDialogState.NONE) },
+            onPositiveClick = { vm.onDialogStateChange(ObjectsDialogState.NONE) }
         )
 
-        BookerOMAccountsDialogState.COULD_NOT_GET_ACCOUNTS -> InfoDialog(
+        ObjectsDialogState.COULD_NOT_GET_OBJECTS -> InfoDialog(
             uis = stateMap[status]!!,
             onCloseClick = {
-                vm.onDialogStateChange(BookerOMAccountsDialogState.NONE)
+                vm.onDialogStateChange(ObjectsDialogState.NONE)
                 navigateBack()
             },
             onOtherClick = {
-                vm.onDialogStateChange(BookerOMAccountsDialogState.NONE)
+                vm.onDialogStateChange(ObjectsDialogState.NONE)
                 navigateBack()
             },
             onPositiveClick = {
                 vm.onInitComplete(false)
-                vm.onDialogStateChange(BookerOMAccountsDialogState.NONE)
+                vm.onDialogStateChange(ObjectsDialogState.NONE)
             }
         )
 
-        BookerOMAccountsDialogState.LEAVING_WITHOUT_ACCOUNTS -> InfoDialog(
+        ObjectsDialogState.LEAVING_WITHOUT_OBJECTS -> InfoDialog(
             uis = stateMap[status]!!,
             onCloseClick = {
-                vm.onDialogStateChange(BookerOMAccountsDialogState.NONE)
+                vm.onDialogStateChange(ObjectsDialogState.NONE)
             },
             onPositiveClick = {
-                vm.onDialogStateChange(BookerOMAccountsDialogState.NONE)
+                vm.onDialogStateChange(ObjectsDialogState.NONE)
             },
             onOtherClick = {
-                vm.onDialogStateChange(BookerOMAccountsDialogState.NONE)
+                vm.onDialogStateChange(ObjectsDialogState.NONE)
                 navigateBack()
             }
         )
 
-        BookerOMAccountsDialogState.DELETE_ACCOUNTS_WARNING -> InfoDialog(
+        ObjectsDialogState.DELETE_OBJECTS_WARNING -> InfoDialog(
             uis = stateMap[status]!!,
             onCloseClick = {
                 vm.clearOnToDelete()
-                vm.onDialogStateChange(BookerOMAccountsDialogState.NONE)
+                vm.onDialogStateChange(ObjectsDialogState.NONE)
             },
             onPositiveClick = {
                 vm.clearOnToDelete()
-                vm.onDialogStateChange(BookerOMAccountsDialogState.NONE)
+                vm.onDialogStateChange(ObjectsDialogState.NONE)
             },
             onOtherClick = {
-                vm.onDialogStateChange(BookerOMAccountsDialogState.NONE)
-                vm.deleteAccounts()
+                vm.onDialogStateChange(ObjectsDialogState.NONE)
+                vm.deleteObjects()
             }
         )
 
-        BookerOMAccountsDialogState.SORTING -> SortingDialog(
-            onDismiss = { vm.onDialogStateChange(BookerOMAccountsDialogState.NONE) },
+        ObjectsDialogState.SORTING -> SortingDialog(
+            onDismiss = { vm.onDialogStateChange(ObjectsDialogState.NONE) },
             sortFields = uis.sortFields,
             selectedField = uis.selectedSortField,
             onFieldClick = {
-                vm.onSelectedSortFieldChange(it)
+                vm.onSelectedsSortFieldChange(it)
 //                vm.onDialogStateChange(BookerOMAccountsDialogState.NONE)/**/
             }
         )
@@ -229,7 +207,7 @@ fun BookerOMAccounts(
         confirmValueChange = {
             when (it) {
                 ModalBottomSheetValue.Hidden -> {
-                    vm.onSheetStateChange(BookerOMAccountsSheetState.NONE)
+                    vm.onSheetStateChange(ObjectsSheetState.NONE)
                 }
 
                 ModalBottomSheetValue.Expanded -> {}
@@ -240,7 +218,7 @@ fun BookerOMAccounts(
     )
 
     LaunchedEffect(uis.sheetStatus) {
-        if (uis.sheetStatus != BookerOMAccountsSheetState.NONE) {
+        if (uis.sheetStatus != ObjectsSheetState.NONE) {
             sheetState.show()
         } else if (sheetState.targetValue != ModalBottomSheetValue.Hidden || sheetState.currentValue != ModalBottomSheetValue.Hidden) {
             sheetState.hide()
@@ -250,7 +228,7 @@ fun BookerOMAccounts(
     ModalBottomSheetLayout(
         sheetContent = {
             when (uis.sheetStatus) {
-                BookerOMAccountsSheetState.ACTIONS -> {
+                ObjectsSheetState.ACTIONS -> {
                     ActionSheet(
                         modifier = Modifier.fillMaxWidth()
                     ) {
@@ -262,9 +240,9 @@ fun BookerOMAccounts(
                                 ),
                                 onClick = {
                                     vm.onDialogStateChange(
-                                        BookerOMAccountsDialogState.DELETE_ACCOUNTS_WARNING
+                                        ObjectsDialogState.DELETE_OBJECTS_WARNING
                                     )
-                                    vm.onSheetStateChange(BookerOMAccountsSheetState.NONE)
+                                    vm.onSheetStateChange(ObjectsSheetState.NONE)
                                 },
                             )
 
@@ -274,8 +252,8 @@ fun BookerOMAccounts(
                                 Icons.Outlined.Sort
                             ),
                             onClick = {
-                                vm.onDialogStateChange(BookerOMAccountsDialogState.SORTING)
-                                vm.onSheetStateChange(BookerOMAccountsSheetState.NONE)
+                                vm.onDialogStateChange(ObjectsDialogState.SORTING)
+                                vm.onSheetStateChange(ObjectsSheetState.NONE)
                             },
                         )
 
@@ -283,15 +261,15 @@ fun BookerOMAccounts(
                         ActionItem(
                             action = MainAction(R.string.lb_about_page, Icons.Outlined.Info),
                             onClick = {
-                                vm.onDialogStateChange(BookerOMAccountsDialogState.ABOUT_MAIN_PAGE)
-                                vm.onSheetStateChange(BookerOMAccountsSheetState.NONE)
+                                vm.onDialogStateChange(ObjectsDialogState.ABOUT_MAIN_PAGE)
+                                vm.onSheetStateChange(ObjectsSheetState.NONE)
                             },
                         )
 
                     }
                 }
 
-                BookerOMAccountsSheetState.NONE -> {}
+                ObjectsSheetState.NONE -> {}
             }
         }, sheetShape = MaterialTheme.shapes.medium.copy(
             topEnd = CornerSize(10), topStart = CornerSize(10),
@@ -326,14 +304,15 @@ fun BookerOMAccounts(
                             onBackClick = { vm.onIsSearchingChange(false) },
                             onClearQueryClick = { vm.onQueryChanged("") },
                             onMoreClick = {
-                                vm.onSheetStateChange(BookerOMAccountsSheetState.ACTIONS)
+                                vm.onSheetStateChange(ObjectsSheetState.ACTIONS)
                             }
                         )
 
                         false -> TopAppBar(
                             title = {
+                                //TODO: Change
                                 Text(
-                                    text = if (uis.toDelete.isEmpty()) stringResource(id = R.string.lb_my_om_accounts).titleCase else "${uis.toDelete.size}",
+                                    text = if (uis.toDelete.isEmpty()) stringResource(id = TODO("Title  res")).titleCase else "${uis.toDelete.size}",
                                     style = MaterialTheme.typography.h5.copy(fontWeight = FontWeight.SemiBold)
                                 )
                             },
@@ -366,7 +345,7 @@ fun BookerOMAccounts(
 
                                 IconButton(onClick = {
                                     vm.onSheetStateChange(
-                                        BookerOMAccountsSheetState.ACTIONS
+                                        ObjectsSheetState.ACTIONS
                                     )
                                 }) {
                                     Icon(
@@ -401,8 +380,7 @@ fun BookerOMAccounts(
                 }
                 if (!uis.isLoading)
                     items(
-                        uis.accounts
-                            .run {
+                        uis.objects.run {
                                 when (uis.selectedSortField?.ascending) {
                                     true -> sortedBy {
                                         it.backingField(uis.selectedSortField!!.nameRes)
@@ -425,9 +403,10 @@ fun BookerOMAccounts(
                                     }
                                 }
                             },
-                        key = { it.phoneNumber }
+                        key = { TODO("Primary key") }
                     ) { account ->
-                        DashboardItemNoIcon(
+                        TODO("Object Item")
+                       /* DashboardItemNoIcon(
                             modifier = Modifier
                                 .padding(4.dp)
                                 .fillMaxWidth(),
@@ -449,7 +428,7 @@ fun BookerOMAccounts(
                             },
                             onDeleteClick = {
                                 vm.onToDeleteChange(account.phoneNumber)
-                                vm.onDialogStateChange(BookerOMAccountsDialogState.DELETE_ACCOUNTS_WARNING)
+                                vm.onDialogStateChange(ObjectsDialogState.DELETE_OBJECTS_WARNING)
                             },
                             onLongClick = {
                                 vm.onToDeleteChange(account.phoneNumber)
@@ -459,39 +438,22 @@ fun BookerOMAccounts(
                                 modifier = Modifier.padding(start = 8.dp, bottom = 4.dp),
                                 isError = !account.isActive,
                                 positiveText = "Enabled",
-                                errorText = "Disabled"
+                                negativeText = "Disabled"
                             )
-                        }
+                        }*/
                     }
-            }
-        }
-    }
-
-    if (uis.message != null) {
-        val message = stringResource(id = uis.message!!).caps
-        val closeLabel = stringResource(id = R.string.lb_close)
-
-        LaunchedEffect(uis.message) {
-            scaffoldState.snackbarHostState.showSnackbar(
-                message = message,
-                duration = SnackbarDuration.Short,
-                actionLabel = closeLabel
-            ).also {
-                when (it) {
-                    SnackbarResult.Dismissed -> vm.onMessageChange(null)
-                    SnackbarResult.ActionPerformed -> vm.onMessageChange(null)
-                }
             }
         }
     }
 }
 
+
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
-fun BookerOMAccountDetails(
+fun EntityView(
     modifier: Modifier = Modifier,
     scaffoldState: ScaffoldState = rememberScaffoldState(),
-    vm: BookerOMAccountsVM,
+    vm: ClassObjectsVM,
     navigateBack: () -> Unit
 ) {
     val focusManager = LocalFocusManager.current
@@ -502,7 +464,7 @@ fun BookerOMAccountDetails(
     if (uis.isDetailsComplete) {
 //        vm.doBeforeNavBackToAccounts()
         navigateBack()
-        vm.onDetailsCompleteChange(false)
+        vm.onObjectCompleteChange(false)
     }
     val fieldPadding = PaddingValues(horizontal = 16.dp, vertical = 2.dp)
     //To pick an image from the gallery
@@ -511,9 +473,9 @@ fun BookerOMAccountDetails(
 
     fun handleBackNav() {
         if (vm.hasAnyFieldChanged)
-            vm.onDetailsDialogStateChange(BookerOMAccountDetailsDialogState.LEAVING_WITHOUT_SAVING)
-        else if (!uis.isEditMode) vm.onDetailsDialogStateChange(BookerOMAccountDetailsDialogState.LEAVING_WITH_EMPTY_ACCOUNT)
-        else vm.onDetailsCompleteChange(true)
+            vm.onObjectStateChange(ObjectDialogState.LEAVING_WITHOUT_SAVING)
+        else if (!uis.isEditMode) vm.onObjectStateChange(ObjectDialogState.LEAVING_WITH_EMPTY_ACCOUNT)
+        else vm.onObjectCompleteChange(true)
     }
 
     BackHandler(true) {
@@ -521,19 +483,19 @@ fun BookerOMAccountDetails(
     }
 
     val statusMap = mapOf(
-        BookerOMAccountDetailsDialogState.HELP_IS_ENABLED to InfoDialogUiState(
+        ObjectDialogState.HELP_IS_ENABLED to InfoDialogUiState(
             Icons.Outlined.ToggleOn,
             title = "Enable or disable account",
             buildAnnotatedString { append("text") },
             positiveText = stringResource(id = R.string.lb_i_understand)
         ),
-        BookerOMAccountDetailsDialogState.ABOUT_MAIN_PAGE to InfoDialogUiState(
+        ObjectDialogState.ABOUT_MAIN_PAGE to InfoDialogUiState(
             Icons.Outlined.Payments,
             "My OM Account",
             buildAnnotatedString { append("text") },
             positiveText = stringResource(id = R.string.lb_i_understand)
         ),
-        BookerOMAccountDetailsDialogState.LEAVING_WITHOUT_SAVING to InfoDialogUiState(
+        ObjectDialogState.LEAVING_WITHOUT_SAVING to InfoDialogUiState(
             Icons.Outlined.Save,
             "Leaving without saving changes?",
             buildAnnotatedString { append("text") },
@@ -541,7 +503,7 @@ fun BookerOMAccountDetails(
             otherText = "Discard",
             isNegative = true
         ),
-        BookerOMAccountDetailsDialogState.LEAVING_WITH_EMPTY_ACCOUNT to InfoDialogUiState(
+        ObjectDialogState.LEAVING_WITH_EMPTY_ACCOUNT to InfoDialogUiState(
             Icons.Outlined.ErrorOutline,
             "Leaving with empty account",
             buildAnnotatedString { append("text") },
@@ -552,21 +514,21 @@ fun BookerOMAccountDetails(
     )
 
     when (val status = uis.detailsDialogState) {
-        BookerOMAccountDetailsDialogState.NONE -> {}
-        BookerOMAccountDetailsDialogState.ABOUT_MAIN_PAGE -> InfoDialog(
+        ObjectDialogState.NONE -> {}
+        ObjectDialogState.ABOUT_MAIN_PAGE -> InfoDialog(
             uis = statusMap[status]!!,
-            onCloseClick = { vm.onDetailsDialogStateChange(BookerOMAccountDetailsDialogState.NONE) },
+            onCloseClick = { vm.onObjectStateChange(ObjectDialogState.NONE) },
             onPositiveClick = {
-                vm.onDetailsDialogStateChange(BookerOMAccountDetailsDialogState.NONE)
+                vm.onObjectStateChange(ObjectDialogState.NONE)
 
             }
         )
 
-        BookerOMAccountDetailsDialogState.LEAVING_WITHOUT_SAVING -> InfoDialog(
+        ObjectDialogState.LEAVING_WITHOUT_SAVING -> InfoDialog(
             uis = statusMap[status]!!,
-            onCloseClick = { vm.onDetailsDialogStateChange(BookerOMAccountDetailsDialogState.NONE) },
+            onCloseClick = { vm.onObjectStateChange(ObjectDialogState.NONE) },
             onPositiveClick = {
-                vm.onDetailsDialogStateChange(BookerOMAccountDetailsDialogState.NONE)
+                vm.onObjectStateChange(ObjectDialogState.NONE)
                 vm.saveOrUpdateAccount(
                     doOnStart = {
                         focusManager.clearFocus(true)
@@ -575,28 +537,28 @@ fun BookerOMAccountDetails(
                 )
             },
             onOtherClick = {
-                vm.onDetailsDialogStateChange(BookerOMAccountDetailsDialogState.NONE)
-                vm.onDetailsCompleteChange(true)
+                vm.onObjectStateChange(ObjectDialogState.NONE)
+                vm.onObjectCompleteChange(true)
             }
         )
 
-        BookerOMAccountDetailsDialogState.LEAVING_WITH_EMPTY_ACCOUNT -> InfoDialog(
+        ObjectDialogState.LEAVING_WITH_EMPTY_ACCOUNT -> InfoDialog(
             uis = statusMap[status]!!,
-            onCloseClick = { vm.onDetailsDialogStateChange(BookerOMAccountDetailsDialogState.NONE) },
+            onCloseClick = { vm.onObjectStateChange(ObjectDialogState.NONE) },
             onPositiveClick = {
-                vm.onDetailsDialogStateChange(BookerOMAccountDetailsDialogState.NONE)
+                vm.onObjectStateChange(ObjectDialogState.NONE)
             },
             onOtherClick = {
-                vm.onDetailsDialogStateChange(BookerOMAccountDetailsDialogState.NONE)
-                vm.onDetailsCompleteChange(true)
+                vm.onObjectStateChange(ObjectDialogState.NONE)
+                vm.onObjectCompleteChange(true)
             }
         )
 
-        BookerOMAccountDetailsDialogState.HELP_IS_ENABLED -> InfoDialog(
+        ObjectDialogState.HELP_IS_ENABLED -> InfoDialog(
             uis = statusMap[status]!!,
-            onCloseClick = { vm.onDetailsDialogStateChange(BookerOMAccountDetailsDialogState.NONE) },
+            onCloseClick = { vm.onObjectStateChange(ObjectDialogState.NONE) },
             onPositiveClick = {
-                vm.onDetailsDialogStateChange(BookerOMAccountDetailsDialogState.NONE)
+                vm.onObjectStateChange(ObjectDialogState.NONE)
             }
         )
     }
@@ -607,7 +569,7 @@ fun BookerOMAccountDetails(
             TopAppBar(
                 title = {
                     Text(
-                        text = if (uis.isEditMode) uis.formattedPhone else stringResource(id = R.string.lb_new_om_account).titleCase,
+                        text = ""/*if (uis.isEditMode) TODO("On edit mode") else TODO("Else"),*/,
                         style = MaterialTheme.typography.h5.copy(fontWeight = FontWeight.SemiBold)
                     )
                 },
@@ -625,8 +587,8 @@ fun BookerOMAccountDetails(
                 modifier = Modifier.fillMaxWidth(),
                 actions = {
                     IconButton(onClick = {
-                        vm.onDetailsDialogStateChange(
-                            BookerOMAccountDetailsDialogState.ABOUT_MAIN_PAGE
+                        vm.onObjectStateChange(
+                            ObjectDialogState.ABOUT_MAIN_PAGE
                         )
                     }) {
                         Icon(
@@ -660,7 +622,8 @@ fun BookerOMAccountDetails(
             }
             Spacer(modifier = Modifier.height(16.dp))
 
-            DashboardItemNoIcon(
+            TODO("Details Item")
+            /*DashboardItemNoIcon(
                 modifier = Modifier
                     .padding(fieldPadding)
                     .fillMaxWidth(),
@@ -670,7 +633,7 @@ fun BookerOMAccountDetails(
                     isHelpable = true
                 ),
                 onHelpClick = {
-                    vm.onDetailsDialogStateChange(BookerOMAccountDetailsDialogState.HELP_IS_ENABLED)
+                    vm.onDetailsDialogStateChange(ObjectDialogState.HELP_IS_ENABLED)
                 }
             ) {
                 Row(
@@ -787,12 +750,13 @@ fun BookerOMAccountDetails(
                     stringResource(if (uis.isEditMode) R.string.lb_save else R.string.lb_create).titleCase,
                     modifier = Modifier.padding(8.dp)
                 )
-            }
+            }*/
 
         }
     }
 
 
+// Check for user messages to display on the screen
     if (uis.message != null) {
         val message = stringResource(id = uis.message!!).caps
         val closeLabel = stringResource(id = R.string.lb_close)

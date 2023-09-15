@@ -8,6 +8,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.*
@@ -28,6 +29,9 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import kotlinx.datetime.LocalDate
 import tech.xken.tripbook.R
+import tech.xken.tripbook.data.models.ActionItem
+import tech.xken.tripbook.data.models.ActionSheet
+import tech.xken.tripbook.data.models.MainAction
 import tech.xken.tripbook.data.models.booker.Sex
 import tech.xken.tripbook.domain.caps
 import tech.xken.tripbook.domain.disableComposable
@@ -37,7 +41,7 @@ import tech.xken.tripbook.ui.components.InfoDialog
 import tech.xken.tripbook.ui.components.InfoDialogUiState
 import tech.xken.tripbook.ui.components.OutTextField
 import tech.xken.tripbook.ui.components.PhotoPicker
-import tech.xken.tripbook.ui.screens.booking.BookerAccountDialogStatus.*
+import tech.xken.tripbook.ui.screens.booking.BookerAccountDialogState.*
 import java.util.*
 
 @OptIn(ExperimentalMaterialApi::class)
@@ -50,7 +54,7 @@ fun BookerAccount(
 ) {
     val statusMap = remember {
         mapOf(
-            HELP_MAIN_PAGE to InfoDialogUiState(
+            ABOUT_MAIN_PAGE to InfoDialogUiState(
                 mainIcon = Icons.Outlined.Badge,
                 title = "Tell more us about you",
                 text = buildAnnotatedString {
@@ -58,7 +62,7 @@ fun BookerAccount(
                 },
                 positiveText = "I understand"
             ),
-            HELP_ON_JOB_SEEKING to InfoDialogUiState(
+            ABOUT_ON_JOB_SEEKING to InfoDialogUiState(
                 mainIcon = Icons.Outlined.Business,
                 title = "Do you want to be employed?",
                 text = buildAnnotatedString {
@@ -153,10 +157,33 @@ fun BookerAccount(
         )
     }
 
+    val sheetState = rememberModalBottomSheetState(
+        initialValue = ModalBottomSheetValue.Hidden,
+        confirmValueChange = {
+            when (it) {
+                ModalBottomSheetValue.Hidden -> {
+                    vm.onSheetStateChange(BookerAccountSheetState.NONE)
+                }
 
-    fun handleBackNav() = if (vm.hasAnyFieldChanged || vm.hasPhotoChanged) vm.onDialogStatusChange(
+                ModalBottomSheetValue.Expanded -> {}
+                ModalBottomSheetValue.HalfExpanded -> {}
+            }
+            true
+        }
+    )
+    LaunchedEffect(uis.sheetStatus) {
+        if (uis.sheetStatus != BookerAccountSheetState.NONE) {
+            sheetState.show()
+        } else if (sheetState.targetValue != ModalBottomSheetValue.Hidden || sheetState.currentValue != ModalBottomSheetValue.Hidden) {
+            sheetState.hide()
+        }
+    }
+
+
+
+    fun handleBackNav() = if (vm.hasAnyFieldChanged || vm.hasPhotoChanged) vm.onDialogStateChange(
         LEAVING_WITHOUT_SAVING
-    ) else if (!uis.isEditMode) vm.onDialogStatusChange(LEAVING_WITH_EMPTY_PROFILE) else vm.onCompleteChange(
+    ) else if (!uis.isEditMode) vm.onDialogStateChange(LEAVING_WITH_EMPTY_PROFILE) else vm.onCompleteChange(
         true
     )
 
@@ -166,24 +193,24 @@ fun BookerAccount(
 
     when (val status = uis.dialogStatus) {
         NONE -> {}
-        HELP_MAIN_PAGE -> {
+        ABOUT_MAIN_PAGE -> {
             InfoDialog(
                 uis = statusMap[status]!!,
                 onCloseClick = {
-                    vm.onDialogStatusChange(NONE)
+                    vm.onDialogStateChange(NONE)
                 }, onPositiveClick = {
-                    vm.onDialogStatusChange(NONE)
+                    vm.onDialogStateChange(NONE)
                 }
             )
         }
 
-        HELP_ON_JOB_SEEKING -> {
+        ABOUT_ON_JOB_SEEKING -> {
             InfoDialog(
                 uis = statusMap[status]!!,
                 onCloseClick = {
-                    vm.onDialogStatusChange(NONE)
+                    vm.onDialogStateChange(NONE)
                 }, onPositiveClick = {
-                    vm.onDialogStatusChange(NONE)
+                    vm.onDialogStateChange(NONE)
                 }
             )
         }
@@ -192,13 +219,13 @@ fun BookerAccount(
             InfoDialog(
                 uis = statusMap[status]!!,
                 onCloseClick = {
-                    vm.onDialogStatusChange(NONE)
+                    vm.onDialogStateChange(NONE)
                 }, onPositiveClick = {
-                    vm.onDialogStatusChange(NONE)
+                    vm.onDialogStateChange(NONE)
                     vm.saveOrUpdateAccount()
 
                 }, onOtherClick = {
-                    vm.onDialogStatusChange(NONE)
+                    vm.onDialogStateChange(NONE)
                     vm.onCompleteChange(true)
                 }
             )
@@ -208,9 +235,9 @@ fun BookerAccount(
             InfoDialog(
                 uis = statusMap[status]!!,
                 onCloseClick = {
-                    vm.onDialogStatusChange(NONE)
+                    vm.onDialogStateChange(NONE)
                 }, onPositiveClick = {
-                    vm.onDialogStatusChange(NONE)
+                    vm.onDialogStateChange(NONE)
                 }
             )
         }
@@ -219,14 +246,14 @@ fun BookerAccount(
             InfoDialog(
                 uis = statusMap[status]!!,
                 onCloseClick = {
-                    vm.onDialogStatusChange(NONE)
+                    vm.onDialogStateChange(NONE)
                     navigateUp()
                 }, onPositiveClick = {
-                    vm.onDialogStatusChange(NONE)
+                    vm.onDialogStateChange(NONE)
                     vm.onAccountInitComplete(false)
                 },
                 onOtherClick = {
-                    vm.onDialogStatusChange(NONE)
+                    vm.onDialogStateChange(NONE)
                     vm.onCompleteChange(true)
                     navigateUp()
                 }
@@ -237,11 +264,11 @@ fun BookerAccount(
             InfoDialog(
                 uis = statusMap[status]!!,
                 onCloseClick = {
-                    vm.onDialogStatusChange(NONE)
+                    vm.onDialogStateChange(NONE)
                 }, onPositiveClick = {
-                    vm.onDialogStatusChange(NONE)
+                    vm.onDialogStateChange(NONE)
                 }, onOtherClick = {
-                    vm.onDialogStatusChange(NONE)
+                    vm.onDialogStateChange(NONE)
                     vm.onCompleteChange(true)
                 }
             )
@@ -251,297 +278,333 @@ fun BookerAccount(
             InfoDialog(
                 uis = statusMap[status]!!,
                 onCloseClick = {
-                    vm.onDialogStatusChange(NONE)
+                    vm.onDialogStateChange(NONE)
                 }, onPositiveClick = {
-                    vm.onDialogStatusChange(NONE)
+                    vm.onDialogStateChange(NONE)
                     vm.onPhotoInitComplete(false)
                 },
                 onOtherClick = {
-                    vm.onDialogStatusChange(NONE)
+                    vm.onDialogStateChange(NONE)
                 }
             )
         }
     }
 
-    Scaffold(
-        scaffoldState = scaffoldState,
-        topBar = {
-            TopAppBar(
-                title = {
-                    Text(
-                        text = stringResource(id = R.string.lb_me).titleCase,
-                        style = MaterialTheme.typography.h5.copy(fontWeight = FontWeight.SemiBold)
-                    )
-                },
-                navigationIcon = {
-                    IconButton(onClick = {
-                        handleBackNav()
-                    }) {
-                        Icon(
-                            Icons.Outlined.ArrowBack,
-                            contentDescription = null,
-                            tint = LocalContentColor.current
-                        )
-                    }
-                },
-                modifier = Modifier.fillMaxWidth(),
-                actions = {
-                    IconButton(onClick = { vm.onDialogStatusChange(HELP_MAIN_PAGE) }) {
-                        Icon(
-                            Icons.Outlined.HelpOutline,
-                            contentDescription = stringResource(id = R.string.desc_help),
-                            tint = LocalContentColor.current
-                        )
-                    }
-                }
-            )
-        },
-    ) { paddingValues ->
-        Column(
-            modifier = Modifier
-                .disableComposable(uis.isLoading || !uis.isInitComplete)
-                .padding(paddingValues)
-                .fillMaxSize()
-                .verticalScroll(scrollState),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            AnimatedVisibility(
-                visible = uis.isLoading,
-                modifier = Modifier.padding(4.dp)
-            ) {
-                CircularProgressIndicator()
-                if (uis.isLoading && uis.isInitComplete)
-                    LaunchedEffect(Unit) {
-                        scrollState.animateScrollTo(0)
-                    }
-
-            }
-
-            if (uis.isInitComplete) {
-                PhotoPicker(
-                    photoBitmap = uis.photoBitmap,
-                    placeholder = Icons.Filled.AccountCircle,
-                    onDeletePhotoClick = { vm.onPhotoUriChange(context, null) },
-                    modifier = Modifier
-                        .padding(4.dp)
-                        .size(150.dp),
-                    onBrowseGalleryClick = {
-                        galleryLauncher.launch(arrayOf("image/*"))
-                    },
-                    onLaunchCameraClick = {
-                        //TODO: Launch camera
-                    },
-                    isLoading = uis.isLoadingPhoto,
-                    onReloadPhotoClick = {
-                        vm.onPhotoInitComplete(false)
-                    },
-                    isFailure = uis.isPhotoFailed
-                )
-
-                //Name
-                OutTextField(
-                    modifier = Modifier
-                        .padding(fieldPadding)
-                        .fillMaxWidth(),
-                    value = uis.booker.name ?: "",
-                    errorText = { vm.nameErrorText(it) },
-                    onValueChange = { vm.onNameChange(it) },
-                    trailingIcon = {
-                        if (uis.booker.name.isNotBlank())
-                            IconButton(onClick = { vm.onNameChange("") }) {
-                                Icon(
-                                    imageVector = Icons.Outlined.Clear,
-                                    contentDescription = ""
-                                )
-                            }
-                    },
-                    leadingIcon = {
-                        Icon(
-                            imageVector = Icons.Default.Person,
-                            contentDescription = ""
-                        )
-                    },
-                    label = { Text(stringResource(R.string.lb_name).caps) },
-                    singleLine = true,
-                    keyboardActions = KeyboardActions(
-                        onNext = { focusManager.moveFocus(FocusDirection.Next) }
-                    ),
-                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next)
-                )
-
-                //nation id card number
-                OutTextField(
-                    modifier = Modifier
-                        .padding(fieldPadding)
-                        .fillMaxWidth(),
-                    value = uis.booker.idCardNumber ?: "",
-                    errorText = { vm.idCardNumberErrorText(it) },
-                    onValueChange = { vm.onIdCardNumberChange(it) },
-                    trailingIcon = {
-                        if (uis.booker.idCardNumber.isNotBlank())
-                            IconButton(onClick = { vm.onIdCardNumberChange("") }) {
-                                Icon(
-                                    imageVector = Icons.Outlined.Clear,
-                                    contentDescription = ""
-                                )
-                            }
-                    },
-                    leadingIcon = {
-                        Icon(imageVector = Icons.Default.Badge, contentDescription = "")
-                    },
-                    keyboardActions = KeyboardActions(
-                        onNext = { focusManager.moveFocus(FocusDirection.Next) }
-                    ),
-                    label = { Text(stringResource(R.string.lb_id_card_number).titleCase) },
-                    singleLine = true
-                )
-
-                // Birthday
-                OutTextField(
-                    modifier = Modifier
-                        .padding(fieldPadding)
-                        .fillMaxWidth(),
-                    value = uis.booker.birthday.format(),
-                    trailingIcon = {
-                        IconButton(onClick = { dialog.show() }) {
-                            Icon(imageVector = Icons.Outlined.EditCalendar, contentDescription = "")
-                        }
-                    },
-                    leadingIcon = {
-                        Icon(imageVector = Icons.Default.Cake, contentDescription = "")
-                    },
-                    label = { Text(stringResource(R.string.lb_birthday).caps) },
-                    onValueChange = { },
-                    readOnly = true,
-                    singleLine = true,
-                    errorText = { vm.birthdayErrorText() },
-                    keyboardActions = KeyboardActions.Default,
-                )
-
-                //Gender
-                ExposedDropdownMenuBox(
-                    expanded = uis.isSexExpanded,
-                    onExpandedChange = { vm.onGenderExpansionChange(it) },
-                    modifier = Modifier
-                        .padding(fieldPadding)
-                        .fillMaxWidth()
-                ) {
-                    OutTextField(
-                        modifier = Modifier.fillMaxWidth(),
-                        value = stringResource(id = uis.booker.bookerSex.resId).caps,
-                        trailingIcon = {
-                            ExposedDropdownMenuDefaults.TrailingIcon(
-                                expanded = uis.isSexExpanded
-                            )
-                        },
-                        leadingIcon = {
-                            Icon(imageVector = Icons.Default.Transgender, contentDescription = "")
-                        },
-                        label = { Text(stringResource(R.string.lb_sex).caps) },
-                        onValueChange = {},
-                        readOnly = true,
-                        colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(),
-                        keyboardActions = KeyboardActions.Default,
-                        singleLine = true,
-                    )
-                    ExposedDropdownMenu(
-                        expanded = uis.isSexExpanded,
-                        onDismissRequest = { vm.onGenderExpansionChange(false) },
+    ModalBottomSheetLayout(
+        sheetContent = {
+            when (uis.sheetStatus) {
+                BookerAccountSheetState.ACTIONS -> {
+                    ActionSheet(
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        Sex.values().forEach { sex ->
-                            DropdownMenuItem(onClick = {
-                                vm.onSelectedSexChange(sex)
-                                vm.onGenderExpansionChange(false)
-                            }) {
-                                Text(text = stringResource(sex.resId).caps)
+
+
+                        ActionItem(
+                            action = MainAction(R.string.lb_about_page, Icons.Outlined.Info),
+                            onClick = {
+                                vm.onDialogStateChange(ABOUT_MAIN_PAGE)
+                                vm.onSheetStateChange(BookerAccountSheetState.NONE)
+                            },
+                        )
+
+                    }
+                }
+                BookerAccountSheetState.NONE -> {}
+            }
+        }, sheetShape = MaterialTheme.shapes.medium.copy(
+            topEnd = CornerSize(10), topStart = CornerSize(10),
+        ), sheetState = sheetState,
+        sheetElevation = 1.dp,
+        scrimColor = ModalBottomSheetDefaults.scrimColor.copy(alpha = 0.1f)
+    ) {
+        Scaffold(
+            scaffoldState = scaffoldState,
+            topBar = {
+                TopAppBar(
+                    title = {
+                        Text(
+                            text = stringResource(id = R.string.lb_me).titleCase,
+                            style = MaterialTheme.typography.h5.copy(fontWeight = FontWeight.SemiBold)
+                        )
+                    },
+                    navigationIcon = {
+                        IconButton(onClick = {
+                            handleBackNav()
+                        }) {
+                            Icon(
+                                Icons.Outlined.ArrowBack,
+                                contentDescription = null,
+                                tint = LocalContentColor.current
+                            )
+                        }
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    actions = {
+                        IconButton(onClick = {
+                            vm.onSheetStateChange(BookerAccountSheetState.ACTIONS)
+                        }) {
+                            Icon(
+                                Icons.Outlined.MoreVert,
+                                contentDescription = stringResource(id = R.string.desc_more_options),
+                                tint = LocalContentColor.current
+
+                            )
+                        }
+                    }
+                )
+            },
+        ) { paddingValues ->
+            Column(
+                modifier = Modifier
+                    .disableComposable(uis.isLoading || !uis.isInitComplete)
+                    .padding(paddingValues)
+                    .fillMaxSize()
+                    .verticalScroll(scrollState),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                AnimatedVisibility(
+                    visible = uis.isLoading,
+                    modifier = Modifier.padding(4.dp)
+                ) {
+                    CircularProgressIndicator()
+                    if (uis.isLoading && uis.isInitComplete)
+                        LaunchedEffect(Unit) {
+                            scrollState.animateScrollTo(0)
+                        }
+
+                }
+
+                if (uis.isInitComplete) {
+                    PhotoPicker(
+                        photoBitmap = uis.photoBitmap,
+                        placeholder = Icons.Filled.AccountCircle,
+                        onDeletePhotoClick = { vm.onPhotoUriChange(context, null) },
+                        modifier = Modifier
+                            .padding(4.dp)
+                            .size(150.dp),
+                        onBrowseGalleryClick = {
+                            galleryLauncher.launch(arrayOf("image/*"))
+                        },
+                        onLaunchCameraClick = {
+                            //TODO: Launch camera
+                        },
+                        isLoading = uis.isLoadingPhoto,
+                        onReloadPhotoClick = {
+                            vm.onPhotoInitComplete(false)
+                        },
+                        isFailure = uis.isPhotoFailed
+                    )
+
+                    //Name
+                    OutTextField(
+                        modifier = Modifier
+                            .padding(fieldPadding)
+                            .fillMaxWidth(),
+                        value = uis.booker.name ?: "",
+                        errorText = { vm.nameErrorText(it) },
+                        onValueChange = { vm.onNameChange(it) },
+                        trailingIcon = {
+                            if (uis.booker.name.isNotBlank())
+                                IconButton(onClick = { vm.onNameChange("") }) {
+                                    Icon(
+                                        imageVector = Icons.Outlined.Clear,
+                                        contentDescription = ""
+                                    )
+                                }
+                        },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Default.Person,
+                                contentDescription = ""
+                            )
+                        },
+                        label = { Text(stringResource(R.string.lb_name).caps) },
+                        singleLine = true,
+                        keyboardActions = KeyboardActions(
+                            onNext = { focusManager.moveFocus(FocusDirection.Next) }
+                        ),
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next)
+                    )
+
+                    //nation id card number
+                    OutTextField(
+                        modifier = Modifier
+                            .padding(fieldPadding)
+                            .fillMaxWidth(),
+                        value = uis.booker.idCardNumber ?: "",
+                        errorText = { vm.idCardNumberErrorText(it) },
+                        onValueChange = { vm.onIdCardNumberChange(it) },
+                        trailingIcon = {
+                            if (uis.booker.idCardNumber.isNotBlank())
+                                IconButton(onClick = { vm.onIdCardNumberChange("") }) {
+                                    Icon(
+                                        imageVector = Icons.Outlined.Clear,
+                                        contentDescription = ""
+                                    )
+                                }
+                        },
+                        leadingIcon = {
+                            Icon(imageVector = Icons.Default.Badge, contentDescription = "")
+                        },
+                        keyboardActions = KeyboardActions(
+                            onNext = { focusManager.moveFocus(FocusDirection.Next) }
+                        ),
+                        label = { Text(stringResource(R.string.lb_id_card_number).titleCase) },
+                        singleLine = true
+                    )
+
+                    // Birthday
+                    OutTextField(
+                        modifier = Modifier
+                            .padding(fieldPadding)
+                            .fillMaxWidth(),
+                        value = uis.booker.birthday.format(),
+                        trailingIcon = {
+                            IconButton(onClick = { dialog.show() }) {
+                                Icon(
+                                    imageVector = Icons.Outlined.EditCalendar,
+                                    contentDescription = ""
+                                )
+                            }
+                        },
+                        leadingIcon = {
+                            Icon(imageVector = Icons.Default.Cake, contentDescription = "")
+                        },
+                        label = { Text(stringResource(R.string.lb_birthday).caps) },
+                        onValueChange = { },
+                        readOnly = true,
+                        singleLine = true,
+                        errorText = { vm.birthdayErrorText() },
+                        keyboardActions = KeyboardActions.Default,
+                    )
+
+                    //Gender
+                    ExposedDropdownMenuBox(
+                        expanded = uis.isSexExpanded,
+                        onExpandedChange = { vm.onGenderExpansionChange(it) },
+                        modifier = Modifier
+                            .padding(fieldPadding)
+                            .fillMaxWidth()
+                    ) {
+                        OutTextField(
+                            modifier = Modifier.fillMaxWidth(),
+                            value = stringResource(id = uis.booker.bookerSex.resId).caps,
+                            trailingIcon = {
+                                ExposedDropdownMenuDefaults.TrailingIcon(
+                                    expanded = uis.isSexExpanded
+                                )
+                            },
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.Default.Transgender,
+                                    contentDescription = ""
+                                )
+                            },
+                            label = { Text(stringResource(R.string.lb_sex).caps) },
+                            onValueChange = {},
+                            readOnly = true,
+                            colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors(),
+                            keyboardActions = KeyboardActions.Default,
+                            singleLine = true,
+                        )
+                        ExposedDropdownMenu(
+                            expanded = uis.isSexExpanded,
+                            onDismissRequest = { vm.onGenderExpansionChange(false) },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Sex.values().forEach { sex ->
+                                DropdownMenuItem(onClick = {
+                                    vm.onSelectedSexChange(sex)
+                                    vm.onGenderExpansionChange(false)
+                                }) {
+                                    Text(text = stringResource(sex.resId).caps)
+                                }
                             }
                         }
                     }
-                }
 
-                //Nationality
-                OutTextField(
-                    modifier = Modifier
-                        .padding(fieldPadding)
-                        .fillMaxWidth(),
-                    value = uis.booker.nationality ?: "",
-                    onValueChange = { vm.onNationalityChange(it) },
-                    trailingIcon = {
-                        if (!uis.booker.nationality.isNullOrBlank())
-                            IconButton(onClick = { vm.onNationalityChange("") }) {
-                                Icon(
-                                    imageVector = Icons.Outlined.Clear,
-                                    contentDescription = ""
-                                )
-                            }
-                    },
-                    leadingIcon = {
-                        Icon(imageVector = Icons.Default.Flag, contentDescription = "")
-                    },
-                    label = { Text(stringResource(R.string.lb_nationality).caps) },
-                    keyboardActions = KeyboardActions(
-                        onNext = { focusManager.moveFocus(FocusDirection.Next) }
-                    ),
-                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-                    singleLine = true
-                )
-                //Occupation
-                OutTextField(
-                    modifier = Modifier
-                        .padding(fieldPadding)
-                        .fillMaxWidth(),
-                    value = uis.booker.occupation ?: "",
-                    onValueChange = { vm.onOccupationChange(it) },
-                    trailingIcon = {
-                        if (!uis.booker.occupation.isNullOrBlank())
-                            IconButton(onClick = { vm.onOccupationChange("") }) {
-                                Icon(
-                                    imageVector = Icons.Outlined.Clear,
-                                    contentDescription = ""
-                                )
-                            }
-
-                    },
-                    leadingIcon = {
-                        Icon(imageVector = Icons.Default.Work, contentDescription = "")
-                    },
-                    label = { Text(stringResource(R.string.lb_occupation).caps) },
-                    keyboardActions = KeyboardActions(
-                        onGo = { vm.saveOrUpdateAccount() }
-                    ),
-                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Go),
-                    singleLine = true
-                )
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Button(
-                    onClick = {
-                        vm.saveOrUpdateAccount()
-                    },
-                    modifier = Modifier
-                        .padding(vertical = 8.dp)
-                        .padding(fieldPadding)
-                        .fillMaxWidth(),
-                ) {
-                    Icon(
-                        imageVector = if (uis.isEditMode) Icons.Outlined.Check else Icons.Outlined.PersonAdd,
-                        contentDescription = null
+                    //Nationality
+                    OutTextField(
+                        modifier = Modifier
+                            .padding(fieldPadding)
+                            .fillMaxWidth(),
+                        value = uis.booker.nationality ?: "",
+                        onValueChange = { vm.onNationalityChange(it) },
+                        trailingIcon = {
+                            if (!uis.booker.nationality.isNullOrBlank())
+                                IconButton(onClick = { vm.onNationalityChange("") }) {
+                                    Icon(
+                                        imageVector = Icons.Outlined.Clear,
+                                        contentDescription = ""
+                                    )
+                                }
+                        },
+                        leadingIcon = {
+                            Icon(imageVector = Icons.Default.Flag, contentDescription = "")
+                        },
+                        label = { Text(stringResource(R.string.lb_nationality).caps) },
+                        keyboardActions = KeyboardActions(
+                            onNext = { focusManager.moveFocus(FocusDirection.Next) }
+                        ),
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                        singleLine = true
                     )
-                    Text(
-                        stringResource(if (uis.isEditMode) R.string.lb_save else R.string.lb_create).titleCase,
-                        modifier = Modifier.padding(8.dp)
+                    //Occupation
+                    OutTextField(
+                        modifier = Modifier
+                            .padding(fieldPadding)
+                            .fillMaxWidth(),
+                        value = uis.booker.occupation ?: "",
+                        onValueChange = { vm.onOccupationChange(it) },
+                        trailingIcon = {
+                            if (!uis.booker.occupation.isNullOrBlank())
+                                IconButton(onClick = { vm.onOccupationChange("") }) {
+                                    Icon(
+                                        imageVector = Icons.Outlined.Clear,
+                                        contentDescription = ""
+                                    )
+                                }
+
+                        },
+                        leadingIcon = {
+                            Icon(imageVector = Icons.Default.Work, contentDescription = "")
+                        },
+                        label = { Text(stringResource(R.string.lb_occupation).caps) },
+                        keyboardActions = KeyboardActions(
+                            onGo = { vm.saveOrUpdateAccount() }
+                        ),
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Go),
+                        singleLine = true
                     )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    Button(
+                        onClick = {
+                            vm.saveOrUpdateAccount()
+                        },
+                        modifier = Modifier
+                            .padding(vertical = 8.dp)
+                            .padding(fieldPadding)
+                            .fillMaxWidth(),
+                    ) {
+                        Icon(
+                            imageVector = if (uis.isEditMode) Icons.Outlined.Check else Icons.Outlined.PersonAdd,
+                            contentDescription = null
+                        )
+                        Text(
+                            stringResource(if (uis.isEditMode) R.string.lb_save else R.string.lb_create).titleCase,
+                            modifier = Modifier.padding(8.dp)
+                        )
+                    }
+
+
                 }
 
 
             }
-
-
         }
     }
-
 
 // Check for user messages to display on the screen
     if (uis.message != null) {

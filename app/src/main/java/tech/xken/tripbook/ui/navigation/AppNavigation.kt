@@ -11,16 +11,16 @@ import tech.xken.tripbook.ui.navigation.AgencyArgs.AGENCY_STATION_JOB_ID
 import tech.xken.tripbook.ui.navigation.AgencyArgs.AGENCY_STATION_LAT
 import tech.xken.tripbook.ui.navigation.AgencyArgs.AGENCY_STATION_LON
 import tech.xken.tripbook.ui.navigation.AgencyArgs.AGENCY_STATION_NAME
-import tech.xken.tripbook.ui.navigation.AgencyDestinations.AGENCY_CREATION_WELCOME_PROFILE_ROUTE
-import tech.xken.tripbook.ui.navigation.AgencyDestinations.AGENCY_CREATION_WELCOME_ROUTE
-import tech.xken.tripbook.ui.navigation.AgencyScreens.AGENCY_CREATION_WELCOME
-import tech.xken.tripbook.ui.navigation.AgencyScreens.AGENCY_CREATION_WELCOME_PROFILE
+import tech.xken.tripbook.ui.navigation.AgencyDestinations.AGENCY_PROFILE_ROUTE
+import tech.xken.tripbook.ui.navigation.AgencyScreens.AGENCY_HELP_CENTER
+import tech.xken.tripbook.ui.navigation.AgencyScreens.AGENCY_PROFILE
 import tech.xken.tripbook.ui.navigation.AgencyScreens.AGENCY_STATION_DASHBOARD
 import tech.xken.tripbook.ui.navigation.AgencyScreens.AGENCY_STATION_JOBS
 import tech.xken.tripbook.ui.navigation.AgencyScreens.AGENCY_STATION_JOB_DETAILS
 import tech.xken.tripbook.ui.navigation.AgencyScreens.AGENCY_STATION_LOCATION
 import tech.xken.tripbook.ui.navigation.AgencyScreens.AGENCY_STATION_PERSONNEL
 import tech.xken.tripbook.ui.navigation.AgencyScreens.AGENCY_STATION_PROFILE
+import tech.xken.tripbook.ui.navigation.BookingDestinations.AGENCY_PORTAL_ROUTE
 import tech.xken.tripbook.ui.navigation.BookingDestinations.BOOKER_ACCOUNT_ROUTE
 import tech.xken.tripbook.ui.navigation.BookingDestinations.BOOKER_CREDIT_CARDS_ACCOUNTS_ROUTE
 import tech.xken.tripbook.ui.navigation.BookingDestinations.BOOKER_MOMO_ACCOUNTS_ROUTE
@@ -29,9 +29,11 @@ import tech.xken.tripbook.ui.navigation.BookingDestinations.BOOKER_OM_ACCOUNTS_R
 import tech.xken.tripbook.ui.navigation.BookingDestinations.BOOKER_OM_ACCOUNT_DETAILS_ROUTE
 import tech.xken.tripbook.ui.navigation.BookingNavArgs.CARD_NUMBER
 import tech.xken.tripbook.ui.navigation.BookingNavArgs.SHOULD_SIGN_OUT
+import tech.xken.tripbook.ui.navigation.BookingScreens.AGENCY_PORTAL
 import tech.xken.tripbook.ui.navigation.BookingScreens.BOOKER_ACCOUNT
 import tech.xken.tripbook.ui.navigation.BookingScreens.BOOKER_AGENCY_PICKING
 import tech.xken.tripbook.ui.navigation.BookingScreens.BOOKER_AGENCY_SETTINGS
+import tech.xken.tripbook.ui.navigation.BookingScreens.BOOKER_AUTHENTICATION
 import tech.xken.tripbook.ui.navigation.BookingScreens.BOOKER_BOOKS
 import tech.xken.tripbook.ui.navigation.BookingScreens.BOOKER_CREDIT_CARDS_ACCOUNTS
 import tech.xken.tripbook.ui.navigation.BookingScreens.BOOKER_CREDIT_CARD_ACCOUNT_DETAILS
@@ -40,7 +42,6 @@ import tech.xken.tripbook.ui.navigation.BookingScreens.BOOKER_MOMO_ACCOUNT_DETAI
 import tech.xken.tripbook.ui.navigation.BookingScreens.BOOKER_OM_ACCOUNTS
 import tech.xken.tripbook.ui.navigation.BookingScreens.BOOKER_OM_ACCOUNT_DETAILS
 import tech.xken.tripbook.ui.navigation.BookingScreens.BOOKER_PROFILE
-import tech.xken.tripbook.ui.navigation.BookingScreens.BOOKER_SIGN_IN
 import tech.xken.tripbook.ui.navigation.BookingScreens.BOOKER_TRIP_DETAILS
 import tech.xken.tripbook.ui.navigation.BookingScreens.BOOKER_TRIP_PAYMENT
 import tech.xken.tripbook.ui.navigation.BookingScreens.BOOKER_TRIP_SEARCH
@@ -51,6 +52,7 @@ import tech.xken.tripbook.ui.navigation.UniverseArgs.UNIV_SEARCH_FIELDS
 import tech.xken.tripbook.ui.navigation.UniverseArgs.UNIV_SEARCH_HAS_PRESELECTED_FIELDS
 import java.util.UUID
 
+/** Screens */
 object UnivScreens {
     const val BASE_UNIV = "agency"
     const val UNIVERSE_SEARCH = "universe_search"
@@ -62,8 +64,8 @@ object AgencyScreens {
     const val BASE_AGENCY = "agency"
 
     //    -------------------------------------------------
-    const val AGENCY_CREATION_WELCOME = "agency_creation_welcome"
-    const val AGENCY_CREATION_WELCOME_PROFILE = "agency_creation_welcome_profile"
+    const val AGENCY_PROFILE = "agency_profile"
+    const val AGENCY_HELP_CENTER = "agency_help_center"
 //    -------------------------------------------------
 
     const val AGENCY_STATION_DASHBOARD = "station_dashboard"
@@ -72,11 +74,12 @@ object AgencyScreens {
     const val AGENCY_STATION_PERSONNEL = "station_personnel"
     const val AGENCY_STATION_JOBS = "station_jobs"
     const val AGENCY_STATION_JOB_DETAILS = "station_jobs_details"
+
 }
 
 object BookingScreens {
     const val BASE_BOOKER = "booker"
-    const val BOOKER_SIGN_IN = "booker_sign_in"
+    const val BOOKER_AUTHENTICATION = "booker_authentication"
     const val BOOKER_BOOKS = "booker_books"
     const val BOOKER_PROFILE = "booker_profile"
     const val BOOKER_ACCOUNT = "booker_account"
@@ -91,26 +94,45 @@ object BookingScreens {
     const val BOOKER_AGENCY_PICKING = "booker_agency_picking"
     const val BOOKER_TRIP_DETAILS = "booker_trip_details"
     const val BOOKER_TRIP_PAYMENT = "booker_trip_payment"
+    const val AGENCY_PORTAL = "agency_portal"
 }
 
-object AgencyArgs {
-    const val AGENCY_ID = "agency_id"
-    const val AGENCY_STATION_IS_EDIT_MODE = "station_is_new"
-    const val AGENCY_STATION_ID = "stationID"
-    const val AGENCY_STATION_NAME = "station_name"
-    const val AGENCY_STATION_LON = "station_lon"
-    const val AGENCY_STATION_LAT = "station_lan"
-    const val AGENCY_STATION_JOB_ID = "station_job_id"
+/** Destinations */
+object BookingDestinations {
+    const val BOOKER_AUTHENTICATION_ROUTE = "$BOOKER_AUTHENTICATION/{$SHOULD_SIGN_OUT}"
+    const val BOOKER_PROFILE_ROUTE = BOOKER_PROFILE
+    const val BOOKER_BOOKS_ROUTE = BOOKER_BOOKS
+    const val BOOKER_TRIP_SEARCH_ROUTE = BOOKER_TRIP_SEARCH
+    const val BOOKER_AGENCY_SEARCH_ROUTE = BOOKER_AGENCY_PICKING
+    const val BOOKER_TRIP_DETAILS_ROUTE = BOOKER_TRIP_DETAILS
+    const val BOOKER_TRIP_PAYMENT_ROUTE = BOOKER_TRIP_PAYMENT
+
+    const val BOOKER_ACCOUNT_ROUTE = "$BOOKER_PROFILE/$BOOKER_ACCOUNT"
+    const val BOOKER_MOMO_ACCOUNTS_ROUTE = "$BOOKER_PROFILE/$BOOKER_MOMO_ACCOUNTS"
+    const val BOOKER_OM_ACCOUNTS_ROUTE = "$BOOKER_PROFILE/$BOOKER_OM_ACCOUNTS"
+    const val BOOKER_CREDIT_CARDS_ACCOUNTS_ROUTE = "$BOOKER_PROFILE/$BOOKER_CREDIT_CARDS_ACCOUNTS"
+    const val BOOKER_AGENCY_SETTINGS_ROUTE = "$BOOKER_PROFILE/$BOOKER_AGENCY_SETTINGS"
+
+    const val BOOKER_MOMO_ACCOUNT_DETAILS_ROUTE =
+        "$BOOKER_MOMO_ACCOUNTS_ROUTE/$BOOKER_MOMO_ACCOUNT_DETAILS"
+    const val BOOKER_OM_ACCOUNT_DETAILS_ROUTE =
+        "$BOOKER_OM_ACCOUNTS_ROUTE/$BOOKER_OM_ACCOUNT_DETAILS"
+    const val BOOKER_CREDIT_CARD_ACCOUNT_DETAILS_ROUTE =
+        "$BOOKER_PROFILE/$BOOKER_CREDIT_CARD_ACCOUNT_DETAILS/{$CARD_NUMBER}"
+
+    const val AGENCY_PORTAL_ROUTE = AGENCY_PORTAL
+}
+
+object UnivDestinations {
+    const val UNIV_SEARCH_ROUTE =
+        "$UNIVERSE_SEARCH/{$UNIV_SEARCH_HAS_PRESELECTED_FIELDS}/{$UNIV_SEARCH_CALLER_SCREEN}/{$UNIVERSE_SEARCH_RETURN_TOWNS_ONLY}/{$UNIV_SEARCH_FIELDS}"
 }
 
 object AgencyDestinations {
-
-    const val AGENCY_CREATION_WELCOME_ROUTE = AGENCY_CREATION_WELCOME
-    const val AGENCY_CREATION_WELCOME_PROFILE_ROUTE = AGENCY_CREATION_WELCOME_PROFILE
-
-
+    const val AGENCY_PROFILE_ROUTE = AGENCY_PROFILE
     const val AGENCY_STATION_DASHBOARD_ROUTE =
         "$AGENCY_STATION_DASHBOARD/{$AGENCY_STATION_IS_EDIT_MODE}/{$AGENCY_STATION_ID}"
+    const val AGENCY_HELP_CENTER_ROUTE = AGENCY_HELP_CENTER
     const val AGENCY_STATION_PROFILE_ROUTE =
         "$AGENCY_STATION_PROFILE/{$AGENCY_STATION_ID}/{$AGENCY_STATION_IS_EDIT_MODE}"
     const val AGENCY_STATION_LOCATION_ROUTE =
@@ -122,16 +144,142 @@ object AgencyDestinations {
         "$AGENCY_STATION_JOB_DETAILS/{$AGENCY_STATION_JOB_ID}"
 }
 
-class AgencyNavActions(private val navController: NavHostController) {
+/** Nav Args */
+object AgencyArgs {
+    const val AGENCY_ID = "agency_id"
+    const val AGENCY_STATION_IS_EDIT_MODE = "station_is_new"
+    const val AGENCY_STATION_ID = "stationID"
+    const val AGENCY_STATION_NAME = "station_name"
+    const val AGENCY_STATION_LON = "station_lon"
+    const val AGENCY_STATION_LAT = "station_lan"
+    const val AGENCY_STATION_JOB_ID = "station_job_id"
+}
 
-    fun navigateToWelcome() {
-        navController.navigate(route = AGENCY_CREATION_WELCOME_ROUTE) {
+object UniverseArgs {
+    //States whether we are going into the search view with already selected results stored in the cache
+    const val UNIV_SEARCH_HAS_PRESELECTED_FIELDS = "univ_search_has_preselected_fields"
+    const val UNIV_SEARCH_RESULT = "univ_search_results"
+    const val UNIV_SEARCH_CALLER_SCREEN = "univ_search_caller_screen"
+    const val UNIV_SEARCH_FIELDS = "univ_search_fields"
+    const val TOWNS_TO_EXCLUDE_BY_IDS = "towns_for_exclusion"
+    const val UNIVERSE_SEARCH_RETURN_TOWNS_ONLY = "univ_search_return_towns_only"
+}
+
+object BookingNavArgs {
+    const val SHOULD_SIGN_OUT = "should_sign_out"
+    const val PHONE_NUMBER = "phone_number"
+    const val CARD_NUMBER = "card_number"
+    const val MOMO_ACCOUNT = "momo_account"
+}
+
+/** Nav Actions */
+class BookingNavActions constructor(
+    private val navController: NavHostController,
+    private val authRepo: AuthRepo
+) {
+    fun navigateToSignIn(shouldSignOut: Boolean = false) {
+        navController.navigate(route = "$BOOKER_AUTHENTICATION/$shouldSignOut") {
             launchSingleTop = true
         }
     }
 
-    fun navigateToWelcomeProfile() {
-        navController.navigate(route = AGENCY_CREATION_WELCOME_PROFILE_ROUTE) {
+    fun navigateToProfile() {
+        navController.navigate(BOOKER_PROFILE) {
+            launchSingleTop = true
+        }
+    }
+
+    fun navigateToAccount() {
+        navController.navigate(BOOKER_ACCOUNT_ROUTE) {
+            launchSingleTop = true
+        }
+    }
+
+    fun navigateToMoMoAccounts() {
+        navController.navigate(BOOKER_MOMO_ACCOUNTS_ROUTE) {
+            launchSingleTop = true
+        }
+    }
+
+    fun navigateToMoMoAccountDetails() {
+        navController.navigate(BOOKER_MOMO_ACCOUNT_DETAILS_ROUTE) {
+            launchSingleTop = true
+        }
+    }
+
+    fun navigateToCreditCardAccounts(cardNumber: String) {
+        navController.navigate("$BOOKER_PROFILE/$BOOKER_CREDIT_CARDS_ACCOUNTS/$BOOKER_CREDIT_CARD_ACCOUNT_DETAILS/{$cardNumber}") {
+            launchSingleTop = true
+        }
+    }
+
+    fun navigateToOMAccountDetails() {
+        navController.navigate(BOOKER_OM_ACCOUNT_DETAILS_ROUTE) {
+            launchSingleTop = true
+        }
+    }
+
+    fun navigateToOMAccounts() {
+        navController.navigate(BOOKER_OM_ACCOUNTS_ROUTE) {
+            launchSingleTop = true
+        }
+    }
+
+    fun navigateToCreditCardAccounts() {
+        navController.navigate(BOOKER_CREDIT_CARDS_ACCOUNTS_ROUTE) {
+            launchSingleTop = true
+        }
+    }
+
+    fun navigateToAgencySettings() {
+        navController.navigate(BOOKER_AGENCY_SETTINGS) {
+            launchSingleTop = true
+        }
+    }
+
+    fun navigateToTripSearch() {
+        navController.navigate(BOOKER_TRIP_SEARCH) {
+            launchSingleTop = true
+
+        }
+    }
+
+    fun navigateToAgencyPicking() {
+        navController.navigate(BOOKER_AGENCY_PICKING) {
+            launchSingleTop = true
+        }
+    }
+
+    fun navigateToTripDetails() {
+        navController.navigate(BOOKER_TRIP_DETAILS) {
+            launchSingleTop = true
+        }
+    }
+
+    fun navigateToTripPayment() {
+        navController.navigate(BOOKER_TRIP_PAYMENT) {
+            launchSingleTop = true
+        }
+    }
+
+    fun navigateToAgencyPortal() {
+        navController.navigate(AGENCY_PORTAL_ROUTE) {
+            launchSingleTop = true
+        }
+    }
+}
+
+class AgencyNavActions(private val navController: NavHostController) {
+
+
+    fun navigateToAgencyProfile() {
+        navController.navigate(route = AGENCY_PROFILE_ROUTE) {
+            launchSingleTop = true
+        }
+    }
+
+    fun navigateHelpCenter() {
+        navController.navigate(route = AGENCY_HELP_CENTER) {
             launchSingleTop = true
         }
     }
@@ -185,52 +333,6 @@ class AgencyNavActions(private val navController: NavHostController) {
     }
 }
 
-object BookingDestinations {
-    const val BOOKER_SIGN_IN_ROUTE = "$BOOKER_SIGN_IN/{$SHOULD_SIGN_OUT}"
-    const val BOOKER_PROFILE_ROUTE = BOOKER_PROFILE
-    const val BOOKER_BOOKS_ROUTE = BOOKER_BOOKS
-    const val BOOKER_TRIP_SEARCH_ROUTE = BOOKER_TRIP_SEARCH
-    const val BOOKER_AGENCY_SEARCH_ROUTE = BOOKER_AGENCY_PICKING
-    const val BOOKER_TRIP_DETAILS_ROUTE = BOOKER_TRIP_DETAILS
-    const val BOOKER_TRIP_PAYMENT_ROUTE = BOOKER_TRIP_PAYMENT
-
-    const val BOOKER_ACCOUNT_ROUTE = "$BOOKER_PROFILE/$BOOKER_ACCOUNT"
-    const val BOOKER_MOMO_ACCOUNTS_ROUTE = "$BOOKER_PROFILE/$BOOKER_MOMO_ACCOUNTS"
-    const val BOOKER_OM_ACCOUNTS_ROUTE = "$BOOKER_PROFILE/$BOOKER_OM_ACCOUNTS"
-    const val BOOKER_CREDIT_CARDS_ACCOUNTS_ROUTE = "$BOOKER_PROFILE/$BOOKER_CREDIT_CARDS_ACCOUNTS"
-    const val BOOKER_AGENCY_SETTINGS_ROUTE = "$BOOKER_PROFILE/$BOOKER_AGENCY_SETTINGS"
-
-    const val BOOKER_MOMO_ACCOUNT_DETAILS_ROUTE =
-        "$BOOKER_MOMO_ACCOUNTS_ROUTE/$BOOKER_MOMO_ACCOUNT_DETAILS"
-    const val BOOKER_OM_ACCOUNT_DETAILS_ROUTE =
-        "$BOOKER_OM_ACCOUNTS_ROUTE/$BOOKER_OM_ACCOUNT_DETAILS"
-    const val BOOKER_CREDIT_CARD_ACCOUNT_DETAILS_ROUTE =
-        "$BOOKER_PROFILE/$BOOKER_CREDIT_CARD_ACCOUNT_DETAILS/{$CARD_NUMBER}"
-}
-
-object UnivDestinations {
-    const val UNIV_SEARCH_ROUTE =
-        "$UNIVERSE_SEARCH/{$UNIV_SEARCH_HAS_PRESELECTED_FIELDS}/{$UNIV_SEARCH_CALLER_SCREEN}/{$UNIVERSE_SEARCH_RETURN_TOWNS_ONLY}/{$UNIV_SEARCH_FIELDS}"
-}
-
-object UniverseArgs {
-    //States whether we are going into the search view with already selected results stored in the cache
-    const val UNIV_SEARCH_HAS_PRESELECTED_FIELDS = "univ_search_has_preselected_fields"
-    const val UNIV_SEARCH_RESULT = "univ_search_results"
-    const val UNIV_SEARCH_CALLER_SCREEN = "univ_search_caller_screen"
-    const val UNIV_SEARCH_FIELDS = "univ_search_fields"
-    const val TOWNS_TO_EXCLUDE_BY_IDS = "towns_for_exclusion"
-    const val UNIVERSE_SEARCH_RETURN_TOWNS_ONLY = "univ_search_return_towns_only"
-}
-
-object BookingNavArgs {
-    const val SHOULD_SIGN_OUT = "should_sign_out"
-    const val PHONE_NUMBER = "phone_number"
-    const val CARD_NUMBER = "card_number"
-    const val MOMO_ACCOUNT = "momo_account"
-}
-
-
 class UnivNavActions(private val navController: NavHostController) {
     fun navigateToUnivSearch(
         hasPreselectedFields: Boolean,
@@ -248,97 +350,3 @@ class UnivNavActions(private val navController: NavHostController) {
     }
 }
 
-class BookingNavActions constructor(
-    private val navController: NavHostController,
-    private val authRepo: AuthRepo
-) {
-    fun navigateToSignIn(shouldSignOut: Boolean = false) {
-        navController.navigate(route = "$BOOKER_SIGN_IN/$shouldSignOut") {
-            launchSingleTop = true
-        }
-    }
-
-    fun navigateToProfile() {
-        navController.navigate(BOOKER_PROFILE) {
-            launchSingleTop = true
-        }
-    }
-
-    fun navigateToAccount() {
-        navController.navigate(BOOKER_ACCOUNT_ROUTE) {
-            launchSingleTop = true
-        }
-    }
-
-    fun navigateToMoMoAccounts() {
-        navController.navigate(BOOKER_MOMO_ACCOUNTS_ROUTE) {
-            launchSingleTop = true
-        }
-    }
-
-    fun navigateToMoMoAccountDetails() {
-        navController.navigate(BOOKER_MOMO_ACCOUNT_DETAILS_ROUTE) {
-            launchSingleTop = true
-        }
-    }
-
-
-    fun navigateToCreditCardAccounts(cardNumber: String) {
-        navController.navigate("$BOOKER_PROFILE/$BOOKER_CREDIT_CARDS_ACCOUNTS/$BOOKER_CREDIT_CARD_ACCOUNT_DETAILS/{$cardNumber}") {
-            launchSingleTop = true
-        }
-    }
-
-
-    fun navigateToOMAccountDetails() {
-        navController.navigate(BOOKER_OM_ACCOUNT_DETAILS_ROUTE) {
-            launchSingleTop = true
-        }
-    }
-
-    fun navigateToOMAccounts() {
-        navController.navigate(BOOKER_OM_ACCOUNTS_ROUTE) {
-            launchSingleTop = true
-        }
-    }
-
-    fun navigateToCreditCardAccounts() {
-        navController.navigate(BOOKER_CREDIT_CARDS_ACCOUNTS_ROUTE) {
-            launchSingleTop = true
-        }
-    }
-
-    fun navigateToAgencySettings() {
-        navController.navigate(BOOKER_AGENCY_SETTINGS) {
-            launchSingleTop = true
-        }
-    }
-
-    fun navigateToTripSearch() {
-        navController.navigate(BOOKER_TRIP_SEARCH) {
-            launchSingleTop = true
-
-        }
-    }
-
-
-    fun navigateToAgencyPicking() {
-        navController.navigate(BOOKER_AGENCY_PICKING) {
-            launchSingleTop = true
-        }
-    }
-
-    fun navigateToTripDetails() {
-        navController.navigate(BOOKER_TRIP_DETAILS) {
-            launchSingleTop = true
-        }
-    }
-
-    fun navigateToTripPayment() {
-        navController.navigate(BOOKER_TRIP_PAYMENT) {
-            launchSingleTop = true
-        }
-    }
-
-
-}

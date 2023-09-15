@@ -1,68 +1,110 @@
 package tech.xken.tripbook.data.models.agency
 
 import androidx.room.Entity
+import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDate
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import tech.xken.tripbook.data.models.DbAction
+import tech.xken.tripbook.data.models.booker.CI
+import tech.xken.tripbook.domain.DATE_NOW
 
-@Serializable
-data class AgencyProfile(
-    @SerialName("agency_id") val agencyId: String,
-    @SerialName("name") val name: String,
-    @SerialName("physical_created_on") val physicalCreatedOn: LocalDate,
-    @SerialName("motto") val motto: String?,
-    @SerialName("about_us") val aboutUs: String,
-    @SerialName("added_on") val added_on: Instant,
-)
-
-@Serializable
-data class AgencyProfileStats(
-    @SerialName("agency_id") val agencyId: String,
-    @SerialName("personnel_count") val personnelCount: Int,
-    @SerialName("bus_count") val busCount: Int,
-    @SerialName("station_count") val stationCount: Int,
-    @SerialName("support_email_count") val supportEmailCount: Int,
-    @SerialName("support_phone_count") val supportPhoneCount: Int,
-)
+typealias SN = SerialName
 
 
 @Serializable
+@Entity(AgencyAccount.NAME, primaryKeys = ["agency_id"])
+data class AgencyAccount(
+    @CI("agency_id") @SN("agency_id") val agencyId: String = "",
+    @CI("name") @SN("name") val name: String = "",
+    @CI("physical_created_on") @SN("physical_created_on") val physicalCreatedOn: LocalDate = DATE_NOW,
+    @CI("motto") @SN("motto") val motto: String = "",
+    @CI("about_us") @SN("about_us") val aboutUs: String? = null,
+    @CI("added_on") @SN("added_on") val addedOn: Instant? = null,
+    @CI("modified_on") @SN("modified_on") val modifiedOn: Instant? = null,
+) {
+    @Serializable
+    data class Log(
+        @SN("log_id") val logId: Long,
+        @SN("agency_id") val agencyId: String,
+        @SN("timestamp") val timestamp: Instant,
+        @SN("db_action") val dbAction: DbAction,
+        @SN("scanner_id") val scannerId: String,
+        @SN("data_json") val data: AgencyAccount? = null,
+    ) {
+        companion object {
+            const val NAME = "agency_account_log"
+        }
+
+    }
+
+    companion object {
+        const val NAME = "agency_account"
+    }
+}
+
+@Serializable
+@Entity(AgencyMetadata.NAME, primaryKeys = ["agency_id"])
 data class AgencyMetadata(
-    @SerialName("agency_id") val agency_id: String,
-    @SerialName("is_suspended") val isSuspended: Boolean?,
-    @SerialName("reputation") val reputation: Float?,
-    @SerialName("accident_count") val accidentCount: Int?,
-)
+    @CI("agency_id") @SN("agency_id") val agencyId: String = "",
+    @CI("is_suspended") @SN("is_suspended") val isSuspended: Boolean = false,
+    @CI("reputation") @SN("reputation") val reputation: Float = 5.0f,
+    @CI("accident_count") @SN("accident_count") val accidentCount: Int = 0,
+    @CI("added_on") @SN("added_on") val addedOn: Instant? = null,
+    @CI("modified_on") @SN("modified_on") val modifiedOn: Instant? = null,
+) {
+    companion object {
+        const val NAME = "agency_metadata"
+    }
+}
 
 
 @Serializable
+@Entity(AgencySettings.NAME, primaryKeys = ["agency_id"])
 data class AgencySettings(
-    @SerialName("agency_id") val agencyId: String?,
-    @SerialName("cost_per_km") val costPerKm: Double?,
-    @SerialName("vip_cost_per_km") val vipCostPerKm: Double?,
-)
+    @CI("agency_id") @SN("agency_id") val agencyId: String? = "",
+    @CI("cost_per_km") @SN("cost_per_km") val costPerKm: Double?,
+    @CI("vip_cost_per_km") @SN("vip_cost_per_km") val vipCostPerKm: Double?,
+    @CI("added_on") @SN("added_on") val addedOn: Instant? = null,
+    @CI("modified_on") @SN("modified_on") val modifiedOn: Instant? = null,
+) {
+    companion object {
+        const val NAME = "agency_settings"
+    }
+}
 
 @Serializable
+@Entity(AgencyEvent.NAME, primaryKeys = ["agency_id", "event_id"])
 data class AgencyEvent(
-    @SerialName("id") val id: String,
-    @SerialName("added_on") val addedOn: Long?,
-    @SerialName("start_time") val startTime: Long?,
-    @SerialName("end_time") val endTime: Long?,
-    @SerialName("expected_duration") val expectedDuration: Long?,
-    @SerialName("purpose") val purpose: String?,
-)
+    @CI("event_id") @SN("event_id") val eventId: String = "",
+    @CI("start_time") @SN("start_time") val startTime: Instant = Clock.System.now(),
+    @CI("end_time") @SN("end_time") val endTime: Instant = Clock.System.now(),
+    @CI("description") @SN("description") val description: String = "",
+    @CI("added_on") @SN("added_on") val addedOn: Instant? = null,
+    @CI("modified_on") @SN("modified_on") val modifiedOn: Instant? = null,
+) {
+    @Serializable
+    @SerialName(Log.NAME)
+    data class Log(
+        @SN("data_json") val data: AgencyEvent? = null,
+        @SN("log_id") val logId: Long,
+        @SN("agency_id") val agencyId: String,
+        @SN("event_id") val eventId: String,
+        @SN("timestamp") val timestamp: Instant,
+        @SN("db_action") val dbAction: DbAction,
+        @SN("scanner_id") val scannerId: String,
+    ) {
+        companion object {
+            const val NAME = "agency_event_log"
+        }
 
+    }
 
-@Serializable
-data class StationProfileStats(
-    @SerialName("station_id") val stationId: String,
-    @SerialName("affiliated_town_count") val affiliatedTownCount: Int,
-    @SerialName("personnel_count") val personnelCount: Int,
-    @SerialName("bus_count") val busCount: Int,
-    @SerialName("station_count") val stationCount: Int,
-)
-
+    companion object {
+        const val NAME = "agency_event"
+    }
+}
 
 /**
  * Profile

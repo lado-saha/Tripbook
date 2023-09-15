@@ -17,7 +17,7 @@ import tech.xken.tripbook.R
 import tech.xken.tripbook.data.models.Results.Failure
 import tech.xken.tripbook.data.models.Results.Success
 import tech.xken.tripbook.data.sources.univ.UniverseRepository
-import tech.xken.tripbook.domain.NOW
+import tech.xken.tripbook.domain.DATE_NOW
 import tech.xken.tripbook.domain.WhileUiSubscribed
 import tech.xken.tripbook.domain.format
 import tech.xken.tripbook.ui.components.RoadItemUiState
@@ -31,7 +31,7 @@ data class TripSearchUiState(
     val message: Int? = null,
     val isFromExpanded: Boolean = false,
     val isToExpanded: Boolean = false,
-    val departureDate: LocalDate = NOW,
+    val departureDate: LocalDate = DATE_NOW,
     val fromFilteredNames: List<String> = listOf(),
     val toFilteredNames: List<String> = listOf(),
     val townNames: List<String> = listOf(),
@@ -54,7 +54,7 @@ class TripSearchVM @Inject constructor(
     private val _isComplete = MutableStateFlow(false)
     private val _isFromExpanded = MutableStateFlow(false)
     private val _isToExpanded = MutableStateFlow(false)
-    private val _departureDate = MutableStateFlow(NOW)
+    private val _departureDate = MutableStateFlow(DATE_NOW)
     private val _fromFilteredNames = MutableStateFlow(listOf<String>())
     private val _toFilteredNames = MutableStateFlow(listOf<String>())
     private val _townNames = MutableStateFlow(listOf<String>())
@@ -173,8 +173,8 @@ class TripSearchVM @Inject constructor(
     }
 
     fun isDepartureDateError(departureDate: LocalDate = _departureDate.value) = when {
-        departureDate < NOW -> R.string.msg_invalid_departure_date_in_past
-        departureDate > NOW.plus(
+        departureDate < DATE_NOW -> R.string.msg_invalid_departure_date_in_past
+        departureDate > DATE_NOW.plus(
             30,
             DateTimeUnit.DAY
         ) -> R.string.msg_invalid_departure_date_in_future

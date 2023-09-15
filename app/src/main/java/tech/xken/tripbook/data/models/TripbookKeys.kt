@@ -10,3 +10,11 @@ object BookingKeys {
     val HAS_SYNC_MOMO_ACCOUNTS = booleanPreferencesKey("has_sync_momo_accounts")
     val HAS_SYNC_OM_ACCOUNTS = booleanPreferencesKey("has_sync_om_accounts")
 }
+
+object AgencyKeys{
+    const val name = "agency_sync"
+    val LISTEN_TO_ACCOUNT = booleanPreferencesKey("listen_to_account")
+    val LISTEN_TO_PHONE_SUPPORT = booleanPreferencesKey("listen_to_phone_support")
+    val LISTEN_TO_EMAIL_SUPPORT = booleanPreferencesKey("listen_to_email_support")
+    val LISTEN_TO_REFUND_POLICY = booleanPreferencesKey("listen_to_refund_policy")
+}

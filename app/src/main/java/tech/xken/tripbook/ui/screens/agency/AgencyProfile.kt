@@ -1,4 +1,4 @@
-package tech.xken.tripbook.ui.screens.booking
+package tech.xken.tripbook.ui.screens.agency
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Column
@@ -27,7 +27,6 @@ import androidx.compose.material.icons.outlined.Badge
 import androidx.compose.material.icons.outlined.Dangerous
 import androidx.compose.material.icons.outlined.DeleteForever
 import androidx.compose.material.icons.outlined.ErrorOutline
-import androidx.compose.material.icons.outlined.HelpOutline
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Menu
 import androidx.compose.material.icons.outlined.MoreVert
@@ -58,26 +57,14 @@ import tech.xken.tripbook.ui.components.DashboardItemUiState
 import tech.xken.tripbook.ui.components.DashboardSubItem
 import tech.xken.tripbook.ui.components.InfoDialog
 import tech.xken.tripbook.ui.components.InfoDialogUiState
-import tech.xken.tripbook.ui.screens.booking.BookerProfileDialogState.ABOUT_ACCOUNT
-import tech.xken.tripbook.ui.screens.booking.BookerProfileDialogState.ABOUT_MAIN_PAGE
-import tech.xken.tripbook.ui.screens.booking.BookerProfileDialogState.ABOUT_MOMO
-import tech.xken.tripbook.ui.screens.booking.BookerProfileDialogState.ABOUT_OM
-import tech.xken.tripbook.ui.screens.booking.BookerProfileDialogState.DELETE_ACCOUNT_1
-import tech.xken.tripbook.ui.screens.booking.BookerProfileDialogState.DELETE_ACCOUNT_2
-import tech.xken.tripbook.ui.screens.booking.BookerProfileDialogState.DELETE_ACCOUNT_3
-import tech.xken.tripbook.ui.screens.booking.BookerProfileDialogState.FAILED_GET_ACCOUNT
-import tech.xken.tripbook.ui.screens.booking.BookerProfileDialogState.FAILED_GET_AGENCY_SETTINGS
-import tech.xken.tripbook.ui.screens.booking.BookerProfileDialogState.FAILED_GET_MOMO
-import tech.xken.tripbook.ui.screens.booking.BookerProfileDialogState.FAILED_GET_OM
-import tech.xken.tripbook.ui.screens.booking.BookerProfileDialogState.NONE
 
 
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
-fun BookerProfile(
+fun AgencyProfile(
     modifier: Modifier = Modifier,
     scaffoldState: ScaffoldState = rememberScaffoldState(),
-    vm: BookerProfileVM = hiltViewModel(),
+    vm: AgencyProfileVM = hiltViewModel(),
     onNavigateToAccount: () -> Unit,
     onNavigateToMoMoAccount: () -> Unit,
     onNavigateToOMAccount: () -> Unit,
@@ -88,7 +75,7 @@ fun BookerProfile(
 ) {
     val statusMap = remember {
         mapOf(
-            ABOUT_MAIN_PAGE to InfoDialogUiState(
+            AgencyProfileDialogState.ABOUT_MAIN_PAGE to InfoDialogUiState(
                 mainIcon = Icons.Outlined.Person,
                 title = "My Booking Profile",
                 text = buildAnnotatedString {
@@ -96,7 +83,7 @@ fun BookerProfile(
                 },
                 positiveText = "I understand"
             ),
-            ABOUT_ACCOUNT to InfoDialogUiState(
+            AgencyProfileDialogState.ABOUT_ACCOUNT to InfoDialogUiState(
                 mainIcon = Icons.Outlined.Badge,
                 title = "Me",
                 text = buildAnnotatedString {
@@ -112,7 +99,7 @@ fun BookerProfile(
 //                },
 //                positiveText = "I understand"
 //            ),
-            ABOUT_OM to InfoDialogUiState(
+            AgencyProfileDialogState.ABOUT_OM to InfoDialogUiState(
                 mainIcon = Icons.Filled.Payments,
                 title = "Orange Money Accounts",
                 text = buildAnnotatedString {
@@ -120,7 +107,7 @@ fun BookerProfile(
                 },
                 positiveText = "I understand",
             ),
-            ABOUT_MOMO to InfoDialogUiState(
+            AgencyProfileDialogState.ABOUT_MOMO to InfoDialogUiState(
                 mainIcon = Icons.Filled.Payments,
                 title = "MTN MoMo Accounts",
                 text = buildAnnotatedString {
@@ -136,7 +123,7 @@ fun BookerProfile(
 //                },
 //                positiveText = "I understand",
 //            ),
-            FAILED_GET_ACCOUNT to InfoDialogUiState(
+            AgencyProfileDialogState.FAILED_GET_ACCOUNT to InfoDialogUiState(
                 mainIcon = Icons.Outlined.ErrorOutline,
                 title = "Could not get account",
                 text = buildAnnotatedString {
@@ -145,7 +132,7 @@ fun BookerProfile(
                 positiveText = "Retry",
             ),
 
-            FAILED_GET_OM to InfoDialogUiState(
+            AgencyProfileDialogState.FAILED_GET_OM to InfoDialogUiState(
                 mainIcon = Icons.Outlined.ErrorOutline,
                 title = "Could not get OM account",
                 text = buildAnnotatedString {
@@ -154,7 +141,7 @@ fun BookerProfile(
                 positiveText = "Retry",
             ),
 
-            FAILED_GET_MOMO to InfoDialogUiState(
+            AgencyProfileDialogState.FAILED_GET_MOMO to InfoDialogUiState(
                 mainIcon = Icons.Outlined.ErrorOutline,
                 title = "Could not get MoMo account",
                 text = buildAnnotatedString {
@@ -163,7 +150,7 @@ fun BookerProfile(
                 positiveText = "Retry",
             ),
 
-            FAILED_GET_AGENCY_SETTINGS to InfoDialogUiState(
+            AgencyProfileDialogState.FAILED_GET_AGENCY_SETTINGS to InfoDialogUiState(
                 mainIcon = Icons.Outlined.ErrorOutline,
                 title = "Could not Agency Settings",
                 text = buildAnnotatedString {
@@ -171,7 +158,7 @@ fun BookerProfile(
                 },
                 positiveText = "Retry",
             ),
-            DELETE_ACCOUNT_1 to InfoDialogUiState(
+            AgencyProfileDialogState.DELETE_ACCOUNT_1 to InfoDialogUiState(
                 mainIcon = Icons.Outlined.Dangerous,
                 title = "Danger zone! Want to delete account?",
                 text = buildAnnotatedString {
@@ -181,7 +168,7 @@ fun BookerProfile(
                 isNegative = true,
                 otherText = "I want"
             ),
-            DELETE_ACCOUNT_2 to InfoDialogUiState(
+            AgencyProfileDialogState.DELETE_ACCOUNT_2 to InfoDialogUiState(
                 mainIcon = Icons.Outlined.DeleteForever,
                 title = "Warning! Want to delete account?",
                 text = buildAnnotatedString {
@@ -191,7 +178,7 @@ fun BookerProfile(
                 isNegative = true,
                 otherText = "I really want"
             ),
-            DELETE_ACCOUNT_3 to InfoDialogUiState(
+            AgencyProfileDialogState.DELETE_ACCOUNT_3 to InfoDialogUiState(
                 mainIcon = Icons.Outlined.DeleteForever,
                 title = "Final Warning! Do you want to delete your Account?",
                 text = buildAnnotatedString {
@@ -213,7 +200,7 @@ fun BookerProfile(
         confirmValueChange = {
             when (it) {
                 ModalBottomSheetValue.Hidden -> {
-                    vm.onSheetStateChange(BookerProfileSheetState.NONE)
+                    vm.onSheetStateChange(AgencyProfileSheetState.NONE)
                 }
 
                 ModalBottomSheetValue.Expanded -> {}
@@ -223,7 +210,7 @@ fun BookerProfile(
         }
     )
     LaunchedEffect(uis.sheetStatus) {
-        if (uis.sheetStatus != BookerProfileSheetState.NONE) {
+        if (uis.sheetStatus != AgencyProfileSheetState.NONE) {
             sheetState.show()
         } else if (sheetState.targetValue != ModalBottomSheetValue.Hidden || sheetState.currentValue != ModalBottomSheetValue.Hidden) {
             sheetState.hide()
@@ -231,30 +218,30 @@ fun BookerProfile(
     }
 
     when (val status = uis.dialogStatus) {
-        ABOUT_ACCOUNT -> InfoDialog(
+        AgencyProfileDialogState.ABOUT_ACCOUNT -> InfoDialog(
             uis = statusMap[status]!!,
             onCloseClick = {
-                vm.onDialogStateChange(NONE)
+                vm.onDialogStateChange(AgencyProfileDialogState.NONE)
             }, onPositiveClick = {
-                vm.onDialogStateChange(NONE)
+                vm.onDialogStateChange(AgencyProfileDialogState.NONE)
             }
         )
 
-        ABOUT_MOMO -> InfoDialog(
+        AgencyProfileDialogState.ABOUT_MOMO -> InfoDialog(
             uis = statusMap[status]!!,
             onCloseClick = {
-                vm.onDialogStateChange(NONE)
+                vm.onDialogStateChange(AgencyProfileDialogState.NONE)
             }, onPositiveClick = {
-                vm.onDialogStateChange(NONE)
+                vm.onDialogStateChange(AgencyProfileDialogState.NONE)
             }
         )
 
-        ABOUT_OM -> InfoDialog(
+        AgencyProfileDialogState.ABOUT_OM -> InfoDialog(
             uis = statusMap[status]!!,
             onCloseClick = {
-                vm.onDialogStateChange(NONE)
+                vm.onDialogStateChange(AgencyProfileDialogState.NONE)
             }, onPositiveClick = {
-                vm.onDialogStateChange(NONE)
+                vm.onDialogStateChange(AgencyProfileDialogState.NONE)
             }
         )
 
@@ -277,103 +264,103 @@ fun BookerProfile(
 //            }
 //        )
 
-        ABOUT_MAIN_PAGE ->
+        AgencyProfileDialogState.ABOUT_MAIN_PAGE ->
             InfoDialog(
                 uis = statusMap[status]!!,
                 onCloseClick = {
-                    vm.onDialogStateChange(NONE)
+                    vm.onDialogStateChange(AgencyProfileDialogState.NONE)
                 }, onPositiveClick = {
-                    vm.onDialogStateChange(NONE)
+                    vm.onDialogStateChange(AgencyProfileDialogState.NONE)
                 }
             )
 
-        NONE -> {}
-        FAILED_GET_ACCOUNT -> InfoDialog(
+        AgencyProfileDialogState.NONE -> {}
+        AgencyProfileDialogState.FAILED_GET_ACCOUNT -> InfoDialog(
             uis = statusMap[status]!!,
             onCloseClick = {
-                vm.onDialogStateChange(NONE)
+                vm.onDialogStateChange(AgencyProfileDialogState.NONE)
             },
 
             onPositiveClick = {
                 vm.onAccountCompleteChange(null)
-                vm.onDialogStateChange(NONE)
+                vm.onDialogStateChange(AgencyProfileDialogState.NONE)
             },
         )
 
-        FAILED_GET_OM -> InfoDialog(
+        AgencyProfileDialogState.FAILED_GET_OM -> InfoDialog(
             uis = statusMap[status]!!,
             onCloseClick = {
-                vm.onDialogStateChange(NONE)
+                vm.onDialogStateChange(AgencyProfileDialogState.NONE)
             },
             onPositiveClick = {
                 vm.onOMCompleteChange(null)
-                vm.onDialogStateChange(NONE)
+                vm.onDialogStateChange(AgencyProfileDialogState.NONE)
             },
 
             )
 
-        FAILED_GET_MOMO -> InfoDialog(
+        AgencyProfileDialogState.FAILED_GET_MOMO -> InfoDialog(
             uis = statusMap[status]!!,
             onCloseClick = {
-                vm.onDialogStateChange(NONE)
+                vm.onDialogStateChange(AgencyProfileDialogState.NONE)
             },
             onPositiveClick = {
                 vm.onMoMoCompleteChange(null)
-                vm.onDialogStateChange(NONE)
+                vm.onDialogStateChange(AgencyProfileDialogState.NONE)
             },
 
             )
 
-        FAILED_GET_AGENCY_SETTINGS -> InfoDialog(
+        AgencyProfileDialogState.FAILED_GET_AGENCY_SETTINGS -> InfoDialog(
             uis = statusMap[status]!!,
             onCloseClick = {
-                vm.onDialogStateChange( NONE)
+                vm.onDialogStateChange( AgencyProfileDialogState.NONE)
                 navigateUp()
             },
             onPositiveClick = {
                 vm.onAgencySettingsCompleteChange(null)
-                vm.onDialogStateChange(NONE)
+                vm.onDialogStateChange(AgencyProfileDialogState.NONE)
             },
         )
 
-        DELETE_ACCOUNT_1 -> InfoDialog(
+        AgencyProfileDialogState.DELETE_ACCOUNT_1 -> InfoDialog(
             uis = statusMap[status]!!,
             onCloseClick = {
-                vm.onDialogStateChange(NONE)
+                vm.onDialogStateChange(AgencyProfileDialogState.NONE)
             },
             onPositiveClick = {
-                vm.onDialogStateChange(NONE)
+                vm.onDialogStateChange(AgencyProfileDialogState.NONE)
             },
             onOtherClick = {
-                vm.onDialogStateChange(DELETE_ACCOUNT_2)
+                vm.onDialogStateChange(AgencyProfileDialogState.DELETE_ACCOUNT_2)
             },
             mainIconTint = MaterialTheme.colors.error
         )
 
-        DELETE_ACCOUNT_2 -> InfoDialog(
+        AgencyProfileDialogState.DELETE_ACCOUNT_2 -> InfoDialog(
             uis = statusMap[status]!!,
             onCloseClick = {
-                vm.onDialogStateChange(NONE)
+                vm.onDialogStateChange(AgencyProfileDialogState.NONE)
             },
             onPositiveClick = {
-                vm.onDialogStateChange(NONE)
+                vm.onDialogStateChange(AgencyProfileDialogState.NONE)
             },
             onOtherClick = {
-                vm.onDialogStateChange(DELETE_ACCOUNT_3)
+                vm.onDialogStateChange(AgencyProfileDialogState.DELETE_ACCOUNT_3)
             },
             mainIconTint = MaterialTheme.colors.error
         )
 
-        DELETE_ACCOUNT_3 -> InfoDialog(
+        AgencyProfileDialogState.DELETE_ACCOUNT_3 -> InfoDialog(
             uis = statusMap[status]!!,
             onCloseClick = {
-                vm.onDialogStateChange(NONE)
+                vm.onDialogStateChange(AgencyProfileDialogState.NONE)
             },
             onPositiveClick = {
-                vm.onDialogStateChange(NONE)
+                vm.onDialogStateChange(AgencyProfileDialogState.NONE)
             },
             onOtherClick = {
-                vm.onDialogStateChange(NONE)
+                vm.onDialogStateChange(AgencyProfileDialogState.NONE)
             }, mainIconTint = MaterialTheme.colors.error
         )
 
@@ -390,7 +377,7 @@ fun BookerProfile(
     ModalBottomSheetLayout(
         sheetContent = {
             when (uis.sheetStatus) {
-                BookerProfileSheetState.ACTIONS -> {
+                AgencyProfileSheetState.ACTIONS -> {
                     ActionSheet(
                         modifier = Modifier.fillMaxWidth()
                     ) {
@@ -399,15 +386,15 @@ fun BookerProfile(
                         ActionItem(
                             action = MainAction(R.string.lb_about_page, Icons.Outlined.Info),
                             onClick = {
-                                vm.onDialogStateChange(ABOUT_MAIN_PAGE)
-                                vm.onSheetStateChange(BookerProfileSheetState.NONE)
+                                vm.onDialogStateChange(AgencyProfileDialogState.ABOUT_MAIN_PAGE)
+                                vm.onSheetStateChange(AgencyProfileSheetState.NONE)
                             },
                         )
 
                     }
                 }
 
-                BookerProfileSheetState.NONE -> {}
+                AgencyProfileSheetState.NONE -> {}
             }
         }, sheetShape = MaterialTheme.shapes.medium.copy(
             topEnd = CornerSize(10), topStart = CornerSize(10),
@@ -437,7 +424,7 @@ fun BookerProfile(
                     modifier = Modifier.fillMaxWidth(),
                     actions = {
                         IconButton(onClick = {
-                            vm.onSheetStateChange(BookerProfileSheetState.ACTIONS)
+                            vm.onSheetStateChange(AgencyProfileSheetState.ACTIONS)
                         }) {
                             Icon(
                                 Icons.Outlined.MoreVert,
@@ -472,14 +459,14 @@ fun BookerProfile(
                     ),
                     onClick = { onNavigateToAccount() },
                     onHelpClick = {
-                        vm.onDialogStateChange(ABOUT_ACCOUNT)
+                        vm.onDialogStateChange(AgencyProfileDialogState.ABOUT_ACCOUNT)
                     },
                     mainIconColor = MaterialTheme.colors.onSurface,
                     onRetryClick = {
                         vm.onAccountCompleteChange(null)
                     },
                     onDeleteClick = {
-                        vm.onDialogStateChange(DELETE_ACCOUNT_1)
+                        vm.onDialogStateChange(AgencyProfileDialogState.DELETE_ACCOUNT_1)
                     }
                 ) {
                     Column(
@@ -522,7 +509,7 @@ fun BookerProfile(
                         onNavigateToMoMoAccount()
                     },
                     onHelpClick = {
-                        vm.onDialogStateChange(ABOUT_MOMO)
+                        vm.onDialogStateChange(AgencyProfileDialogState.ABOUT_MOMO)
                     })
                 {
                     Column(
@@ -530,8 +517,8 @@ fun BookerProfile(
                     ) {
                         DashboardSubItem(
                             modifier = Modifier.padding(2.dp),
-                            isError = uis.bookerMoMoPhoneCount == 0L,
-                            positiveText = "MoMo Accounts found: ${uis.bookerMoMoPhoneCount}",
+                            isError = uis.emailSupportCount == 0L,
+                            positiveText = "MoMo Accounts found: ${uis.emailSupportCount}",
                             errorText = "No MoMo account found"
                         )
                     }
@@ -553,7 +540,7 @@ fun BookerProfile(
                         onNavigateToOMAccount()
                     },
                     onHelpClick = {
-                        vm.onDialogStateChange(ABOUT_OM)
+                        vm.onDialogStateChange(AgencyProfileDialogState.ABOUT_OM)
                     },
                     mainIconColor = MaterialTheme.colors.onSurface,
                     onRetryClick = {
@@ -565,8 +552,8 @@ fun BookerProfile(
                     ) {
                         DashboardSubItem(
                             modifier = Modifier.padding(2.dp),
-                            isError = uis.bookerOMPhoneCount == 0L,
-                            positiveText = "OM Accounts found: ${uis.bookerOMPhoneCount}",
+                            isError = uis.phoneSupportCount == 0L,
+                            positiveText = "OM Accounts found: ${uis.phoneSupportCount}",
                             errorText = "No OM account found"
                         )
                     }

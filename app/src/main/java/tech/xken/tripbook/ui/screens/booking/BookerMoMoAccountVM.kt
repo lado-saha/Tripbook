@@ -15,6 +15,7 @@ import kotlinx.coroutines.launch
 import tech.xken.tripbook.R
 import tech.xken.tripbook.data.AuthRepo
 import tech.xken.tripbook.data.models.Results
+import tech.xken.tripbook.data.models.SortField
 import tech.xken.tripbook.data.models.booker.BookerMoMoAccount
 import tech.xken.tripbook.data.models.codeCountryMap
 import tech.xken.tripbook.data.sources.booker.BookerRepository
@@ -24,18 +25,31 @@ import tech.xken.tripbook.domain.isMTNPhoneValid
 import tech.xken.tripbook.domain.isPhoneInvalid
 import javax.inject.Inject
 
+
 data class BookerMoMoAccountsUiState(
     val isLoading: Boolean = false,
     val message: Int? = null,
-    val accounts: List<BookerMoMoAccount> = listOf(),
+    val objects: List<BookerMoMoAccount> = listOf(),
     val isComplete: Boolean = false,
     val dialogState: BookerMoMoAccountsDialogState = BookerMoMoAccountsDialogState.NONE,
     val isInitComplete: Boolean = false,
-    val toDelete: List<String> = listOf()
+    val toDelete: List<String> = listOf(),
+    val sortFields: List<SortField> = BookerMoMoAccount.sortFields,
+    val searchFields: List<SortField> = BookerMoMoAccount.sortFields,
+    val selectedSortField: SortField? = null,
+    val selectedSearchField: SortField? = null,
+    val sheetStatus: BookerMoMoAccountsSheetState = BookerMoMoAccountsSheetState.NONE,
+    val isSearching: Boolean = false,
+//    val selectedField:
+    val query: String = ""
 )
 
+enum class BookerMoMoAccountsSheetState {
+    ACTIONS, NONE
+}
+
 enum class BookerMoMoAccountsDialogState {
-    NONE, HELP_MAIN_PAGE, COULD_NOT_GET_ACCOUNTS, LEAVING_WITHOUT_ACCOUNTS, DELETE_ACCOUNTS_WARNING
+    NONE, ABOUT_MAIN_PAGE, COULD_NOT_GET_ACCOUNTS, LEAVING_WITHOUT_ACCOUNTS, DELETE_ACCOUNTS_WARNING, SORTING
 }
 
 @HiltViewModel
@@ -50,13 +64,20 @@ class BookerMoMoAccountsVM @Inject constructor(
     private val _dialogState = MutableStateFlow(BookerMoMoAccountsDialogState.NONE)
     private val _isInitComplete = MutableStateFlow(false)
     private val _toDelete = MutableStateFlow(listOf<String>())
+    private val _sheetState = MutableStateFlow(BookerMoMoAccountsSheetState.NONE)
 
     // Details
     private var oldAccountCopy = BookerMoMoAccount()
     private val _isEditMode = MutableStateFlow(false)
     private val _accountDetails = MutableStateFlow(BookerMoMoAccount())
     private val _isDetailsComplete = MutableStateFlow(false)
-    private val _detailsDialogState = MutableStateFlow(BookerMoMoAccountDetailsDialogState.NONE)
+    private val _accountDialogState = MutableStateFlow(BookerMoMoAccountDialogState.NONE)
+    private val _selectedSortField = MutableStateFlow<SortField?>(null)
+    private val _selectedSearchField = MutableStateFlow<SortField?>(null)
+    private val _isSearching = MutableStateFlow(false)
+    private val _sortFields = MutableStateFlow(BookerMoMoAccount.sortFields)
+    private val _searchFields = MutableStateFlow(BookerMoMoAccount.searchFields)
+    private val _query = MutableStateFlow("")
 
 
     val uiState = combine(
@@ -65,32 +86,45 @@ class BookerMoMoAccountsVM @Inject constructor(
         _isComplete,
         repo.bookerMoMoAccounts(authRepo.bookerId!!)
             .onStart { onInitComplete(false) }
-            .map {
+            .map { result ->
                 onInitComplete(true)
-                when (it) {
+                when (result) {
                     is Results.Failure -> {
-                        _message.value = R.string.msg_get_momo_accounts_error
+                        _message.value = R.string.msg_get_om_accounts_error
                         onDialogStateChange(BookerMoMoAccountsDialogState.COULD_NOT_GET_ACCOUNTS)
                         listOf()
                     }
 
                     is Results.Success -> {
-                        it.data
+                        onInitComplete(true)
+                        result.data
                     }
-
                 }
             },
         _dialogState,
         _toDelete,
-
-        ) { args ->
+        _sortFields,
+        _selectedSortField,
+        _sheetState,
+        _isSearching,
+        _selectedSearchField,
+        _query,
+        _searchFields
+    ) { args ->
         BookerMoMoAccountsUiState(
             isLoading = args[0] as Boolean,
             message = args[1] as Int?,
             isComplete = args[2] as Boolean,
-            accounts = args[3] as List<BookerMoMoAccount>,
+            objects = args[3] as List<BookerMoMoAccount>,
             dialogState = args[4] as BookerMoMoAccountsDialogState,
-            toDelete = args[5] as List<String>
+            toDelete = args[5] as List<String>,
+            sortFields = args[6] as List<SortField>,
+            selectedSortField = args[7] as SortField?,
+            sheetStatus = args[8] as BookerMoMoAccountsSheetState,
+            isSearching = args[9] as Boolean,
+            selectedSearchField = args[10] as SortField?,
+            query = args[11] as String,
+            searchFields = args[12] as List<SortField>
         )
     }.stateIn(
         scope = viewModelScope,
@@ -103,45 +137,41 @@ class BookerMoMoAccountsVM @Inject constructor(
         _message,
         _accountDetails,
         _isDetailsComplete,
-        _detailsDialogState,
+        _accountDialogState,
         _isEditMode,
     ) {
-        BookerMoMoAccountDetailsUiState(
+        BookerMoMoAccountUiState(
             isLoading = it[0] as Boolean,
             message = it[1] as Int?,
             account = it[2] as BookerMoMoAccount,
             isDetailsComplete = it[3] as Boolean,
             isEditMode = it[5] as Boolean,
-            detailsDialogState = it[4] as BookerMoMoAccountDetailsDialogState,
-        ).also {
-//            if (_isInitComplete.value)
-//                _isInitComplete.value = false
-        }
+            detailsDialogState = it[4] as BookerMoMoAccountDialogState,
+        )
     }.stateIn(
         scope = viewModelScope,
         started = WhileUiSubscribed,
-        initialValue = BookerMoMoAccountDetailsUiState()
+        initialValue = BookerMoMoAccountUiState()
     )
 
     fun onNavigateToEdit(account: BookerMoMoAccount) {
         oldAccountCopy = account
         _accountDetails.value = account
         _isEditMode.value = true
-
-        _isInitComplete.value = false
     }
 
     fun onNavigateToNew() {
         oldAccountCopy = BookerMoMoAccount()
         _accountDetails.value = oldAccountCopy
         _isEditMode.value = false
-        _isInitComplete.value = false
     }
 
-    fun doBeforeNavBackToAccounts() {
-//        _accountDetails.value = BookerMoMoAccount()
-//        _isEditMode.value = false
-//        oldAccountCopy = BookerMoMoAccount()
+    fun onSelectedSortFieldChange(new: SortField) {
+        _selectedSortField.value = new
+        _sortFields.value = BookerMoMoAccount.sortFields.toMutableList().apply {
+            val i = indexOfFirst { it.nameRes == new.nameRes }
+            this[i] = new
+        }
     }
 
     fun onToDeleteChange(new: String) {
@@ -153,7 +183,11 @@ class BookerMoMoAccountsVM @Inject constructor(
         _toDelete.value = listOf()
     }
 
-    fun deleteAccounts() {
+    fun onSheetStateChange(new: BookerMoMoAccountsSheetState) {
+        _sheetState.value = new
+    }
+
+    fun deleteObjects() {
         viewModelScope.launch {
             onLoadingChange(true)
             repo.deleteBookerMoMoAccounts(
@@ -199,11 +233,11 @@ class BookerMoMoAccountsVM @Inject constructor(
     }
 
     // Details
-    fun onDetailsDialogStateChange(new: BookerMoMoAccountDetailsDialogState) {
-        _detailsDialogState.value = new
+    fun onAccountDialogStateChange(new: BookerMoMoAccountDialogState) {
+        _accountDialogState.value = new
     }
 
-    fun onDetailsCompleteChange(new: Boolean) {
+    fun onAccountCompleteChange(new: Boolean) {
         _isDetailsComplete.value = new
     }
 
@@ -237,7 +271,7 @@ class BookerMoMoAccountsVM @Inject constructor(
             onLoadingChange(true)
             doOnStart()
             if (!hasAnyFieldChanged) {
-                onDetailsCompleteChange(true)
+                onAccountCompleteChange(true)
                 return
             }
             viewModelScope.launch {
@@ -247,12 +281,12 @@ class BookerMoMoAccountsVM @Inject constructor(
                             is Results.Failure -> {
                                 Log.e(TAG, result.exception.toString())
                                 onLoading(false)
-                                onMessageChange(R.string.msg_error_update_account)
+                                onMessageChange(R.string.msg_error_saving_account)
                             }
 
                             is Results.Success -> {
                                 onLoading(false)
-                                onDetailsCompleteChange(true)
+                                onAccountCompleteChange(true)
                             }
                         }
                     }
@@ -269,7 +303,7 @@ class BookerMoMoAccountsVM @Inject constructor(
 
                             is Results.Success -> {
                                 onLoading(false)
-                                onDetailsCompleteChange(true)
+                                onAccountCompleteChange(true)
                             }
                         }
                     }
@@ -278,6 +312,26 @@ class BookerMoMoAccountsVM @Inject constructor(
         } else {
             onMessageChange(R.string.msg_fields_contain_errors)
         }
+    }
+
+    fun onQueryChanged(new: String) {
+        _query.value = new
+    }
+
+    fun onSearchFieldChange(new: SortField) {
+        _selectedSearchField.value = new
+        _searchFields.value.toMutableList().apply {
+            val i = indexOf(new)
+            val temp = this[0]
+            this[0] = new
+            this[i] = temp
+        }.also {
+            _searchFields.value = it
+        }
+    }
+
+    fun onIsSearchingChange(new: Boolean) {
+        _isSearching.value = new
     }
 
     val hasAnyFieldChanged
@@ -289,23 +343,23 @@ class BookerMoMoAccountsVM @Inject constructor(
 }
 
 /** ----------------------------------DETAILS --------------------------------------------*/
-data class BookerMoMoAccountDetailsUiState(
+data class BookerMoMoAccountUiState(
     val isLoading: Boolean = false,
     val message: Int? = null,
     val account: BookerMoMoAccount = BookerMoMoAccount(),
     val isDetailsComplete: Boolean = false,
     val isEditMode: Boolean = false,
-    val detailsDialogState: BookerMoMoAccountDetailsDialogState = BookerMoMoAccountDetailsDialogState.NONE,
+    val detailsDialogState: BookerMoMoAccountDialogState = BookerMoMoAccountDialogState.NONE,
 ) {
     val formattedPhone: String
         get() = PhoneNumberUtils.formatNumber(
             account.phoneNumber,
             codeCountryMap["237"]!!
         )
+
 }
 
-enum class BookerMoMoAccountDetailsDialogState {
-    NONE, HELP_MAIN_PAGE, LEAVING_WITHOUT_SAVING, LEAVING_WITH_EMPTY_ACCOUNT, HELP_IS_ENABLED
+enum class BookerMoMoAccountDialogState {
+    NONE, ABOUT_MAIN_PAGE, LEAVING_WITHOUT_SAVING, LEAVING_WITH_EMPTY_ACCOUNT, HELP_IS_ENABLED
 }
-
 

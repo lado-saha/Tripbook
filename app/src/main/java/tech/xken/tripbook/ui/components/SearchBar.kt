@@ -7,7 +7,6 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.*
@@ -28,6 +27,7 @@ import androidx.compose.ui.unit.sp
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.constraintlayout.compose.Dimension
 import tech.xken.tripbook.R
+import tech.xken.tripbook.data.models.SortField
 import tech.xken.tripbook.domain.caps
 
 
@@ -38,33 +38,35 @@ import tech.xken.tripbook.domain.caps
 fun SearchBar(
     query: String,
     onQueryChange: (String) -> Unit,
-    queryFields: List<Int>,
-    onFieldClick: (new: Int) -> Unit,
+    fields: List<SortField>,
+    onFieldClick: (new: SortField) -> Unit,
     modifier: Modifier = Modifier,
-    @StringRes queryPlaceholder: Int = R.string.lb_search,
+    @StringRes placeholder: Int = R.string.lb_search,
     fieldsLazyListState: LazyListState = rememberLazyListState(),
     onBackClick: () -> Unit,
     onClearQueryClick: () -> Unit,
     isError: () -> Boolean = { false },
-
-    isFiltersVisible: Boolean,
-    filters: List<Filter>,
-    onFilterClick: (new: Filter) -> Unit,
-    filtersLazyListState: LazyListState = rememberLazyListState(),
+    onMoreClick: (() -> Unit)? = null
+//    isFiltersVisible: Boolean,
+//    filters: List<Filter>,
+//    onFilterClick: (new: Filter) -> Unit,
+//    filtersLazyListState: LazyListState = rememberLazyListState(),
 ) {
     Card(
-        modifier = modifier.padding(4.dp),
+        modifier = modifier.padding(2.dp),
         shape = RoundedCornerShape(50f),
-        elevation = if (query.isBlank()) 1.dp else 5.dp,
+        elevation = if (query.isBlank()) 4.dp else 8.dp,
         border = if (query.isBlank()) null else BorderStroke(
             width = 1.dp,
             color = if (isError()) MaterialTheme.colors.error else MaterialTheme.colors.primary
         )
     ) {
-        Column {
+        Column(
+            modifier = Modifier
+        ) {
             OutTextField(
                 modifier = Modifier.fillMaxWidth(),
-                textStyle = LocalTextStyle.current.copy(fontSize = 16.sp),
+//                textStyle = LocalTextStyle.current.copy(fontSize = 16.sp),
                 colors = TextFieldDefaults.outlinedTextFieldColors(
                     focusedBorderColor = Color.Transparent,
                     unfocusedBorderColor = Color.Transparent,
@@ -72,7 +74,7 @@ fun SearchBar(
                 value = query,
                 placeholder = {
                     Text(
-                        text = stringResource(queryPlaceholder).caps,
+                        text = stringResource(placeholder).caps,
                         style = TextStyle(fontSize = 16.sp)
                     )
                 },
@@ -80,13 +82,32 @@ fun SearchBar(
                     onQueryChange(it)
                 },
                 trailingIcon = {
-                    if (query.isNotBlank())
-                        IconButton(onClick = { onClearQueryClick() }) {
-                            Icon(
-                                imageVector = Icons.Rounded.Clear,
-                                contentDescription = null
-                            )
-                        }
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.wrapContentWidth()
+                    ) {
+                        if (query.isNotBlank())
+                            IconButton(
+                                onClick = { onClearQueryClick() },
+                                modifier = Modifier.padding(0.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Rounded.Clear,
+                                    contentDescription = null
+                                )
+                            }
+                        if (onMoreClick != null)
+                            IconButton(
+                                onClick = { onMoreClick() },
+                                modifier = Modifier.padding(0.dp)
+                            ) {
+                                Icon(
+                                    Icons.Outlined.MoreVert,
+                                    contentDescription = null,
+                                    tint = LocalContentColor.current
+                                )
+                            }
+                    }
                 },
                 leadingIcon = {
                     Row(
@@ -106,7 +127,10 @@ fun SearchBar(
                                 imageVector = Icons.Default.ArrowBack,
                                 contentDescription = stringResource(R.string.dsc_btn_cancel_search),
                             )
-                            Text(stringResource(id = queryFields.first()).caps, fontSize = 12.sp)
+                            Text(
+                                stringResource(id = fields.first().nameRes).caps,
+                                fontSize = 12.sp
+                            )
                         }
                     }
                 },
@@ -121,7 +145,7 @@ fun SearchBar(
                         .fillMaxWidth()
                 ) {
                     items(
-                        items = queryFields.subList(1, queryFields.size)
+                        items = fields.subList(1, fields.size)
                     ) { field ->
                         Button(
                             //Index + 1 Since we are excluding the already selected field which is at first index
@@ -132,59 +156,59 @@ fun SearchBar(
                                 .animateContentSize(),
                         ) {
                             Text(
-                                text = stringResource(id = field).caps,
+                                text = stringResource(id = field.nameRes).caps,
                                 style = TextStyle(fontSize = 12.sp)
                             )
                         }
                     }
                 }
             }
+        }
+        /*Divider(
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 2.dp),
+            thickness = 2.dp
+        )
 
-            Divider(
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 2.dp),
-                thickness = 2.dp
-            )
-
-            AnimatedVisibility(isFiltersVisible) {
-                LazyRow(
-                    state = filtersLazyListState,
-                    modifier = Modifier.fillMaxWidth(),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    item {
-                        IconButton(
-                            modifier = Modifier.padding(start = 4.dp, end = 8.dp),
-                            onClick = {}) {
+        AnimatedVisibility(isFiltersVisible) {
+            LazyRow(
+                state = filtersLazyListState,
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                item {
+                    IconButton(
+                        modifier = Modifier.padding(start = 4.dp, end = 8.dp),
+                        onClick = {}) {
+                        Icon(
+                            imageVector = Icons.Outlined.FilterAlt,
+                            contentDescription = null
+                        )
+                    }
+                }
+                items(
+                    items = filters
+                ) { filter ->
+                    OutlinedButton(
+                        onClick = { onFilterClick(filter) },
+                        shape = RoundedCornerShape(percent = 100),
+                        modifier = Modifier
+                            .padding(horizontal = 2.dp)
+                            .animateContentSize(),
+                    ) {
+                        if (filter.isSelected)
                             Icon(
-                                imageVector = Icons.Outlined.FilterAlt,
+                                modifier = Modifier
+                                    .padding(end = 4.dp)
+                                    .size(16.dp),
+                                imageVector = Icons.Outlined.Done,
                                 contentDescription = null
                             )
-                        }
-                    }
-                    items(
-                        items = filters
-                    ) { filter ->
-                        OutlinedButton(
-                            onClick = { onFilterClick(filter) },
-                            shape = RoundedCornerShape(percent = 100),
-                            modifier = Modifier
-                                .padding(horizontal = 2.dp)
-                                .animateContentSize(),
-                        ) {
-                            if (filter.isSelected)
-                                Icon(
-                                    modifier = Modifier
-                                        .padding(end = 4.dp)
-                                        .size(16.dp),
-                                    imageVector = Icons.Outlined.Done,
-                                    contentDescription = null
-                                )
-                            Text(stringResource(id = filter.name).caps, fontSize = 12.sp)
-                        }
+                        Text(stringResource(id = filter.name).caps, fontSize = 12.sp)
                     }
                 }
             }
-        }
+        }*/
+
     }
 }
 

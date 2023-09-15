@@ -1,6 +1,8 @@
 package tech.xken.tripbook.ui.navigation
 
+import androidx.activity.result.ActivityResult
 import androidx.compose.foundation.background
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -22,19 +24,22 @@ import androidx.compose.material.Text
 import androidx.compose.material.TextButton
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.AccountCircle
+import androidx.compose.material.icons.outlined.AppRegistration
 import androidx.compose.material.icons.outlined.Book
-import androidx.compose.material.icons.outlined.Business
+import androidx.compose.material.icons.outlined.EmojiTransportation
 import androidx.compose.material.icons.outlined.HelpCenter
-import androidx.compose.material.icons.outlined.Login
 import androidx.compose.material.icons.outlined.Logout
 import androidx.compose.material.icons.outlined.Luggage
+import androidx.compose.material.icons.outlined.Person
 import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -43,15 +48,17 @@ import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import tech.xken.tripbook.R
+import tech.xken.tripbook.data.models.ActionItem
+import tech.xken.tripbook.data.models.MainAction
 import tech.xken.tripbook.domain.caps
-import tech.xken.tripbook.domain.titleCase
+import tech.xken.tripbook.ui.navigation.BookingDestinations.AGENCY_PORTAL_ROUTE
+import tech.xken.tripbook.ui.navigation.BookingDestinations.BOOKER_AUTHENTICATION_ROUTE
 
 @Composable
-fun AppModalDrawer(
+fun BookingModalDrawer(
     drawerState: DrawerState,
     currentRoute: String,
     bookerNavActions: BookingNavActions,
-    agencyNavActions: AgencyNavActions,
 //    univNavActions: UnivNavActions,
     coroutineScope: CoroutineScope = rememberCoroutineScope(),
     isSignedIn: () -> Boolean,
@@ -60,7 +67,7 @@ fun AppModalDrawer(
     ModalDrawer(
         drawerState = drawerState,
         drawerContent = {
-            AppDrawer(
+            BookingDrawerContent(
                 currentRoute = currentRoute,
                 navigateToSignIn = {
                     coroutineScope.launch { bookerNavActions.navigateToSignIn(false) }
@@ -75,6 +82,11 @@ fun AppModalDrawer(
                         bookerNavActions.navigateToTripSearch()
                     }
                 },
+                navigateToAgencyPortal = {
+                    coroutineScope.launch {
+                        bookerNavActions.navigateToAgencyPortal()
+                    }
+                },
                 closeDrawer = { coroutineScope.launch { drawerState.close() } },
                 isSignedIn = isSignedIn,
                 signOut = { bookerNavActions.navigateToSignIn(true) }
@@ -86,11 +98,12 @@ fun AppModalDrawer(
 }
 
 @Composable
-private fun AppDrawer(
+private fun BookingDrawerContent(
     currentRoute: String,
     navigateToProfile: () -> Unit,
     navigateToSignIn: () -> Unit,
     navigateToTripSearch: () -> Unit,
+    navigateToAgencyPortal: () -> Unit,
     closeDrawer: () -> Unit,
     modifier: Modifier = Modifier,
     isSignedIn: () -> Boolean,
@@ -103,7 +116,7 @@ private fun AppDrawer(
     ) {
         Row(
             modifier = Modifier
-                .background(MaterialTheme.colors.primary)
+                .background(if (isSystemInDarkTheme()) Color.Unspecified else MaterialTheme.colors.primary)
                 .padding(4.dp)
                 .fillMaxWidth(),
             horizontalArrangement = Arrangement.Center,
@@ -113,14 +126,13 @@ private fun AppDrawer(
                 style = MaterialTheme.typography.h2.copy(
                     fontWeight = FontWeight.ExtraBold,
                     textAlign = TextAlign.Center,/* color = MaterialTheme.colors.primary*/
-                    color = MaterialTheme.colors.onPrimary
+                    color = Color.Unspecified
                 ),
-                modifier = Modifier.padding(4.dp)
+                modifier = Modifier.padding(4.dp),
             )
             Icon(
                 imageVector = Icons.Outlined.Luggage,
                 contentDescription = null,
-                tint = MaterialTheme.colors.onPrimary
             )
         }
 
@@ -130,64 +142,72 @@ private fun AppDrawer(
                 .fillMaxWidth()
         )
 
-        DrawerButton(
-            imageVector = Icons.Outlined.Search,
-            label = stringResource(id = R.string.lb_home),
+        ActionItem(
+            action = MainAction(
+                R.string.lb_home, Icons.Outlined.Search
+            ),
             isSelected = currentRoute == BookingScreens.BOOKER_TRIP_SEARCH,
-            action = {
+            onClick = {
                 closeDrawer()
                 navigateToTripSearch()
-            }
+            },
+            isBold = true
         )
 
         if (!isSignedIn())
-            DrawerButton(
-                imageVector = Icons.Outlined.Login,
-                label = stringResource(id = R.string.lb_sign_in),
-                isSelected = currentRoute == BookingScreens.BOOKER_SIGN_IN,
-                action = {
+            ActionItem(
+                action = MainAction(
+                    R.string.lb_sign_in_or_up, Icons.Outlined.Person,
+                ),
+                isSelected = currentRoute == BOOKER_AUTHENTICATION_ROUTE,
+                onClick = {
                     closeDrawer()
                     navigateToSignIn()
-                }
+                },
+                isBold = true
             )
 
         //Booker profile
         if (isSignedIn()) {
-            DrawerButton(
-                imageVector = Icons.Outlined.Book,
-                label = stringResource(id = R.string.lb_my_books).titleCase,
+            ActionItem(
+                action = MainAction(
+                    R.string.lb_my_books, Icons.Outlined.Book,
+                ),
                 isSelected = false,
-                action = {
-//                    navigateToTripSearch()
+                onClick = {
                     closeDrawer()
-                }
+                },
+                isBold = true
             )
-            DrawerButton(
-                imageVector = Icons.Outlined.AccountCircle,
-                label = stringResource(id = R.string.lb_my_profile).titleCase,
+
+            ActionItem(
+                action = MainAction(
+                    R.string.lb_my_profile, Icons.Outlined.AccountCircle
+                ),
                 isSelected = currentRoute == BookingScreens.BOOKER_PROFILE,
-                action = {
+                onClick = {
                     navigateToProfile()
                     closeDrawer()
-                }
+                },
+                isBold = true
             )
-            DrawerButton(
-                imageVector = Icons.Outlined.Settings,
-                label = stringResource(id = R.string.lb_settings).titleCase,
+            ActionItem(
+                action = MainAction(R.string.lb_settings, Icons.Outlined.Settings),
                 isSelected = false,
-                action = {
+                onClick = {
 //                    navigateToProfile()
                     closeDrawer()
-                }
+                },
+                isBold = true
             )
-            DrawerButton(
-                imageVector = Icons.Outlined.HelpCenter,
-                label = stringResource(id = R.string.lb_help_center).titleCase,
+            ActionItem(
+                action = MainAction(R.string.lb_help_center, Icons.Outlined.HelpCenter),
                 isSelected = false,
-                action = {
+                onClick = {
 //                    navigateToProfile()
                     closeDrawer()
-                }
+                },
+                isBold = true
             )
 
             Divider(
@@ -195,31 +215,159 @@ private fun AppDrawer(
                     .padding(vertical = 4.dp)
                     .fillMaxWidth()
             )
-            DrawerButton(
-                imageVector = Icons.Outlined.Business,
-                label = stringResource(id = R.string.lb_my_agency).titleCase,
+
+            ActionItem(
+                action = MainAction(R.string.lb_sign_out, Icons.Outlined.Logout),
                 isSelected = false,
-                action = {
-//                    navigateToProfile()
+                onClick = {
+                    signOut()
                     closeDrawer()
-                }
+                },
+                isBold = true
             )
+
             Divider(
                 modifier = Modifier
                     .padding(bottom = 18.dp)
                     .fillMaxWidth()
             )
 
-            DrawerButton(
-                imageVector = Icons.Outlined.Logout,
-                label = stringResource(id = R.string.lb_sign_out).titleCase,
-                isSelected = false,
-                action = {
-                    signOut()
+            ActionItem(
+                action = MainAction(R.string.lb_agency_portal, Icons.Outlined.EmojiTransportation),
+                isSelected = currentRoute == AGENCY_PORTAL_ROUTE,
+                onClick = {
+                    navigateToAgencyPortal()
                     closeDrawer()
-                }
+                },
+                isBold = true
             )
         }
+
+    }
+}
+
+@Composable
+fun AgencyModalDrawer(
+    drawerState: DrawerState,
+    currentRoute: String,
+    agencyNavActions: AgencyNavActions,
+//    univNavActions: UnivNavActions,
+    coroutineScope: CoroutineScope = rememberCoroutineScope(),
+    isSignedIn: () -> Boolean,
+    content: @Composable () -> Unit
+) {
+    ModalDrawer(
+        drawerState = drawerState,
+        drawerContent = {
+            AgencyDrawerContent(
+                currentRoute = currentRoute,
+                navigateBackToAgencyPortal = {
+
+                },
+                navigateToAgencyProfile = {
+                    coroutineScope.launch {
+                        agencyNavActions.navigateToAgencyProfile()
+                    }
+                },
+                closeDrawer = { coroutineScope.launch { drawerState.close() } },
+                isSignedIn = isSignedIn,
+                navigateToAgencyHelpCenter = {
+                    coroutineScope.launch {
+                        agencyNavActions.navigateHelpCenter()
+                    }
+                }
+            )
+        }, drawerElevation = 4.dp
+    ) {
+        content()
+    }
+}
+
+@Composable
+private fun AgencyDrawerContent(
+    currentRoute: String,
+    navigateToAgencyProfile: () -> Unit,
+    navigateBackToAgencyPortal: () -> Unit,
+    navigateToAgencyHelpCenter: () -> Unit,
+    closeDrawer: () -> Unit,
+    modifier: Modifier = Modifier,
+    isSignedIn: () -> Boolean
+) {
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+    ) {
+        Row(
+            modifier = Modifier
+                .background(if (isSystemInDarkTheme()) Color.Unspecified else MaterialTheme.colors.primary)
+                .padding(4.dp)
+                .fillMaxWidth(),
+            horizontalArrangement = Arrangement.Center,
+        ) {
+            Text(
+                stringResource(id = R.string.app_name).caps,
+                style = MaterialTheme.typography.h2.copy(
+                    fontWeight = FontWeight.ExtraBold,
+                    textAlign = TextAlign.Center,/* color = MaterialTheme.colors.primary*/
+                    color = Color.Unspecified
+                ),
+                modifier = Modifier.padding(4.dp),
+            )
+            Icon(
+                imageVector = Icons.Outlined.EmojiTransportation,
+                contentDescription = null,
+            )
+        }
+
+        Divider(
+            modifier = Modifier
+                .padding(bottom = 4.dp)
+                .fillMaxWidth()
+        )
+
+        ActionItem(
+            action = MainAction(
+                R.string.lb_agency_profile, Icons.Outlined.AppRegistration
+            ),
+            isSelected = currentRoute == AgencyDestinations.AGENCY_PROFILE_ROUTE,
+            onClick = {
+                closeDrawer()
+                navigateToAgencyProfile()
+            },
+            isBold = true
+        )
+
+        ActionItem(
+            action = MainAction(
+                R.string.lb_help_center, Icons.Outlined.HelpCenter,
+            ),
+            isSelected = currentRoute == AgencyDestinations.AGENCY_HELP_CENTER_ROUTE,
+            onClick = {
+                closeDrawer()
+                navigateToAgencyHelpCenter()
+            },
+            isBold = true
+        )
+
+        Divider(
+            modifier = Modifier
+                .padding(bottom = 18.dp)
+                .fillMaxWidth()
+        )
+
+        ActionItem(
+            action = MainAction(
+                R.string.lb_agency_portal, Icons.Outlined.Logout,
+            ),
+            isSelected = currentRoute == BookingDestinations.AGENCY_PORTAL_ROUTE,
+            onClick = {
+                closeDrawer()
+                navigateBackToAgencyPortal()
+            },
+            isBold = true
+        )
+
 
     }
 }
@@ -263,7 +411,7 @@ private fun DrawerButton(
     imageVector: ImageVector,
     label: String,
     isSelected: Boolean,
-    action: () -> Unit,
+    onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val tintColor = if (isSelected) {
@@ -273,7 +421,7 @@ private fun DrawerButton(
     }
 
     TextButton(
-        onClick = { action() },
+        onClick = { onClick() },
         modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = dimensionResource(id = R.dimen.horizontal_margin)),

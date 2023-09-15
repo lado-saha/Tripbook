@@ -1,30 +1,36 @@
 package tech.xken.tripbook.data.models.booker
 
+import android.telephony.PhoneNumberUtils
 import androidx.room.ColumnInfo
 import androidx.room.Entity
-import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDate
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import tech.xken.tripbook.R
-import tech.xken.tripbook.domain.NOW
+import tech.xken.tripbook.data.models.codeCountryMap
+import tech.xken.tripbook.domain.DATE_NOW
 
 typealias CI = ColumnInfo
-typealias SN = SerialName
+private typealias SN = SerialName
 
 @Serializable
-@Entity(tableName = "booker", primaryKeys = ["booker_id"])
+@Entity(tableName = Booker.NAME, primaryKeys = ["booker_id"])
 data class Booker(
     @CI(name = "booker_id") @SN("booker_id") val bookerId: String = "",
     @CI(name = "name") @SN("name") val name: String = "",
     @CI(name = "booker_sex") @SN("booker_sex") val bookerSex: Sex = Sex.Unspecified,
-    @CI(name = "added_on") @SN("added_on") val addedOn: Instant = Clock.System.now(),
+    @CI(name = "added_on") @SN("added_on") val addedOn: Instant? = null,
     @CI(name = "id_card_number") @SN("id_card_number") val idCardNumber: String = "",
-    @CI(name = "birthday") @SN("birthday") val birthday: LocalDate = NOW,
+    @CI(name = "birthday") @SN("birthday") val birthday: LocalDate = DATE_NOW,
     @CI(name = "occupation") @SN("occupation") val occupation: String? = null,
     @CI(name = "nationality") @SN("nationality") val nationality: String? = null,
-)
+    @ColumnInfo("modified_on") @SerialName("modified_on") val modifiedOn: Instant? = null
+){
+    companion object{
+        const val NAME =  "booker"
+    }
+}
 
 @Serializable
 data class BookerWithPhone(
@@ -35,9 +41,15 @@ data class BookerWithPhone(
 data class BookerCredentials(
     val phoneNumber: String = "",
     val phoneCode: String = "237",
+    val password: String = "",
     val token: String? = null
 ) {
-    val formattedPhone get() = "+$phoneCode$phoneNumber"
+    val fullPhoneNumber get() = "+$phoneCode$phoneNumber"
+    val formatedPhoneNumber
+        get() = PhoneNumberUtils.formatNumber(
+            phoneNumber,
+            codeCountryMap[phoneCode]
+        )
 }
 
 /*@Entity(tableName = Scanner.TABLE_NAME, primaryKeys = [Scanner.BOOKER_ID, Scanner.AGENCY_ID])

@@ -1,12 +1,104 @@
-//package tech.xken.tripbook.data.sources.agency.local
+package tech.xken.tripbook.data.sources.agency.local
+
+import androidx.room.Dao
+import androidx.room.Insert
+import androidx.room.Query
+import androidx.room.Update
+import kotlinx.coroutines.flow.Flow
+import kotlinx.datetime.Instant
+import tech.xken.tripbook.data.models.agency.AgencyAccount
+import tech.xken.tripbook.data.models.agency.AgencyEmailSupport
+import tech.xken.tripbook.data.models.agency.AgencyPhoneSupport
+import tech.xken.tripbook.data.models.agency.AgencyRefundPolicy
+import tech.xken.tripbook.data.models.agency.AgencySocialSupport
+import tech.xken.tripbook.data.models.agency.TripCancellationReason
+
 //
 //import androidx.room.*
 //import androidx.room.OnConflictStrategy.Companion.REPLACE
 //import kotlinx.coroutines.flow.Flow
 //import tech.xken.tripbook.data.models.*
 //
-//@Dao
-//interface AgencyDao {
+@Dao
+interface AgencyDao {
+    @Query("select * from agency_account where agency_id = :agencyId")
+    fun agencyAccount(agencyId: String): AgencyAccount
+    @Query("select * from agency_email_support where agency_id = :agencyId")
+    fun agencyEmailSupports(agencyId: String): List<AgencyEmailSupport>
+    @Query("select * from agency_phone_support where agency_id = :agencyId")
+    fun agencyPhoneSupports(agencyId: String): List<AgencyPhoneSupport>
+    @Query("select * from agency_social_support where agency_id = :agencyId")
+    fun agencySocialSupports(agencyId: String): AgencySocialSupport
+    @Query("select * from agency_refund_policy where agency_id = :agencyId")
+    fun agencyRefundPolicies(agencyId: String): List<AgencyRefundPolicy>
+
+    @Query("select max(*) from agency_account where agency_id = :agencyId")
+    fun agencyAccountLastModifiedOn(agencyId: String):Instant?
+    @Query("select max(*) from agency_email_support where agency_id = :agencyId")
+    fun agencyEmailSupportsLastModifiedOn(agencyId: String):Instant?
+    @Query("select max(*) from agency_phone_support where agency_id = :agencyId")
+    fun agencyPhoneSupportsLastModifiedOn(agencyId: String):Instant?
+    @Query("select max(*) from agency_social_support where agency_id = :agencyId")
+    fun agencySocialSupportsLastModifiedOn(agencyId: String):Instant?
+    @Query("select max(*) from agency_refund_policy where agency_id = :agencyId")
+    fun agencyRefundPoliciesLastModifiedOn(agencyId: String):Instant?
+
+    @Query("select count(agency_id) from agency_account where agency_id = :agencyId")
+    fun agencyAccountCount(agencyId: String): Flow<Long>
+    @Query("select count(agency_id) from agency_email_support where agency_id = :agencyId")
+    fun agencyEmailSupportsCount(agencyId: String): Flow<Long>
+    @Query("select count(agency_id) from agency_phone_support where agency_id = :agencyId")
+    fun agencyPhoneSupportsCount(agencyId: String): Flow<Long>
+    @Query("select count(agency_id) from agency_social_support where agency_id = :agencyId")
+    fun agencySocialSupportsCount(agencyId: String): Flow<Long>
+    @Query("select count(agency_id) from agency_refund_policy where agency_id = :agencyId")
+    fun agencyRefundPoliciesCount(agencyId: String): Flow<Long>
+
+    @Query("select * from agency_account where agency_id = :agencyId")
+    fun agencyAccountFlow(agencyId: String): Flow<AgencyAccount>
+    @Query("select * from agency_email_support where agency_id = :agencyId")
+    fun agencyEmailSupportsFlow(agencyId: String):Flow<List<AgencyEmailSupport>>
+    @Query("select * from agency_phone_support where agency_id = :agencyId")
+    fun agencyPhoneSupportsFlow(agencyId: String):Flow<List<AgencyPhoneSupport>>
+    @Query("select * from agency_social_support where agency_id = :agencyId")
+    fun agencySocialSupportFlow(agencyId: String):Flow<AgencySocialSupport>
+    @Query("select * from agency_refund_policy where agency_id = :agencyId")
+    fun agencyRefundPolicyFlow(agencyId: String):Flow< List<AgencyRefundPolicy>>
+//    @Query("select max(modified_on) from agency_account where agency_id=:agencyId")
+//    fun agencyLastModifiedOn(agencyId: String): Instant?
+
+    @Insert
+    fun createAgencyAccount(account: AgencyAccount)
+    @Insert
+    fun createEmailSupports(supports: List<AgencyEmailSupport>)
+    @Insert
+    fun createPhoneSupports(supports: List<AgencyPhoneSupport>)
+    @Insert
+    fun createSocialSupport(support: AgencySocialSupport)
+    @Insert
+    fun createRefundPolicies(policies: List<AgencyRefundPolicy>)
+    @Update
+    fun updateAgencyAccount(account: AgencyAccount)
+    @Update
+    fun updateEmailSupports(supports: List<AgencyEmailSupport>)
+    @Update
+    fun updatePhoneSupports(supports: List<AgencyPhoneSupport>)
+    @Update
+    fun updateSocialSupport(support: AgencySocialSupport)
+    @Update
+    fun updateRefundPolicies(supports: List<AgencyRefundPolicy>)
+
+//    @Query("delete from agency_account where agency_id = :agencyId")
+//    fun deleteAgencyAccount(agencyId: String)
+    @Query("delete from agency_email_support where agency_id = :agencyId and email in (:email)")
+    fun deleteEmailSupports(agencyId: String,email: List<String>)
+    @Query("delete from agency_phone_support where agency_id = :agencyId and phone_code in (:phoneCodes) and phone_number in (:phoneNumbers)")
+    fun deletePhoneSupports(agencyId: String,phoneCodes: List<String>,  phoneNumbers: List<String>)
+    @Query("delete from agency_social_support where agency_id = :agencyId")
+    fun deleteSocialSupport(agencyId: String)
+    @Query("delete from agency_refund_policy where agency_id = :agencyId and reason in (:reasons)")
+    fun deleteRefundPolicies(agencyId: String, reasons: List<TripCancellationReason>)
+}
 //    /**
 //     * gets all scanner's associated permissions
 //     */

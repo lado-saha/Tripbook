@@ -1,6 +1,5 @@
 package tech.xken.tripbook.ui.components
 
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Arrangement
@@ -24,23 +23,17 @@ import androidx.compose.material.LinearProgressIndicator
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Error
+import androidx.compose.material.icons.filled.ArrowForward
+import androidx.compose.material.icons.filled.ArrowForwardIos
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.filled.NavigateNext
 import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material.icons.outlined.Close
-import androidx.compose.material.icons.outlined.CloudDone
-import androidx.compose.material.icons.outlined.CloudOff
 import androidx.compose.material.icons.outlined.Delete
-import androidx.compose.material.icons.outlined.HelpOutline
+import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Refresh
+import androidx.compose.material.icons.outlined.Sort
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -57,8 +50,9 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.constraintlayout.compose.ConstraintLayout
 import androidx.constraintlayout.compose.Dimension
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import tech.xken.tripbook.R
+import tech.xken.tripbook.data.models.SortField
+import tech.xken.tripbook.ui.theme.ColorWarn
 import kotlin.coroutines.CoroutineContext
 
 data class InfoDialogUiState(
@@ -187,6 +181,97 @@ fun InfoDialog(
     }
 }
 
+@Composable
+fun SortingDialog(
+    onDismiss: () -> Unit,
+    sortFields: List<SortField>,
+    selectedField: SortField?,
+    onFieldClick: (SortField) -> Unit,
+) {
+    Dialog(
+        onDismissRequest = { onDismiss() },
+        properties = DialogProperties(dismissOnClickOutside = false, dismissOnBackPress = false)
+    ) {
+        Card {
+            ConstraintLayout(
+                modifier = Modifier
+                    .padding(16.dp)
+                    .wrapContentSize()
+                    .verticalScroll(rememberScrollState())
+
+            ) {
+                val (btnCloseRef, mainIconRef, titleRef, textRef) = createRefs()
+                IconButton(
+                    onClick = { onDismiss() },
+                    modifier = Modifier.constrainAs(btnCloseRef) {
+                        centerHorizontallyTo(parent, 1f)
+                        top.linkTo(parent.top)
+                    }
+                ) {
+                    Icon(
+                        imageVector = Icons.Outlined.Close,
+                        contentDescription = stringResource(id = R.string.desc_close_dialog),
+
+                        )
+                }
+
+                Icon(
+                    imageVector = Icons.Outlined.Sort,
+                    contentDescription = null,
+                    modifier = Modifier
+                        .constrainAs(mainIconRef) {
+                            centerHorizontallyTo(parent, 0f)
+                            top.linkTo(parent.top)
+                        }
+                        .padding(4.dp)
+                        .size(64.dp),
+                )
+
+                Text(
+                    text = stringResource(id = R.string.lb_sort_by),
+                    modifier = Modifier
+                        .constrainAs(titleRef) {
+                            centerHorizontallyTo(parent, 0f)
+                            top.linkTo(mainIconRef.bottom)
+                        }
+                        .padding(start = 4.dp, end = 4.dp, top = 16.dp, bottom = 8.dp),
+                    style = MaterialTheme.typography.h6,
+                    fontWeight = FontWeight.ExtraBold,
+                )
+
+                Column(
+                    modifier = Modifier
+                        .constrainAs(textRef) {
+                            centerHorizontallyTo(parent)
+                            top.linkTo(titleRef.bottom)
+                            bottom.linkTo(parent.bottom)
+//                            width = Dimension.fillToConstraints
+//                            height = Dimension.wrapContent
+                        }
+                        .padding(start = 4.dp, top = 4.dp, bottom = 8.dp, end = 4.dp),
+                ) {
+                    sortFields.forEach { field ->
+                        SortItem(
+                            modifier = Modifier
+                                .padding(2.dp)
+                                .fillMaxWidth(),
+                            field = field,
+                            isSelected = field.nameRes == selectedField?.nameRes,
+                            onAscendingClick = {
+                                onFieldClick(it.copy(ascending = true))
+                            },
+                            onDescendingClick = {
+                                onFieldClick(it.copy(ascending = false))
+                            }
+                        )
+                    }
+                }
+
+            }
+        }
+    }
+}
+
 
 data class DashboardItemUiState(
     val mainIcon: ImageVector = Icons.Filled.Image,
@@ -310,7 +395,7 @@ fun DashboardItem(
                             modifier = Modifier.padding(2.dp)
                         ) {
                             Icon(
-                                imageVector = Icons.Outlined.HelpOutline,
+                                imageVector = Icons.Outlined.Info,
                                 contentDescription = null
                             )
                         }
@@ -322,7 +407,7 @@ fun DashboardItem(
                             modifier = Modifier.padding(2.dp)
                         ) {
                             Icon(
-                                imageVector = Icons.Filled.NavigateNext,
+                                imageVector = Icons.Filled.ArrowForward,
                                 contentDescription = null,
                                 tint = MaterialTheme.colors.primary
                             )
@@ -516,7 +601,7 @@ fun DashboardItemNoIcon(
                             modifier = Modifier.padding(1.dp)
                         ) {
                             Icon(
-                                imageVector = Icons.Outlined.HelpOutline,
+                                imageVector = Icons.Outlined.Info,
                                 contentDescription = null
                             )
                         }
@@ -528,7 +613,7 @@ fun DashboardItemNoIcon(
                             modifier = Modifier.padding(2.dp)
                         ) {
                             Icon(
-                                imageVector = Icons.Filled.NavigateNext,
+                                imageVector = Icons.Filled.ArrowForward,
                                 contentDescription = null,
                                 tint = MaterialTheme.colors.primary
                             )
@@ -628,22 +713,32 @@ fun DashboardItemNoIcon(
 @Composable
 fun DashboardSubItem(
     modifier: Modifier = Modifier,
-    isError: Boolean,
+    isError: Boolean?,
     positiveText: String,
-    negativeText: String
+    errorText: String,
 ) {
     Row(
         modifier = modifier.fillMaxWidth(),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Icon(
-            imageVector = if (isError) Icons.Filled.Error else Icons.Filled.CheckCircle,
+            imageVector = Icons.Filled.NavigateNext,
             contentDescription = null,
             modifier = Modifier
                 .padding(horizontal = 8.dp)
                 .size(16.dp),
-            tint = MaterialTheme.colors.run { if (isError) error else primary }
+            tint = when (isError) {
+                false -> MaterialTheme.colors.primary
+                null -> ColorWarn
+                true -> MaterialTheme.colors.error
+            }
+
         )
-        Text(if (isError) negativeText else positiveText)
+        Text(
+            when (isError) {
+                false -> positiveText
+                else -> errorText
+            }
+        )
     }
 }

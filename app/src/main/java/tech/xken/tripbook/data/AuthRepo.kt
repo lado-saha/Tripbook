@@ -6,40 +6,48 @@ import io.github.jan.supabase.gotrue.OtpType
 import io.github.jan.supabase.gotrue.SessionStatus
 import io.github.jan.supabase.gotrue.gotrue
 import io.github.jan.supabase.gotrue.providers.builtin.Phone
-import io.github.jan.supabase.network.KtorSupabaseHttpClient
 import io.github.jan.supabase.postgrest.postgrest
-import io.github.jan.supabase.realtime.RealtimeChannel
+import io.github.jan.supabase.realtime.PostgresAction
 import io.github.jan.supabase.realtime.createChannel
+import io.github.jan.supabase.realtime.postgresChangeFlow
 import io.github.jan.supabase.realtime.realtime
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.decodeFromJsonElement
 import kotlinx.serialization.json.put
 import tech.xken.tripbook.data.models.Results
+import tech.xken.tripbook.data.models.booker.Booker
 import tech.xken.tripbook.data.models.booker.BookerCredentials
 import javax.inject.Inject
 
 
 class AuthRepo @Inject constructor(
     private val client: SupabaseClient
-    ) {
-
+) {
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO
     val authClient = client.gotrue
     val dbClient = client.postgrest
 
+    val isSignedIn = MutableStateFlow(authClient.currentUserOrNull() != null)
     val bookerId get() = authClient.currentSessionOrNull()?.user?.id
+    val isSignedInFlow = authClient.sessionStatus.map {
+        it is SessionStatus.Authenticated
+    }.onEach {
+        isSignedIn.value = it
+    }
 
-    val isSignedIn get() = authClient.currentUserOrNull() != null
+    val agencyId: String? = "gp"
+
 
     init {
-        val x: RealtimeChannel = client.realtime.createChannel(""){
-        }
         CoroutineScope(ioDispatcher).launch {
             when (authClient.sessionStatus.value) {
                 is SessionStatus.Authenticated -> {
@@ -68,20 +76,20 @@ class AuthRepo @Inject constructor(
     /**
      * Creates a new user in the auth schema and return the generated id
      */
-//    suspend fun phoneSignUp(
-//        credentials: BookerCredentials
-//    ) = withContext(ioDispatcher) {
-//        return@withContext try {
-//            Results.Success(
-//                authClient.signUpWith(Phone) {
-//                    password = credentials.password
-//                    phoneNumber = credentials.formattedPhone
-//                }
-//            )
-//        } catch (e: Exception) {
-//            Results.Failure(e)
-//        }
-//    }
+    suspend fun phoneSignUp(
+        credentials: BookerCredentials
+    ) = withContext(ioDispatcher) {
+        return@withContext try {
+            Results.Success(
+                authClient.signUpWith(Phone) {
+                    password = credentials.password
+                    phoneNumber = credentials.fullPhoneNumber
+                }
+            )
+        } catch (e: Exception) {
+            Results.Failure(e)
+        }
+    }
 
     /**
      * Tells us if a booker has already created a profile or not
@@ -126,7 +134,7 @@ class AuthRepo @Inject constructor(
         }
     }
 
-    suspend fun deleteBooker(bookerId: String) = withContext(ioDispatcher){
+    suspend fun deleteBooker(bookerId: String) = withContext(ioDispatcher) {
         return@withContext try {
             authClient
             authClient.refreshCurrentSession()
@@ -138,11 +146,28 @@ class AuthRepo @Inject constructor(
     /**
      * Sign in a user to database
      */
-    suspend fun bookerPhoneAuth(credentials: BookerCredentials) = withContext(ioDispatcher) {
+    suspend fun signUpBooker(credentials: BookerCredentials) = withContext(ioDispatcher) {
         return@withContext try {
             Results.Success(
                 authClient.sendOtpTo(Phone, createUser = true) {
-                    phoneNumber = credentials.formattedPhone
+                    phoneNumber = credentials.fullPhoneNumber
+                    password = credentials.password
+                }
+            )
+        } catch (e: Exception) {
+            Results.Failure(e)
+        }
+    }
+
+    /**
+     * Sign in a user to database
+     */
+    suspend fun signInBooker(credentials: BookerCredentials) = withContext(ioDispatcher) {
+        return@withContext try {
+            Results.Success(
+                authClient.sendOtpTo(Phone, createUser = false) {
+                    phoneNumber = credentials.fullPhoneNumber
+                    password = credentials.password
                 }
             )
         } catch (e: Exception) {
@@ -158,7 +183,7 @@ class AuthRepo @Inject constructor(
             return@withContext try {
                 Results.Success(authClient.verifyPhoneOtp(
                     type = OtpType.Phone.SMS,
-                    phoneNumber = credentials.formattedPhone,
+                    phoneNumber = credentials.fullPhoneNumber,
                     token = credentials.token!!,
                 ).also {
                     authClient.refreshCurrentSession()
@@ -171,7 +196,7 @@ class AuthRepo @Inject constructor(
     suspend fun resendPhoneToken(credentials: BookerCredentials) = withContext(ioDispatcher) {
         return@withContext try {
             Results.Success(
-                authClient.resendPhone(OtpType.Phone.SMS, credentials.formattedPhone)
+                authClient.resendPhone(OtpType.Phone.SMS, credentials.fullPhoneNumber)
             )
         } catch (e: Exception) {
             Results.Failure(e)
