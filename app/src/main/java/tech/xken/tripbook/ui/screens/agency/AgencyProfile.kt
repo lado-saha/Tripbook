@@ -22,16 +22,16 @@ import androidx.compose.material.ScaffoldState
 import androidx.compose.material.Text
 import androidx.compose.material.TopAppBar
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Payments
-import androidx.compose.material.icons.outlined.Badge
-import androidx.compose.material.icons.outlined.Dangerous
-import androidx.compose.material.icons.outlined.DeleteForever
+import androidx.compose.material.icons.outlined.Analytics
+import androidx.compose.material.icons.outlined.Email
+import androidx.compose.material.icons.outlined.EmojiTransportation
 import androidx.compose.material.icons.outlined.ErrorOutline
+import androidx.compose.material.icons.outlined.Groups3
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Menu
 import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.material.icons.outlined.Payments
-import androidx.compose.material.icons.outlined.Person
+import androidx.compose.material.icons.outlined.Phone
 import androidx.compose.material.rememberModalBottomSheetState
 import androidx.compose.material.rememberScaffoldState
 import androidx.compose.runtime.Composable
@@ -75,55 +75,58 @@ fun AgencyProfile(
 ) {
     val statusMap = remember {
         mapOf(
-            AgencyProfileDialogState.ABOUT_MAIN_PAGE to InfoDialogUiState(
-                mainIcon = Icons.Outlined.Person,
-                title = "My Booking Profile",
+            AgencyProfileDialogStatus.ABOUT_MAIN_PAGE to InfoDialogUiState(
+                mainIcon = Icons.Outlined.EmojiTransportation,
+                title = "Agency Profile",
                 text = buildAnnotatedString {
                     append("Text") //TODO: Add profile page hel text
                 },
                 positiveText = "I understand"
             ),
-            AgencyProfileDialogState.ABOUT_ACCOUNT to InfoDialogUiState(
-                mainIcon = Icons.Outlined.Badge,
-                title = "Me",
+            AgencyProfileDialogStatus.ABOUT_ACCOUNT to InfoDialogUiState(
+                mainIcon = Icons.Outlined.Analytics,
+                title = "Agency Account",
                 text = buildAnnotatedString {
                     append("Text") //TODO: Add profile page hel text
                 },
                 positiveText = "I understand"
             ),
-//            ABOUT_AGENCY_SETTINGS to InfoDialogUiState(
-//                mainIcon = Icons.Outlined.Business,
-//                title = "My Agency Settings",
-//                text = buildAnnotatedString {
-//                    append("Text here")//TODO: Add profile page is job seeker help text
-//                },
-//                positiveText = "I understand"
-//            ),
-            AgencyProfileDialogState.ABOUT_OM to InfoDialogUiState(
-                mainIcon = Icons.Filled.Payments,
-                title = "Orange Money Accounts",
+
+            AgencyProfileDialogStatus.ABOUT_EMAIL_SUPPORT to InfoDialogUiState(
+                mainIcon = Icons.Outlined.Email,
+                title = "Email Support",
                 text = buildAnnotatedString {
                     append("Text here")
                 },
                 positiveText = "I understand",
             ),
-            AgencyProfileDialogState.ABOUT_MOMO to InfoDialogUiState(
-                mainIcon = Icons.Filled.Payments,
-                title = "MTN MoMo Accounts",
+
+            AgencyProfileDialogStatus.ABOUT_PHONE_SUPPORT to InfoDialogUiState(
+                mainIcon = Icons.Outlined.Phone,
+                title = "Phone Support",
                 text = buildAnnotatedString {
                     append("Text here")
                 },
                 positiveText = "I understand",
             ),
-//            ABOUT_CREDIT_CARD to InfoDialogUiState(
-//                mainIcon = Icons.Outlined.CreditCard,
-//                title = "Credit Cards",
-//                text = buildAnnotatedString {
-//                    append("Text here")
-//                },
-//                positiveText = "I understand",
-//            ),
-            AgencyProfileDialogState.FAILED_GET_ACCOUNT to InfoDialogUiState(
+            AgencyProfileDialogStatus.ABOUT_SOCIAL_SUPPORT to InfoDialogUiState(
+                mainIcon = Icons.Outlined.Groups3,
+                title = "Social Media",
+                text = buildAnnotatedString {
+                    append("Text here")
+                },
+                positiveText = "I understand",
+            ),
+            AgencyProfileDialogStatus.ABOUT_REFUND_POLICY to InfoDialogUiState(
+                mainIcon = Icons.Outlined.Payments,
+                title = "Refund Policies",
+                text = buildAnnotatedString {
+                    append("Text here")
+                },
+                positiveText = "I understand",
+            ),
+
+            AgencyProfileDialogStatus.FAILED_GET_ACCOUNT to InfoDialogUiState(
                 mainIcon = Icons.Outlined.ErrorOutline,
                 title = "Could not get account",
                 text = buildAnnotatedString {
@@ -132,63 +135,43 @@ fun AgencyProfile(
                 positiveText = "Retry",
             ),
 
-            AgencyProfileDialogState.FAILED_GET_OM to InfoDialogUiState(
+            AgencyProfileDialogStatus.FAILED_GET_REFUND_POLICY to InfoDialogUiState(
                 mainIcon = Icons.Outlined.ErrorOutline,
-                title = "Could not get OM account",
+                title = "Could not get refund policy",
                 text = buildAnnotatedString {
                     append("Text here")
                 },
                 positiveText = "Retry",
             ),
 
-            AgencyProfileDialogState.FAILED_GET_MOMO to InfoDialogUiState(
+            AgencyProfileDialogStatus.FAILED_GET_EMAIL_SUPPORT to InfoDialogUiState(
                 mainIcon = Icons.Outlined.ErrorOutline,
-                title = "Could not get MoMo account",
+                title = "Could not get support emails",
                 text = buildAnnotatedString {
                     append("Text here")
                 },
                 positiveText = "Retry",
             ),
 
-            AgencyProfileDialogState.FAILED_GET_AGENCY_SETTINGS to InfoDialogUiState(
+            AgencyProfileDialogStatus.FAILED_GET_PHONE_SUPPORT to InfoDialogUiState(
                 mainIcon = Icons.Outlined.ErrorOutline,
-                title = "Could not Agency Settings",
+                title = "Could not get support phone numbers",
                 text = buildAnnotatedString {
                     append("Text here")
                 },
                 positiveText = "Retry",
             ),
-            AgencyProfileDialogState.DELETE_ACCOUNT_1 to InfoDialogUiState(
-                mainIcon = Icons.Outlined.Dangerous,
-                title = "Danger zone! Want to delete account?",
+
+            AgencyProfileDialogStatus.FAILED_GET_SOCIAL_SUPPORT to InfoDialogUiState(
+                mainIcon = Icons.Outlined.ErrorOutline,
+                title = "Could not Social support",
                 text = buildAnnotatedString {
                     append("Text here")
                 },
-                positiveText = "No",
-                isNegative = true,
-                otherText = "I want"
+                positiveText = "Retry",
             ),
-            AgencyProfileDialogState.DELETE_ACCOUNT_2 to InfoDialogUiState(
-                mainIcon = Icons.Outlined.DeleteForever,
-                title = "Warning! Want to delete account?",
-                text = buildAnnotatedString {
-                    append("Text here")
-                },
-                positiveText = "No",
-                isNegative = true,
-                otherText = "I really want"
-            ),
-            AgencyProfileDialogState.DELETE_ACCOUNT_3 to InfoDialogUiState(
-                mainIcon = Icons.Outlined.DeleteForever,
-                title = "Final Warning! Do you want to delete your Account?",
-                text = buildAnnotatedString {
-                    append("Text here")
-                },
-                positiveText = "Nooooo!",
-                isNegative = true,
-                otherText = "I really really want!"
+
             )
-        )
     }
 
     val uis by vm.uiState.collectAsState()
@@ -200,7 +183,7 @@ fun AgencyProfile(
         confirmValueChange = {
             when (it) {
                 ModalBottomSheetValue.Hidden -> {
-                    vm.onSheetStateChange(AgencyProfileSheetState.NONE)
+                    vm.onSheetStateChange(AgencyProfileSheetStatus.NONE)
                 }
 
                 ModalBottomSheetValue.Expanded -> {}
@@ -210,7 +193,7 @@ fun AgencyProfile(
         }
     )
     LaunchedEffect(uis.sheetStatus) {
-        if (uis.sheetStatus != AgencyProfileSheetState.NONE) {
+        if (uis.sheetStatus != AgencyProfileSheetStatus.NONE) {
             sheetState.show()
         } else if (sheetState.targetValue != ModalBottomSheetValue.Hidden || sheetState.currentValue != ModalBottomSheetValue.Hidden) {
             sheetState.hide()
@@ -218,153 +201,128 @@ fun AgencyProfile(
     }
 
     when (val status = uis.dialogStatus) {
-        AgencyProfileDialogState.ABOUT_ACCOUNT -> InfoDialog(
+        AgencyProfileDialogStatus.ABOUT_ACCOUNT -> InfoDialog(
             uis = statusMap[status]!!,
             onCloseClick = {
-                vm.onDialogStateChange(AgencyProfileDialogState.NONE)
+                vm.onDialogStateChange(AgencyProfileDialogStatus.NONE)
             }, onPositiveClick = {
-                vm.onDialogStateChange(AgencyProfileDialogState.NONE)
+                vm.onDialogStateChange(AgencyProfileDialogStatus.NONE)
             }
         )
 
-        AgencyProfileDialogState.ABOUT_MOMO -> InfoDialog(
+        AgencyProfileDialogStatus.ABOUT_PHONE_SUPPORT -> InfoDialog(
             uis = statusMap[status]!!,
             onCloseClick = {
-                vm.onDialogStateChange(AgencyProfileDialogState.NONE)
+                vm.onDialogStateChange(AgencyProfileDialogStatus.NONE)
             }, onPositiveClick = {
-                vm.onDialogStateChange(AgencyProfileDialogState.NONE)
+                vm.onDialogStateChange(AgencyProfileDialogStatus.NONE)
             }
         )
 
-        AgencyProfileDialogState.ABOUT_OM -> InfoDialog(
+        AgencyProfileDialogStatus.ABOUT_EMAIL_SUPPORT -> InfoDialog(
             uis = statusMap[status]!!,
             onCloseClick = {
-                vm.onDialogStateChange(AgencyProfileDialogState.NONE)
+                vm.onDialogStateChange(AgencyProfileDialogStatus.NONE)
             }, onPositiveClick = {
-                vm.onDialogStateChange(AgencyProfileDialogState.NONE)
+                vm.onDialogStateChange(AgencyProfileDialogStatus.NONE)
             }
         )
 
-//        ABOUT_CREDIT_CARD -> InfoDialog(
-//            uis = statusMap[status]!!,
-//            onCloseClick = {
-//                vm.onDialogStateChange(NONE)
-//            }, onPositiveClick = {
-//                vm.onDialogStateChange(NONE)
-//            }
-//        )
-//
-//        ABOUT_AGENCY_SETTINGS -> InfoDialog(
-//            uis = statusMap[status]!!,
-//            onCloseClick = {
-//                vm.onDialogStateChange(NONE)
-//
-//            }, onPositiveClick = {
-//                vm.onDialogStateChange(NONE)
-//            }
-//        )
-
-        AgencyProfileDialogState.ABOUT_MAIN_PAGE ->
+        AgencyProfileDialogStatus.ABOUT_MAIN_PAGE ->
             InfoDialog(
                 uis = statusMap[status]!!,
                 onCloseClick = {
-                    vm.onDialogStateChange(AgencyProfileDialogState.NONE)
+                    vm.onDialogStateChange(AgencyProfileDialogStatus.NONE)
                 }, onPositiveClick = {
-                    vm.onDialogStateChange(AgencyProfileDialogState.NONE)
+                    vm.onDialogStateChange(AgencyProfileDialogStatus.NONE)
                 }
             )
 
-        AgencyProfileDialogState.NONE -> {}
-        AgencyProfileDialogState.FAILED_GET_ACCOUNT -> InfoDialog(
+        AgencyProfileDialogStatus.NONE -> {}
+        AgencyProfileDialogStatus.FAILED_GET_ACCOUNT -> InfoDialog(
             uis = statusMap[status]!!,
             onCloseClick = {
-                vm.onDialogStateChange(AgencyProfileDialogState.NONE)
+                vm.onDialogStateChange(AgencyProfileDialogStatus.NONE)
             },
 
             onPositiveClick = {
-                vm.onAccountCompleteChange(null)
-                vm.onDialogStateChange(AgencyProfileDialogState.NONE)
+//                vm.onAccountCompleteChange(null)
+                vm.onDialogStateChange(AgencyProfileDialogStatus.NONE)
             },
         )
 
-        AgencyProfileDialogState.FAILED_GET_OM -> InfoDialog(
+        AgencyProfileDialogStatus.FAILED_GET_EMAIL_SUPPORT -> InfoDialog(
             uis = statusMap[status]!!,
             onCloseClick = {
-                vm.onDialogStateChange(AgencyProfileDialogState.NONE)
+                vm.onDialogStateChange(AgencyProfileDialogStatus.NONE)
             },
             onPositiveClick = {
-                vm.onOMCompleteChange(null)
-                vm.onDialogStateChange(AgencyProfileDialogState.NONE)
+//                vm.onOMCompleteChange(null)
+                vm.onDialogStateChange(AgencyProfileDialogStatus.NONE)
             },
 
             )
 
-        AgencyProfileDialogState.FAILED_GET_MOMO -> InfoDialog(
+        AgencyProfileDialogStatus.FAILED_GET_PHONE_SUPPORT -> InfoDialog(
             uis = statusMap[status]!!,
             onCloseClick = {
-                vm.onDialogStateChange(AgencyProfileDialogState.NONE)
+                vm.onDialogStateChange(AgencyProfileDialogStatus.NONE)
             },
             onPositiveClick = {
-                vm.onMoMoCompleteChange(null)
-                vm.onDialogStateChange(AgencyProfileDialogState.NONE)
+//                vm.onMoMoCompleteChange(null)
+                vm.onDialogStateChange(AgencyProfileDialogStatus.NONE)
             },
 
             )
 
-        AgencyProfileDialogState.FAILED_GET_AGENCY_SETTINGS -> InfoDialog(
+        AgencyProfileDialogStatus.ABOUT_SOCIAL_SUPPORT -> InfoDialog(
             uis = statusMap[status]!!,
             onCloseClick = {
-                vm.onDialogStateChange( AgencyProfileDialogState.NONE)
-                navigateUp()
+                vm.onDialogStateChange(AgencyProfileDialogStatus.NONE)
+//                navigateUp()
             },
             onPositiveClick = {
-                vm.onAgencySettingsCompleteChange(null)
-                vm.onDialogStateChange(AgencyProfileDialogState.NONE)
+//                vm.onAgencySettingsCompleteChange(null)
+                vm.onDialogStateChange(AgencyProfileDialogStatus.NONE)
             },
         )
 
-        AgencyProfileDialogState.DELETE_ACCOUNT_1 -> InfoDialog(
+        AgencyProfileDialogStatus.ABOUT_REFUND_POLICY -> InfoDialog(
             uis = statusMap[status]!!,
             onCloseClick = {
-                vm.onDialogStateChange(AgencyProfileDialogState.NONE)
+                vm.onDialogStateChange(AgencyProfileDialogStatus.NONE)
+//                navigateUp()
             },
             onPositiveClick = {
-                vm.onDialogStateChange(AgencyProfileDialogState.NONE)
+//                vm.onAgencySettingsCompleteChange(null)
+                vm.onDialogStateChange(AgencyProfileDialogStatus.NONE)
             },
-            onOtherClick = {
-                vm.onDialogStateChange(AgencyProfileDialogState.DELETE_ACCOUNT_2)
-            },
-            mainIconTint = MaterialTheme.colors.error
         )
 
-        AgencyProfileDialogState.DELETE_ACCOUNT_2 -> InfoDialog(
+        AgencyProfileDialogStatus.FAILED_GET_SOCIAL_SUPPORT -> InfoDialog(
             uis = statusMap[status]!!,
             onCloseClick = {
-                vm.onDialogStateChange(AgencyProfileDialogState.NONE)
+                vm.onDialogStateChange(AgencyProfileDialogStatus.NONE)
+//                navigateUp()
             },
             onPositiveClick = {
-                vm.onDialogStateChange(AgencyProfileDialogState.NONE)
+//                vm.onAgencySettingsCompleteChange(null)
+                vm.onDialogStateChange(AgencyProfileDialogStatus.NONE)
             },
-            onOtherClick = {
-                vm.onDialogStateChange(AgencyProfileDialogState.DELETE_ACCOUNT_3)
-            },
-            mainIconTint = MaterialTheme.colors.error
         )
 
-        AgencyProfileDialogState.DELETE_ACCOUNT_3 -> InfoDialog(
+        AgencyProfileDialogStatus.FAILED_GET_REFUND_POLICY -> InfoDialog(
             uis = statusMap[status]!!,
             onCloseClick = {
-                vm.onDialogStateChange(AgencyProfileDialogState.NONE)
+                vm.onDialogStateChange(AgencyProfileDialogStatus.NONE)
+//                navigateUp()
             },
             onPositiveClick = {
-                vm.onDialogStateChange(AgencyProfileDialogState.NONE)
+//                vm.onAgencySettingsCompleteChange(null)
+                vm.onDialogStateChange(AgencyProfileDialogStatus.NONE)
             },
-            onOtherClick = {
-                vm.onDialogStateChange(AgencyProfileDialogState.NONE)
-            }, mainIconTint = MaterialTheme.colors.error
         )
 
-        else -> {}
     }
 
     BackHandler(true) {
@@ -377,7 +335,7 @@ fun AgencyProfile(
     ModalBottomSheetLayout(
         sheetContent = {
             when (uis.sheetStatus) {
-                AgencyProfileSheetState.ACTIONS -> {
+                AgencyProfileSheetStatus.ACTIONS -> {
                     ActionSheet(
                         modifier = Modifier.fillMaxWidth()
                     ) {
@@ -386,15 +344,15 @@ fun AgencyProfile(
                         ActionItem(
                             action = MainAction(R.string.lb_about_page, Icons.Outlined.Info),
                             onClick = {
-                                vm.onDialogStateChange(AgencyProfileDialogState.ABOUT_MAIN_PAGE)
-                                vm.onSheetStateChange(AgencyProfileSheetState.NONE)
+                                vm.onDialogStateChange(AgencyProfileDialogStatus.ABOUT_MAIN_PAGE)
+                                vm.onSheetStateChange(AgencyProfileSheetStatus.NONE)
                             },
                         )
 
                     }
                 }
 
-                AgencyProfileSheetState.NONE -> {}
+                AgencyProfileSheetStatus.NONE -> {}
             }
         }, sheetShape = MaterialTheme.shapes.medium.copy(
             topEnd = CornerSize(10), topStart = CornerSize(10),
@@ -408,7 +366,7 @@ fun AgencyProfile(
                 TopAppBar(
                     title = {
                         Text(
-                            text = stringResource(id = R.string.lb_my_profile).titleCase,
+                            text = stringResource(id = R.string.lb_agency_profile).titleCase,
                             style = MaterialTheme.typography.h5.copy(fontWeight = FontWeight.SemiBold)
                         )
                     },
@@ -424,7 +382,7 @@ fun AgencyProfile(
                     modifier = Modifier.fillMaxWidth(),
                     actions = {
                         IconButton(onClick = {
-                            vm.onSheetStateChange(AgencyProfileSheetState.ACTIONS)
+                            vm.onSheetStateChange(AgencyProfileSheetStatus.ACTIONS)
                         }) {
                             Icon(
                                 Icons.Outlined.MoreVert,
@@ -433,7 +391,8 @@ fun AgencyProfile(
 
                             )
                         }
-                    }
+                    },
+                    elevation = 0.dp
                 )
             },
         ) { paddingValues ->
@@ -449,24 +408,24 @@ fun AgencyProfile(
                         .padding(fieldPadding)
                         .fillMaxWidth(),
                     uis = DashboardItemUiState(
-                        mainIcon = Icons.Outlined.Badge,
-                        title = "My Account Details",
+                        mainIcon = Icons.Outlined.Analytics,
+                        title = "Account Details",
                         isClickable = true,
                         isHelpable = true,
-                        isLoading = uis.isAccountComplete == null,
-                        isFailure = uis.isAccountComplete == false,
+                        isLoading = !uis.isAccountComplete,
+//                        isFailure = !uis.isAccountComplete,
                         isDeletable = uis.hasAccount
                     ),
                     onClick = { onNavigateToAccount() },
                     onHelpClick = {
-                        vm.onDialogStateChange(AgencyProfileDialogState.ABOUT_ACCOUNT)
+                        vm.onDialogStateChange(AgencyProfileDialogStatus.ABOUT_ACCOUNT)
                     },
                     mainIconColor = MaterialTheme.colors.onSurface,
                     onRetryClick = {
-                        vm.onAccountCompleteChange(null)
+//                        vm.onAccountCompleteChange(null)
                     },
                     onDeleteClick = {
-                        vm.onDialogStateChange(AgencyProfileDialogState.DELETE_ACCOUNT_1)
+//                        vm.onDialogStateChange(AgencyProfileDialogStatus.DELETE_ACCOUNT_1)
                     }
                 ) {
                     Column(
@@ -479,12 +438,7 @@ fun AgencyProfile(
                             positiveText = "Account found",
                             errorText = "No account found. Please add"
                         )
-                        DashboardSubItem(
-                            modifier = Modifier.padding(2.dp),
-                            isError = !uis.hasAccountPhoto,
-                            positiveText = "Account photo found",
-                            errorText = "No account photo found. Please add"
-                        )
+
                     }
                 }
 
@@ -493,58 +447,22 @@ fun AgencyProfile(
                         .padding(fieldPadding)
                         .fillMaxWidth(),
                     uis = DashboardItemUiState(
-                        mainIcon = Icons.Outlined.Payments,
-                        title = "MTN MoMo Accounts",
+                        mainIcon = Icons.Outlined.Phone,
+                        title = "Phone Support",
                         isClickable = true,
                         isHelpable = true,
-
-                        isLoading = uis.isMoMoAccountComplete == null,
-                        isFailure = uis.isMoMoAccountComplete == false,
+                        isLoading = !uis.isPhoneSupportComplete,
+//                        isFailure = uis.isMoMoAccountComplete == false,
                     ),
                     onRetryClick = {
-                        vm.onMoMoCompleteChange(null)
+//                        vm.onMoMoCompleteChange(null)
                     },
                     mainIconColor = MaterialTheme.colors.onSurface,
                     onClick = {
-                        onNavigateToMoMoAccount()
+////                        onNavigateToMoMoAccount()
                     },
                     onHelpClick = {
-                        vm.onDialogStateChange(AgencyProfileDialogState.ABOUT_MOMO)
-                    })
-                {
-                    Column(
-                        modifier = Modifier.padding(start = 4.dp)
-                    ) {
-                        DashboardSubItem(
-                            modifier = Modifier.padding(2.dp),
-                            isError = uis.emailSupportCount == 0L,
-                            positiveText = "MoMo Accounts found: ${uis.emailSupportCount}",
-                            errorText = "No MoMo account found"
-                        )
-                    }
-                }
-
-                DashboardItem(
-                    modifier = Modifier
-                        .padding(fieldPadding)
-                        .fillMaxWidth(),
-                    uis = DashboardItemUiState(
-                        mainIcon = Icons.Outlined.Payments,
-                        title = "Orange Money Accounts",
-                        isClickable = true,
-                        isHelpable = true,
-                        isLoading = uis.isOMAccountComplete == null,
-                        isFailure = uis.isOMAccountComplete == false,
-                    ),
-                    onClick = {
-                        onNavigateToOMAccount()
-                    },
-                    onHelpClick = {
-                        vm.onDialogStateChange(AgencyProfileDialogState.ABOUT_OM)
-                    },
-                    mainIconColor = MaterialTheme.colors.onSurface,
-                    onRetryClick = {
-                        vm.onOMCompleteChange(null)
+                        vm.onDialogStateChange(AgencyProfileDialogStatus.ABOUT_PHONE_SUPPORT)
                     }
                 ) {
                     Column(
@@ -553,39 +471,117 @@ fun AgencyProfile(
                         DashboardSubItem(
                             modifier = Modifier.padding(2.dp),
                             isError = uis.phoneSupportCount == 0L,
-                            positiveText = "OM Accounts found: ${uis.phoneSupportCount}",
-                            errorText = "No OM account found"
+                            positiveText = "Phone numbers found: ${uis.phoneSupportCount}",
+                            errorText = "No phone number found"
                         )
                     }
                 }
 
+                DashboardItem(
+                    modifier = Modifier
+                        .padding(fieldPadding)
+                        .fillMaxWidth(),
+                    uis = DashboardItemUiState(
+                        mainIcon = Icons.Outlined.Email,
+                        title = "Email Support",
+                        isClickable = true,
+                        isHelpable = true,
+                        isLoading = !uis.isEmailSupportComplete,
+                    ),
+                    onRetryClick = {
+//                        vm.onMoMoCompleteChange(null)
+                    },
+                    mainIconColor = MaterialTheme.colors.onSurface,
+                    onClick = {
+////                        onNavigateToMoMoAccount()
+                    },
+                    onHelpClick = {
+                        vm.onDialogStateChange(AgencyProfileDialogStatus.ABOUT_EMAIL_SUPPORT)
+                    }
+                )
+                {
+                    Column(
+                        modifier = Modifier.padding(start = 4.dp)
+                    ) {
+                        DashboardSubItem(
+                            modifier = Modifier.padding(2.dp),
+                            isError = uis.emailSupportCount == 0L,
+                            positiveText = "Emails found: ${uis.emailSupportCount}",
+                            errorText = "No email founds"
+                        )
+                    }
+                }
 
-//                DashboardItem(
-//                    modifier = Modifier
-//                        .padding(fieldPadding)
-//                        .fillMaxWidth(),
-//                    uis = DashboardItemUiState(
-//                        mainIcon = Icons.Outlined.Business,
-//                        title = "My Agency Settings",
-//                        isClickable = true,
-//                        isHelpable = true,
-//                        isLoading = uis.isAgencySettingsComplete == null,
-//                        isFailure = uis.isAgencySettingsComplete == false,
-//                    ),
-//                    onClick = {
-//
-//                    },
-//                    onHelpClick = {
-//                        vm.onDialogStateChange(ABOUT_AGENCY_SETTINGS)
-//                    },
-//                    mainIconColor = MaterialTheme.colors.onSurface,
-//                    onRetryClick = {
-//                        vm.onAgencySettingsCompleteChange(null)
-//                    }
-//
-//                ) {
-//
-//                }
+                DashboardItem(
+                    modifier = Modifier
+                        .padding(fieldPadding)
+                        .fillMaxWidth(),
+                    uis = DashboardItemUiState(
+                        mainIcon = Icons.Outlined.Groups3,
+                        title = "Social Support",
+                        isClickable = true,
+                        isHelpable = true,
+                        isLoading = !uis.isSocialSupportComplete,
+//                        isFailure = uis.isMoMoAccountComplete == false,
+                    ),
+                    onRetryClick = {
+//                        vm.onMoMoCompleteChange(null)
+                    },
+                    mainIconColor = MaterialTheme.colors.onSurface,
+                    onClick = {
+//                        onNavigateToMoMoAccount()
+                    },
+                    onHelpClick = {
+                        vm.onDialogStateChange(AgencyProfileDialogStatus.ABOUT_PHONE_SUPPORT)
+                    }
+                ) {
+                    Column(
+                        modifier = Modifier.padding(start = 4.dp)
+                    ) {
+                        DashboardSubItem(
+                            modifier = Modifier.padding(2.dp),
+                            isError = !uis.hasSocialSupport,
+                            positiveText = "Social accounts found",
+                            errorText = "No social account. Please add"
+                        )
+                    }
+                }
+
+                DashboardItem(
+                    modifier = Modifier
+                        .padding(fieldPadding)
+                        .fillMaxWidth(),
+                    uis = DashboardItemUiState(
+                        mainIcon = Icons.Outlined.Payments,
+                        title = "Refund Policy",
+                        isClickable = true,
+                        isHelpable = true,
+                        isLoading = !uis.isRefundPoliciesComplete,
+//                        isFailure = uis.isMoMoAccountComplete == false,
+                    ),
+                    onRetryClick = {
+//                        vm.onMoMoCompleteChange(null)
+                    },
+                    mainIconColor = MaterialTheme.colors.onSurface,
+                    onClick = {
+//                        onNavigateToMoMoAccount()
+                    },
+                    onHelpClick = {
+                        vm.onDialogStateChange(AgencyProfileDialogStatus.ABOUT_REFUND_POLICY)
+                    }
+                ) {
+                    Column(
+                        modifier = Modifier.padding(start = 4.dp)
+                    ) {
+                        DashboardSubItem(
+                            modifier = Modifier.padding(2.dp),
+                            isError = uis.refundPoliciesCount == 0L,
+                            positiveText = "Refund policies found: ${uis.refundPoliciesCount}",
+                            errorText = "No refund policy. Please add"
+                        )
+                    }
+                }
+
 
             }
         }

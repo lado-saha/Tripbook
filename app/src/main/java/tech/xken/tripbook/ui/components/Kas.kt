@@ -24,13 +24,14 @@ import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowForward
-import androidx.compose.material.icons.filled.ArrowForwardIos
 import androidx.compose.material.icons.filled.Image
-import androidx.compose.material.icons.filled.NavigateNext
+import androidx.compose.material.icons.outlined.Cancel
 import androidx.compose.material.icons.outlined.Check
+import androidx.compose.material.icons.outlined.CheckCircleOutline
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material.icons.outlined.NavigateNext
 import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material.icons.outlined.Sort
 import androidx.compose.runtime.Composable
@@ -407,7 +408,7 @@ fun DashboardItem(
                             modifier = Modifier.padding(2.dp)
                         ) {
                             Icon(
-                                imageVector = Icons.Filled.ArrowForward,
+                                imageVector = Icons.Outlined.NavigateNext,
                                 contentDescription = null,
                                 tint = MaterialTheme.colors.primary
                             )
@@ -613,7 +614,7 @@ fun DashboardItemNoIcon(
                             modifier = Modifier.padding(2.dp)
                         ) {
                             Icon(
-                                imageVector = Icons.Filled.ArrowForward,
+                                imageVector = Icons.Outlined.NavigateNext,
                                 contentDescription = null,
                                 tint = MaterialTheme.colors.primary
                             )
@@ -722,7 +723,11 @@ fun DashboardSubItem(
         verticalAlignment = Alignment.CenterVertically
     ) {
         Icon(
-            imageVector = Icons.Filled.NavigateNext,
+            imageVector = when (isError) {
+                false -> Icons.Outlined.CheckCircleOutline
+                null -> Icons.Outlined.Info
+                true -> Icons.Outlined.Cancel
+            },
             contentDescription = null,
             modifier = Modifier
                 .padding(horizontal = 8.dp)

@@ -1,6 +1,7 @@
 package tech.xken.tripbook.data.models.agency
 
 import androidx.room.Entity
+import androidx.room.Ignore
 import kotlinx.datetime.Clock
 import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDate
@@ -11,6 +12,12 @@ import tech.xken.tripbook.data.models.booker.CI
 import tech.xken.tripbook.domain.DATE_NOW
 
 typealias SN = SerialName
+
+@Serializable
+data class Param(
+    @SN("p_agency_id") val agencyId: String,
+    @SN("p_from_instant") val fromInstant: Instant
+)
 
 
 @Serializable
@@ -28,9 +35,9 @@ data class AgencyAccount(
     data class Log(
         @SN("log_id") val logId: Long,
         @SN("agency_id") val agencyId: String,
-        @SN("timestamp") val timestamp: Instant,
+        @SN("added_on") val addedOn: Instant,
         @SN("db_action") val dbAction: DbAction,
-        @SN("scanner_id") val scannerId: String,
+        @SN("scanner_id") val scannerId: String?=null,
         @SN("data_json") val data: AgencyAccount? = null,
     ) {
         companion object {
@@ -91,9 +98,9 @@ data class AgencyEvent(
         @SN("log_id") val logId: Long,
         @SN("agency_id") val agencyId: String,
         @SN("event_id") val eventId: String,
-        @SN("timestamp") val timestamp: Instant,
+        @SN("added_on") val addedOn: Instant,
         @SN("db_action") val dbAction: DbAction,
-        @SN("scanner_id") val scannerId: String,
+        @SN("scanner_id") val scannerId: String?=null,
     ) {
         companion object {
             const val NAME = "agency_event_log"

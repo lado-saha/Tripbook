@@ -91,7 +91,7 @@ fun BookingModalDrawer(
                 isSignedIn = isSignedIn,
                 signOut = { bookerNavActions.navigateToSignIn(true) }
             )
-        }, drawerElevation = 4.dp
+        }, drawerElevation = 0.dp
     ) {
         content()
     }
@@ -277,7 +277,7 @@ fun AgencyModalDrawer(
                     }
                 }
             )
-        }, drawerElevation = 4.dp
+        }, drawerElevation = 0.dp
     ) {
         content()
     }

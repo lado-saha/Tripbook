@@ -1,12 +1,12 @@
 package tech.xken.tripbook.data.sources.agency.remote
 
+import android.util.Log
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.rpc
 import io.github.jan.supabase.realtime.PostgresAction
-import io.github.jan.supabase.realtime.createChannel
+import io.github.jan.supabase.realtime.RealtimeChannel
 import io.github.jan.supabase.realtime.postgresChangeFlow
-import io.github.jan.supabase.realtime.realtime
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
@@ -14,7 +14,7 @@ import kotlinx.coroutines.withContext
 import kotlinx.datetime.Instant
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.decodeFromJsonElement
-import tech.xken.tripbook.data.models.Channel
+import kotlinx.serialization.json.jsonArray
 import tech.xken.tripbook.data.models.DbAction
 import tech.xken.tripbook.data.models.Results
 import tech.xken.tripbook.data.models.Results.Failure
@@ -26,6 +26,7 @@ import tech.xken.tripbook.data.models.agency.AgencyLegalDocs
 import tech.xken.tripbook.data.models.agency.AgencyPhoneSupport
 import tech.xken.tripbook.data.models.agency.AgencyRefundPolicy
 import tech.xken.tripbook.data.models.agency.AgencySocialSupport
+import tech.xken.tripbook.data.models.agency.Param
 import tech.xken.tripbook.data.models.agency.TripCancellationReason
 import tech.xken.tripbook.data.models.data
 import tech.xken.tripbook.data.sources.RPC
@@ -36,18 +37,28 @@ import kotlin.coroutines.CoroutineContext
 class AgencyRemoteDataSource @Inject constructor(
     val ioDispatcher: CoroutineContext,
     val client: SupabaseClient,
+    override val channel: RealtimeChannel
 ) : AgencyDataSource {
     private val parser = Json {
         coerceInputValues = true
         encodeDefaults = true
     }
 
-    override val channel = client.realtime.createChannel(Channel.AGENCY)
-    override suspend fun agencyAccountLastModifiedOn(agencyId: String)=TODO("Not to be called from remote")
-    override suspend fun agencyEmailSupportsLastModifiedOn(agencyId: String)=TODO("Not to be called from remote")
-    override suspend fun agencyPhoneSupportsLastModifiedOn(agencyId: String)=TODO("Not to be called from remote")
-    override suspend fun agencySocialSupportsLastModifiedOn(agencyId: String)=TODO("Not to be called from remote")
-    override suspend fun agencyRefundPoliciesLastModifiedOn(agencyId: String)=TODO("Not to be called from remote")
+
+    override suspend fun agencyAccountLastModifiedOn(agencyId: String) =
+        TODO("Not to be called from remote")
+
+    override suspend fun agencyEmailSupportsLastModifiedOn(agencyId: String) =
+        TODO("Not to be called from remote")
+
+    override suspend fun agencyPhoneSupportsLastModifiedOn(agencyId: String) =
+        TODO("Not to be called from remote")
+
+    override suspend fun agencySocialSupportsLastModifiedOn(agencyId: String) =
+        TODO("Not to be called from remote")
+
+    override suspend fun agencyRefundPoliciesLastModifiedOn(agencyId: String) =
+        TODO("Not to be called from remote")
 
     override suspend fun agencyAccount(
         agencyId: String,
@@ -55,7 +66,9 @@ class AgencyRemoteDataSource @Inject constructor(
         try {
             client.postgrest[Schema.AGENCY, AgencyAccount.NAME].select {
                 AgencyAccount::agencyId eq agencyId
-            }.runCatching { parser.decodeFromJsonElement<List<AgencyAccount>>(body!!)[0] }
+            }.runCatching {
+                parser.decodeFromJsonElement<List<AgencyAccount>>(body!!)[0]
+            }
                 .getOrNull().let { Success(it) }
         } catch (e: Exception) {
             Failure(e)
@@ -72,22 +85,22 @@ class AgencyRemoteDataSource @Inject constructor(
             try {
                 client.postgrest.rpc(
                     function = RPC.AGENCY_LATEST_ACCOUNT_LOG,
-                    parameters = mapOf(
-                        "agency_id" to agencyId, "from_instant" to fromInstant
-                    )
-                ).run { Success(parser.decodeFromJsonElement<List<AgencyAccount.Log>>(body!!)[0]) }
+                    parameters = Param(agencyId = agencyId, fromInstant = fromInstant!!)
+                ).run {
+                    Success(parser.decodeFromJsonElement<List<AgencyAccount.Log>>(body!!)[0])
+                }
             } catch (e: Exception) {
                 Failure(e)
             }
         }
 
     override fun agencyAccountLogFlow(agencyId: String) =
-        channel.postgresChangeFlow<PostgresAction.Insert>(AgencyAccount.Log.NAME) {
+        channel.postgresChangeFlow<PostgresAction.Insert>(Schema.AGENCY) {
             table = AgencyAccount.Log.NAME
-            filter = "${AgencyAccount.Log::agencyId}.eq.$agencyId"
+//            filter =
         }
             .map { r ->
-                parser.decodeFromJsonElement<List<AgencyAccount.Log>>(r.record)[0]
+                parser.decodeFromJsonElement<AgencyAccount.Log>(r.record)
                     .runCatching {
                         Success(
                             copy(
@@ -100,6 +113,7 @@ class AgencyRemoteDataSource @Inject constructor(
                     }.getOrElse { Failure(it as Exception) }
             }
             .catch { emit(Failure(it as Exception)) }
+
 
     override suspend fun createAgencyAccount(
         account: AgencyAccount
@@ -126,7 +140,7 @@ class AgencyRemoteDataSource @Inject constructor(
         }
     }
 
-    override suspend fun countAgencyAccount(agencyId: String) =
+    override fun countAgencyAccount(agencyId: String) =
         TODO("Not to be called from remote.")
 
     override suspend fun emailSupports(
@@ -150,22 +164,24 @@ class AgencyRemoteDataSource @Inject constructor(
             try {
                 client.postgrest.rpc(
                     function = RPC.AGENCY_LATEST_EMAIL_SUPPORT_LOG,
-                    parameters = mapOf(
-                        "agency_id" to agencyId, "from_instant" to fromInstant
-                    )
+                    parameters = Param(agencyId = agencyId, fromInstant = fromInstant!!)
                 )
-                    .run { Success(parser.decodeFromJsonElement<List<AgencyEmailSupport.Log>>(body!!)) }
+                    .run {
+                        Success(
+                            parser.decodeFromJsonElement<List<AgencyEmailSupport.Log>>(body!!)
+                        )
+                    }
             } catch (e: Exception) {
                 Failure(e)
             }
         }
 
     override fun emailSupportsLogFlow(agencyId: String) =
-        channel.postgresChangeFlow<PostgresAction.Insert>(AgencyEmailSupport.Log.NAME) {
+        channel.postgresChangeFlow<PostgresAction.Insert>(Schema.AGENCY) {
             table = AgencyEmailSupport.Log.NAME
-            filter = "${AgencyEmailSupport.Log::agencyId}.eq.$agencyId"
+//            filter =
         }.map { r ->
-            parser.decodeFromJsonElement<List<AgencyEmailSupport.Log>>(r.record)[0]
+            parser.decodeFromJsonElement<AgencyEmailSupport.Log>(r.record)
                 .runCatching {
                     Success(
                         copy(
@@ -210,7 +226,7 @@ class AgencyRemoteDataSource @Inject constructor(
         Failure(e)
     }
 
-    override suspend fun countEmailSupports(agencyId: String) =
+    override fun countEmailSupports(agencyId: String) =
         TODO("Not to be called from remote.")
 
     override suspend fun phoneSupports(
@@ -233,12 +249,10 @@ class AgencyRemoteDataSource @Inject constructor(
     override suspend fun phoneSupportsLatestLogs(agencyId: String, fromInstant: Instant?) =
         withContext(ioDispatcher) {
             try {
-                client.postgrest[Schema.AGENCY_LOG, AgencyPhoneSupport.Log.NAME].select {
-                    AgencyPhoneSupport.Log::agencyId eq agencyId
-                    fromInstant?.let {
-                        AgencyPhoneSupport.Log::timestamp gt it
-                    }
-                }
+                client.postgrest.rpc(
+                    function = RPC.AGENCY_LATEST_PHONE_SUPPORT_LOG,
+                    parameters = Param(agencyId = agencyId, fromInstant = fromInstant!!)
+                )
                     .run { Success(parser.decodeFromJsonElement<List<AgencyPhoneSupport.Log>>(body!!)) }
             } catch (e: Exception) {
                 Failure(e)
@@ -246,11 +260,11 @@ class AgencyRemoteDataSource @Inject constructor(
         }
 
     override fun phoneSupportsLogFlow(agencyId: String) =
-        channel.postgresChangeFlow<PostgresAction.Insert>(AgencyPhoneSupport.Log.NAME) {
+        channel.postgresChangeFlow<PostgresAction.Insert>(Schema.AGENCY) {
             table = AgencyPhoneSupport.Log.NAME
-            filter = "${AgencyPhoneSupport.Log::agencyId}.eq.$agencyId"
+//            filter =
         }.map { r ->
-            parser.decodeFromJsonElement<List<AgencyPhoneSupport.Log>>(r.record)[0]
+            parser.decodeFromJsonElement<AgencyPhoneSupport.Log>(r.record)
                 .runCatching {
                     Success(
                         copy(
@@ -299,7 +313,7 @@ class AgencyRemoteDataSource @Inject constructor(
         Failure(e)
     }
 
-    override suspend fun countPhoneSupports(agencyId: String) =
+    override fun countPhoneSupports(agencyId: String) =
         TODO("Not to be called from remote.")
 
     override suspend fun socialSupport(
@@ -321,25 +335,23 @@ class AgencyRemoteDataSource @Inject constructor(
         agencyId: String,
         fromInstant: Instant?
     ) = withContext(ioDispatcher) {
-            try {
-                client.postgrest[Schema.AGENCY_LOG, AgencySocialSupport.Log.NAME].select {
-                    AgencySocialSupport.Log::agencyId eq agencyId
-                    fromInstant?.let {
-                        AgencySocialSupport.Log::timestamp gt it
-                    }
-                }
-                    .run { Success(parser.decodeFromJsonElement<List<AgencySocialSupport.Log>>(body!!)[0]) }
-            } catch (e: Exception) {
-                Failure(e)
-            }
+        try {
+            client.postgrest.rpc(
+                function = RPC.AGENCY_LATEST_SOCIAL_SUPPORT_LOG,
+                parameters = Param(agencyId, fromInstant!!)
+            )
+                .run { Success(parser.decodeFromJsonElement<List<AgencySocialSupport.Log>>(body!!)[0]) }
+        } catch (e: Exception) {
+            Failure(e)
         }
+    }
 
-    override fun socialSupportLogFlow(agencyId: String)=
-        channel.postgresChangeFlow<PostgresAction.Insert>(AgencySocialSupport.Log.NAME) {
+    override fun socialSupportLogFlow(agencyId: String) =
+        channel.postgresChangeFlow<PostgresAction.Insert>(Schema.AGENCY) {
             table = AgencySocialSupport.Log.NAME
-            filter = "${AgencySocialSupport.Log::agencyId}.eq.$agencyId"
+//            filter =
         }.map { r ->
-            parser.decodeFromJsonElement<List<AgencySocialSupport.Log>>(r.record)[0]
+            parser.decodeFromJsonElement<AgencySocialSupport.Log>(r.record)
                 .runCatching {
                     Success(
                         copy(
@@ -366,7 +378,7 @@ class AgencyRemoteDataSource @Inject constructor(
         }
     }
 
-    override suspend fun updateSocialSupports(
+    override suspend fun updateSocialSupport(
         agencyId: String, supports: AgencySocialSupport
     ): Results<AgencySocialSupport?> = withContext(ioDispatcher) {
         try {
@@ -389,7 +401,7 @@ class AgencyRemoteDataSource @Inject constructor(
         }
     }
 
-    override suspend fun countSocialAccount(agencyId: String) =
+    override fun countSocialAccount(agencyId: String) =
         TODO("Not to be called from remote.")
 
     override suspend fun refundPolicies(
@@ -410,12 +422,10 @@ class AgencyRemoteDataSource @Inject constructor(
     override suspend fun refundPolicyLatestLogs(agencyId: String, fromInstant: Instant?) =
         withContext(ioDispatcher) {
             try {
-                client.postgrest[Schema.AGENCY_LOG, AgencyRefundPolicy.Log.NAME].select {
-                    AgencyRefundPolicy.Log::agencyId eq agencyId
-                    fromInstant?.let {
-                        AgencyRefundPolicy.Log::timestamp gt it
-                    }
-                }
+                client.postgrest.rpc(
+                    function = RPC.AGENCY_LATEST_REFUND_POLICY_LOG,
+                    parameters = Param(agencyId = agencyId, fromInstant = fromInstant!!)
+                )
                     .run { Success(parser.decodeFromJsonElement<List<AgencyRefundPolicy.Log>>(body!!)) }
             } catch (e: Exception) {
                 Failure(e)
@@ -423,11 +433,11 @@ class AgencyRemoteDataSource @Inject constructor(
         }
 
     override fun refundPoliciesLogFlow(agencyId: String) =
-        channel.postgresChangeFlow<PostgresAction.Insert>(AgencyRefundPolicy.Log.NAME) {
+        channel.postgresChangeFlow<PostgresAction.Insert>(Schema.AGENCY) {
             table = AgencyRefundPolicy.Log.NAME
-            filter = "${AgencyRefundPolicy.Log::agencyId}.eq.$agencyId"
+//            filter =
         }.map { r ->
-            parser.decodeFromJsonElement<List<AgencyRefundPolicy.Log>>(r.record)[0]
+            parser.decodeFromJsonElement<AgencyRefundPolicy.Log>(r.record)
                 .runCatching {
                     Success(
                         copy(
@@ -473,7 +483,7 @@ class AgencyRemoteDataSource @Inject constructor(
         Failure(e)
     }
 
-    override suspend fun countRefundPolicies(agencyId: String) =
+    override fun countRefundPolicies(agencyId: String) =
         TODO("Not to be called from remote.")
 
     override suspend fun legalDocs(

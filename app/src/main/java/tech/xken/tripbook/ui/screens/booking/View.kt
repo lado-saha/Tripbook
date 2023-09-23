@@ -309,6 +309,7 @@ fun EntitiesView(
                         )
 
                         false -> TopAppBar(
+                            elevation = 0.dp,
                             title = {
                                 //TODO: Change
                                 Text(
@@ -567,6 +568,7 @@ fun EntityView(
         scaffoldState = scaffoldState,
         topBar = {
             TopAppBar(
+                elevation = 0.dp,
                 title = {
                     Text(
                         text = ""/*if (uis.isEditMode) TODO("On edit mode") else TODO("Else"),*/,

@@ -428,6 +428,7 @@ fun CacheSync(
         scaffoldState = scaffoldState,
         topBar = {
             TopAppBar(
+                elevation = 0.dp,
                 title = {
                     Text(
                         text = stringResource(id = R.string.lb_synchronization).titleCase,

@@ -24,6 +24,7 @@ data class AgencyPhoneSupport(
     @CI("is_telegram") @SN("is_telegram") val isTelegram: Boolean = false,
     @CI("is_enabled") @SN("is_enabled") val isEnabled: Boolean = false,
     @CI("added_on") @SN("added_on") val addedOn: Instant? = null,
+    @CI("description") @SN("description") val description: String? = null,
     @CI("modified_on") @SN("modified_on") val modifiedOn: Instant? = null,
 ) {
     @Serializable
@@ -33,16 +34,15 @@ data class AgencyPhoneSupport(
         @SN("agency_id") val agencyId: String,
         @SN("phone_number") val phoneNumber: String,
         @SN("phone_code") val phoneCode: String,
-        @SN("timestamp") val timestamp: Instant,
+        @SN("added_on") val addedOn: Instant,
         @SN("db_action") val dbAction: DbAction,
-        @SN("scanner_id") val scannerId: String
+        @SN("scanner_id") val scannerId: String?=null
     ) {
         companion object {
             const val NAME = "agency_phone_support_log"
         }
 
     }
-
     companion object {
         const val NAME = "agency_phone_support"
     }
@@ -62,6 +62,7 @@ data class AgencyEmailSupport(
     @CI("is_enabled") @SN("is_enabled") val isEnabled: Boolean = false,
     @CI("added_on") @SN("added_on") val addedOn: Instant? = null,
     @CI("modified_on") @SN("modified_on") val modifiedOn: Instant? = null,
+    @CI("description")@SN("description") val description: String?=null,
 ) {
     @Serializable
     data class Log(
@@ -69,9 +70,10 @@ data class AgencyEmailSupport(
         @SN("log_id") val logId: Long,
         @SN("agency_id") val agencyId: String,
         @SN("email") val email: String,
-        @SN("timestamp") val timestamp: Instant,
+        @SN("added_on") val addedOn: Instant,
         @SN("db_action") val dbAction: DbAction,
-        @SN("scanner_id") val scannerId: String
+        @SN("scanner_id") val scannerId: String?=null,
+
     ) {
         companion object {
             const val NAME = "agency_email_support_log"
@@ -114,9 +116,9 @@ data class AgencySocialSupport(
         @SN("data_json") val data: AgencySocialSupport? = null,
         @SN("log_id") val logId: Long,
         @SN("agency_id") val agencyId: String,
-        @SN("timestamp") val timestamp: Instant,
+        @SN("added_on") val addedOn: Instant,
         @SN("db_action") val dbAction: DbAction,
-        @SN("scanner_id") val scannerId: String
+        @SN("scanner_id") val scannerId: String?=null
     ) {
         companion object {
             const val NAME = "agency_social_support_log"

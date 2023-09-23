@@ -4,12 +4,13 @@ import android.util.Log
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.launch
 import tech.xken.tripbook.data.AuthRepo
+import tech.xken.tripbook.data.models.NEW_ID
 import tech.xken.tripbook.data.models.Results
 import tech.xken.tripbook.data.models.exception
 import tech.xken.tripbook.data.sources.agency.AgencyRepository
@@ -22,23 +23,28 @@ data class AgencyProfileUiState(
     val message: Int? = null,
     val isInitComplete: Boolean = false,
     val isComplete: Boolean = false,
-    val dialogStatus: AgencyProfileDialogState = AgencyProfileDialogState.NONE,
-    val emailSupportCount: Long = 0,
-    val phoneSupportCount: Long = 0,
+    val dialogStatus: AgencyProfileDialogStatus = AgencyProfileDialogStatus.NONE,
+
+    val emailSupportCount: Long = 0L,
+    val phoneSupportCount: Long = 0L,
+    val refundPoliciesCount: Long = 0L,
     val hasAccount: Boolean = false,
-    val hasAccountLogo: Boolean = false,
     val hasSocialSupport: Boolean = false,
-    val bookerCreditCardCount: Long = 0,
-    val isAccountComplete: Boolean? = null,
-    val isMoMoAccountComplete: Boolean? = null,
-    val isOMAccountComplete: Boolean? = null,
-    val isAgencySettingsComplete: Boolean? = null,
-    val sheetStatus: AgencyProfileSheetState = AgencyProfileSheetState.NONE,
+
+    val isEmailSupportComplete: Boolean = false,
+    val isPhoneSupportComplete: Boolean = false,
+    val isRefundPoliciesComplete: Boolean = false,
+    val isAccountComplete: Boolean = false,
+    val isSocialSupportComplete: Boolean = false,
+
+    val sheetStatus: AgencyProfileSheetStatus = AgencyProfileSheetStatus.NONE,
 )
-enum class AgencyProfileSheetState {
+
+enum class AgencyProfileSheetStatus {
     ACTIONS, NONE
 }
 
+@HiltViewModel
 class AgencyProfileVM @Inject constructor(
     private val repo: AgencyRepository,
     private val authRepo: AuthRepo,
@@ -47,120 +53,122 @@ class AgencyProfileVM @Inject constructor(
 ) : ViewModel() {
     // To know if we are signing in up or checking the booker profile
     private val _message = MutableStateFlow<Int?>(null)
-    private val _isInitComplete = MutableStateFlow(!authRepo.hasAccount)
+    private val _isInitComplete = MutableStateFlow(authRepo.agencyId == NEW_ID)
     private val _isComplete = MutableStateFlow(false)
-    private val _dialogStatus = MutableStateFlow(AgencyProfileDialogState.NONE)
-    private val _hasAccount = MutableStateFlow(authRepo.hasAccount)
-    private val _hasAccountLogo = MutableStateFlow(authRepo.hasAccountLogo)
-    private val _bookerCreditCardCount = MutableStateFlow(0L)
-    private val _hasAgencyConfigs = MutableStateFlow(false)
-    private val _isAccountComplete = MutableStateFlow<Boolean?>(null)
-    private val _isMoMoAccountComplete = MutableStateFlow<Boolean?>(null)
-    private val _isOMAccountComplete = MutableStateFlow<Boolean?>(null)
-    private val _isAgencySettingsComplete = MutableStateFlow<Boolean?>(null)
-    private val _sheetState = MutableStateFlow(AgencyProfileSheetState.NONE)
-    init {
-        initProfile()
-    }
+    private val _dialogStatus = MutableStateFlow(AgencyProfileDialogStatus.NONE)
+
+//    private val _hasAccount = MutableStateFlow(authRepo.agencyId != NEW_ID)
+//    private val _emailSupportCount = MutableStateFlow(0)
+//    private val _phoneSupportCount = MutableStateFlow(0)
+//    private val _refundPoliciesCount = MutableStateFlow(0)
+//    private val _hasSocialSupport = MutableStateFlow(false)
+
+    private val _isAccountComplete = MutableStateFlow(false)
+    private val _isPhoneSupportComplete = MutableStateFlow(false)
+    private val _isEmailSupportComplete = MutableStateFlow(false)
+    private val _isRefundPoliciesComplete = MutableStateFlow(false)
+    private val _isSocialSupportComplete = MutableStateFlow(false)
+    private val _sheetState = MutableStateFlow(AgencyProfileSheetStatus.NONE)
 
     val uiState = combine(
-        // To know if we are signing in up or checking the booker profile
         _message,
         _isInitComplete,
         _isComplete,
         _dialogStatus,
-        repo.countBookerMoMoAccounts(authRepo.bookerId!!)
-            .map {
-                when (it) {
-                    is Results.Success -> {
-                        _isMoMoAccountComplete.value = true
-                        it.data
-                    }
-
-                    else -> {
-                        _dialogStatus.value = AgencyProfileDialogState.FAILED_GET_MOMO
-                        _isMoMoAccountComplete.value = false
-                        Log.e(TAG, "MOMO: ${it.exception}")
-                        0L
-                    }
-                }
-            },
-        repo.countBookerOMAccounts(authRepo.bookerId!!)
-            .map {
-                when (it) {
-                    is Results.Success -> {
-                        _isOMAccountComplete.value = true
-                        it.data
-                    }
-
-                    is Results.Failure -> {
-                        _isOMAccountComplete.value = false
-                        _dialogStatus.value = AgencyProfileDialogState.FAILED_GET_OM
-                        Log.e(TAG, "OM: ${it.exception}")
-                        0L
-                    }
-                }
-            },
-        _hasAccount,
-        _hasAccountLogo,
-        _hasAgencyConfigs,
-        _bookerCreditCardCount,
-        _isAccountComplete,
-        _isMoMoAccountComplete,
-        _isOMAccountComplete,
-        _isAgencySettingsComplete,
         _sheetState,
+
+        repo.countAgencyAccount(authRepo.agencyId).map {
+            _isAccountComplete.value = true
+            when (it) {
+                is Results.Success -> {
+                    it.data
+                }
+                else -> {
+                    Log.e(TAG, "Agency Account: ${it.exception}")
+                    _dialogStatus.value = AgencyProfileDialogStatus.FAILED_GET_ACCOUNT
+                    0L
+                }
+            }
+        }, // Boolean
+        repo.countPhoneSupports(authRepo.agencyId).map {
+            _isPhoneSupportComplete.value = true
+            when (it) {
+                is Results.Success -> it.data
+                else -> {
+                    _dialogStatus.value = AgencyProfileDialogStatus.FAILED_GET_PHONE_SUPPORT
+                    Log.e(TAG, "Phone Support: ${it.exception}")
+                    0L
+                }
+            }
+        },
+        repo.countEmailSupports(authRepo.agencyId).map {
+            _isEmailSupportComplete.value = true
+            when (it) {
+                is Results.Success -> it.data
+                else -> {
+                    _dialogStatus.value = AgencyProfileDialogStatus.FAILED_GET_PHONE_SUPPORT
+                    Log.e(TAG, "Email Support: ${it.exception}")
+                    0L
+                }
+            }
+        },
+        repo.countSocialAccount(authRepo.agencyId!!).map {
+            _isSocialSupportComplete.value = true
+            when (it) {
+                is Results.Success -> it.data
+                is Results.Failure -> {
+                    _dialogStatus.value = AgencyProfileDialogStatus.FAILED_GET_SOCIAL_SUPPORT
+                    Log.e(TAG, "Social Account: ${it.exception}")
+                    0L
+                }
+            }
+        }, // Boolean
+        repo.countRefundPolicies(authRepo.agencyId!!).map {
+            _isRefundPoliciesComplete.value = true
+            when (it) {
+                is Results.Success -> it.data
+                is Results.Failure -> {
+                    _dialogStatus.value = AgencyProfileDialogStatus.FAILED_GET_REFUND_POLICY
+                    Log.e(TAG, "Refund policy: ${it.exception}")
+                    0L
+                }
+            }
+        },
+
+        _isAccountComplete,
+        _isPhoneSupportComplete,
+        _isEmailSupportComplete,
+        _isRefundPoliciesComplete,
+        _isSocialSupportComplete,
     ) {
         AgencyProfileUiState(
             message = it[0] as Int?,
             isInitComplete = it[1] as Boolean,
             isComplete = it[2] as Boolean,
-            dialogStatus = it[3] as AgencyProfileDialogState,
-            emailSupportCount = it[4] as Long,
-            phoneSupportCount = it[5] as Long,
-            hasAccount = it[6] as Boolean,
-            hasAccountLogo = it[7] as Boolean,
-            hasSocialSupport = it[8] as Boolean,
-            bookerCreditCardCount = it[9] as Long,
-            isAccountComplete = it[10] as Boolean?,
-            isMoMoAccountComplete = it[11] as Boolean?,
-            isOMAccountComplete = it[12] as Boolean?,
-            isAgencySettingsComplete = it[13] as Boolean?,
-            sheetStatus = it[14] as AgencyProfileSheetState
+            dialogStatus = it[3] as AgencyProfileDialogStatus,
+            sheetStatus = it[4] as AgencyProfileSheetStatus,
+
+            hasAccount = (it[5] as Long) > 0L,
+            phoneSupportCount = it[6] as Long,
+            emailSupportCount = it[7] as Long,
+            hasSocialSupport = it[8] as Long > 0L,
+            refundPoliciesCount = it[9] as Long,
+
+            isAccountComplete = it[10] as Boolean,
+            isPhoneSupportComplete = it[11] as Boolean,
+            isEmailSupportComplete = it[12] as Boolean,
+            isRefundPoliciesComplete = it[13] as Boolean,
+            isSocialSupportComplete = it[14] as Boolean,
         )
     }.stateIn(
         scope = viewModelScope, started = WhileUiSubscribed, initialValue = AgencyProfileUiState()
     )
 
-    fun initProfile() {
-//        Accounts
-        if (_isAccountComplete.value == null)
-            viewModelScope.launch {
-                try {
-                    authRepo.forceRefreshUser()
-                    _hasAccount.value = authRepo.hasAccount
-                    _hasAccountLogo.value = authRepo.hasAccountLogo
-                    _isAccountComplete.value = true
-                } catch (e: Exception) {
-                    _isAccountComplete.value = false
-                    _dialogStatus.value = AgencyProfileDialogState.FAILED_GET_ACCOUNT
-                    Log.e(TAG, "MAIN ACCOUNT: $e")
-                }
-            }
-
-//        My Agency Settings
-        if (_isAgencySettingsComplete.value == null)
-            viewModelScope.launch {
-
-            }
-
-    }
-
-    fun onSheetStateChange(new: AgencyProfileSheetState){
+    fun onSheetStateChange(new: AgencyProfileSheetStatus) {
         _sheetState.value = new
     }
 
-    fun onDialogStateChange(new: AgencyProfileDialogState) {
+    fun onDialogStateChange(new: AgencyProfileDialogStatus) {
         _dialogStatus.value = new
     }
 
@@ -172,27 +180,11 @@ class AgencyProfileVM @Inject constructor(
         _isComplete.value = new
     }
 
-    fun onMoMoCompleteChange(new: Boolean?) {
-        _isMoMoAccountComplete.value = new
-    }
-
-    fun onOMCompleteChange(new: Boolean?) {
-        _isOMAccountComplete.value = new
-    }
-
-    fun onAccountCompleteChange(new: Boolean?) {
-        _isAccountComplete.value = new
-    }
-
-    fun onAgencySettingsCompleteChange(new: Boolean?) {
-        _isAgencySettingsComplete.value = new
-    }
-
     companion object {
-        const val TAG = "BP_VM"
+        const val TAG = "AP_VM"
     }
 }
 
-enum class AgencyProfileDialogState {
-    DELETE_ACCOUNT_3, DELETE_ACCOUNT_2, DELETE_ACCOUNT_1, ABOUT_ACCOUNT, ABOUT_MOMO, ABOUT_OM, ABOUT_CREDIT_CARD, ABOUT_AGENCY_SETTINGS, ABOUT_MAIN_PAGE, NONE, FAILED_GET_ACCOUNT, FAILED_GET_MOMO, FAILED_GET_OM, FAILED_GET_AGENCY_SETTINGS
+enum class AgencyProfileDialogStatus {
+    ABOUT_ACCOUNT, ABOUT_PHONE_SUPPORT, ABOUT_EMAIL_SUPPORT, ABOUT_SOCIAL_SUPPORT, ABOUT_REFUND_POLICY, ABOUT_MAIN_PAGE, NONE, FAILED_GET_ACCOUNT, FAILED_GET_PHONE_SUPPORT, FAILED_GET_EMAIL_SUPPORT, FAILED_GET_SOCIAL_SUPPORT, FAILED_GET_REFUND_POLICY
 }

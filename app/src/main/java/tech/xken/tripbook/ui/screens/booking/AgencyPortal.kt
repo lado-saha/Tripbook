@@ -2,11 +2,7 @@
 
 package tech.xken.tripbook.ui.screens.booking
 
-import android.content.Context
 import android.content.Intent
-import android.util.Log
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
@@ -151,7 +147,6 @@ class AgencyPortalVM @Inject constructor(
     companion object {
         const val TAG = "AP _VM"
     }
-
 }
 
 
@@ -206,16 +201,9 @@ fun AgencyPortal(
     val uis by vm.uiState.collectAsState()
     val context = LocalContext.current
     if (uis.isComplete) {
-        rememberLauncherForActivityResult(
-            contract = ActivityResultContracts.StartActivityForResult()
-                .apply {
-                    val intent = Intent(context, MainAgencyActivity::class.java)
-                    createIntent(context, intent)
-                }
-        ) {it ->
-            vm.onCompleteChange(false)
-            Log.d("RESULT CODE", it.resultCode.toString())
-        }
+        val intent = Intent(context, MainAgencyActivity::class.java)
+        context.startActivity(intent)
+        vm.onCompleteChange(false)
     }
 
     val fieldPadding = PaddingValues(horizontal = 4.dp, vertical = 4.dp)
@@ -234,6 +222,7 @@ fun AgencyPortal(
             true
         }
     )
+
     LaunchedEffect(uis.sheetStatus) {
         if (uis.sheetStatus != AgencyPortalSheetState.NONE) {
             sheetState.show()
@@ -316,6 +305,7 @@ fun AgencyPortal(
             scaffoldState = scaffoldState,
             topBar = {
                 TopAppBar(
+                    elevation = 0.dp,
                     title = {
                         Text(
                             text = stringResource(id = R.string.lb_agency_portal).titleCase,
@@ -347,6 +337,7 @@ fun AgencyPortal(
                 )
             },
         ) { paddingValues ->
+
             Column(
                 modifier = Modifier
                     .padding(paddingValues)
@@ -366,7 +357,7 @@ fun AgencyPortal(
                         isLoading = false
 //                        isFailure = false
                     ),
-                    onClick = { onNavigateToAccount() },
+                    onClick = { vm.onCompleteChange(true) },
                     onHelpClick = {
                         vm.onDialogStateChange(AgencyPortalDialogState.ABOUT_LOGIN_TO_AGENCY)
                     },
@@ -430,10 +421,9 @@ fun AgencyPortal(
 //                    }
                 }
 
-
             }
+
         }
     }
-
 
 }

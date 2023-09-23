@@ -21,9 +21,9 @@ data class AgencyMoMoAccount(
         @SN("log_id") val logId: Long,
         @SN("agency_id") val agencyId: String,
         @SN("phone_number") val phoneNumber: String,
-        @SN("timestamp") val timestamp: Instant,
+        @SN("added_on") val addedOn: Instant,
         @SN("db_action") val dbAction: DbAction,
-        @SN("scanner_id") val scannerId: String
+        @SN("scanner_id") val scannerId: String?=null
     ) {
         companion object {
             const val NAME = "agency_momo_account_log"
@@ -51,9 +51,9 @@ data class AgencyOMAccount(
         @SN("log_id") val logId: Long,
         @SN("agency_id") val agencyId: String,
         @SN("phone_number") val phoneNumber: String,
-        @SN("timestamp") val timestamp: Instant,
+        @SN("added_on") val addedOn: Instant,
         @SN("db_action") val dbAction: DbAction,
-        @SN("scanner_id") val scannerId: String,
+        @SN("scanner_id") val scannerId: String?=null,
         @SN("data_json") val data: AgencyOMAccount? = null,
     ) {
         companion object {

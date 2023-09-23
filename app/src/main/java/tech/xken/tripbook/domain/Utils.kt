@@ -126,7 +126,7 @@ val <A, B> Pair<A, B>.reverse: Pair<B, A>
 /**
  * Maximum time after which the state observers must stop observing any flow
  */
-private const val StopTimeoutMillis: Long = 5000
+private const val StopTimeoutMillis: Long = 5000L
 
 /**
  * A [SharingStarted] meant to be used with a [StateFlow] to expose data to the UI.
@@ -137,7 +137,7 @@ private const val StopTimeoutMillis: Long = 5000
  * back, the latest value is replayed and the upstream flows are executed again. This is done to
  * save resources when the app is in the background but let users switch between apps quickly.
  */
-val WhileUiSubscribed: SharingStarted = SharingStarted.WhileSubscribed(StopTimeoutMillis)
+val WhileUiSubscribed: SharingStarted = SharingStarted. WhileSubscribed(StopTimeoutMillis)
 
 /**
  * Capitalises the string

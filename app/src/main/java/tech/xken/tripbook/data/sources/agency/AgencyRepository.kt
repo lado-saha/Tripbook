@@ -12,7 +12,7 @@ import tech.xken.tripbook.data.models.agency.AgencySocialSupport
 import tech.xken.tripbook.data.models.agency.TripCancellationReason
 
 interface AgencyRepository {
-    val channel: RealtimeChannel
+//    val channel: RealtimeChannel
     //    Agency account
     suspend fun agencyAccountFullSync(agencyId: String): Results<Unit>
     suspend fun agencyAccount(agencyId: String): Results<AgencyAccount?>
@@ -30,7 +30,7 @@ interface AgencyRepository {
         agencyId: String, account: AgencyAccount
     ): Results<AgencyAccount?>
 
-    suspend fun countAgencyAccount(agencyId: String): Flow<Results<Long>>
+    fun countAgencyAccount(agencyId: String): Flow<Results<Long>>
 
     // Agency Email support
     suspend fun emailSupportsFullSync(agencyId: String): Results<Unit>
@@ -50,7 +50,7 @@ interface AgencyRepository {
     ): Results<List<AgencyEmailSupport?>>
 
     suspend fun deleteEmailSupports(agencyId: String, emails: List<String>): Results<Unit>
-    suspend fun countEmailSupports(agencyId: String): Flow<Results<Long>>
+    fun countEmailSupports(agencyId: String): Flow<Results<Long>>
 
     // Agency Phone support
     suspend fun phoneSupportsFullSync(agencyId: String): Results<Unit>
@@ -70,7 +70,7 @@ interface AgencyRepository {
     ): Results<List<AgencyPhoneSupport?>>
 
     suspend fun deletePhoneSupports(agencyId: String, phoneCodes: List<String>, phoneNumbers: List<String>): Results<Unit>
-    suspend fun countPhoneSupports(agencyId: String): Flow<Results<Long>>
+    fun countPhoneSupports(agencyId: String): Flow<Results<Long>>
 
     // Agency Social support
     suspend fun socialSupportFullSync(agencyId: String): Results<Unit>
@@ -90,7 +90,7 @@ interface AgencyRepository {
     ): Results<AgencySocialSupport?>
 
     suspend fun deleteSocialSupport(agencyId: String): Results<Unit>
-    suspend fun countSocialAccount(agencyId: String): Flow<Results<Long>>
+    fun countSocialAccount(agencyId: String): Flow<Results<Long>>
 
     // Agency Refund policies
     suspend fun refundPoliciesFullSync(agencyId: String): Results<Unit>
@@ -109,7 +109,7 @@ interface AgencyRepository {
         agencyId: String, policies: List<AgencyRefundPolicy>
     ): Results<List<AgencyRefundPolicy?>>
     suspend fun deleteRefundPolicies(agencyId: String, reasons: List<TripCancellationReason>): Results<Unit>
-    suspend fun countRefundPolicies(agencyId: String): Flow<Results<Long>>
+    fun countRefundPolicies(agencyId: String): Flow<Results<Long>>
 
 
 //    /**

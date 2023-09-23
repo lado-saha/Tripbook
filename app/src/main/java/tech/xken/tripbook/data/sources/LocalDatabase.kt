@@ -1,8 +1,6 @@
 package tech.xken.tripbook.data.sources
 
-//import tech.xken.tripbook.data.models.Scanner
-//import tech.xken.tripbook.data.sources.agency.local.AgencyDao
-//import tech.xken.tripbook.data.sources.init.local.InitDao
+
 import androidx.room.Database
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverter
@@ -18,22 +16,48 @@ import tech.xken.tripbook.data.models.Subdivision
 import tech.xken.tripbook.data.models.Town
 import tech.xken.tripbook.data.models.TownPair
 import tech.xken.tripbook.data.models.UnivSelection
+import tech.xken.tripbook.data.models.agency.AgencyAccount
+import tech.xken.tripbook.data.models.agency.AgencyEmailSupport
+import tech.xken.tripbook.data.models.agency.AgencyPhoneSupport
+import tech.xken.tripbook.data.models.agency.AgencyRefundPolicy
+import tech.xken.tripbook.data.models.agency.AgencySocialSupport
 import tech.xken.tripbook.data.models.booker.Booker
 import tech.xken.tripbook.data.models.booker.BookerMoMoAccount
 import tech.xken.tripbook.data.models.booker.BookerOMAccount
+import tech.xken.tripbook.data.sources.agency.local.AgencyDao
 import tech.xken.tripbook.data.sources.booker.local.BookerDao
 import tech.xken.tripbook.data.sources.caches.local.CachesDao
 import java.util.UUID
 
 
 @Database(
-    entities = [/*Station::class, StationTownMap::class, StationScannerMap::class, *//*Scanner::class,*//* StationJob::class,*/ BookerMoMoAccount::class, BookerOMAccount::class, Booker::class, Country::class, Region::class, Division::class, Subdivision::class, Town::class, Road::class, TownPair::class, UnivSelection::class /*Job::class*/],
-    version = 5,
+    entities = [
+//        Agency
+        AgencyAccount::class,
+        AgencyEmailSupport::class,
+        AgencyPhoneSupport::class,
+        AgencySocialSupport::class,
+        AgencyRefundPolicy::class,
+//        Booker
+        BookerMoMoAccount::class,
+        BookerOMAccount::class,
+        Booker::class,
+//        Universe
+        Country::class,
+        Region::class,
+        Division::class,
+        Subdivision::class,
+        Town::class,
+        Road::class,
+        TownPair::class,
+        UnivSelection::class
+    ],
+    version = 2,
     exportSchema = false
 )
 @TypeConverters(LocalConverters::class)
 abstract class LocalDatabase : RoomDatabase() {
-    //    abstract val agencyDao: AgencyDao
+    abstract val agencyDao: AgencyDao
     abstract val bookerDao: BookerDao
 
 

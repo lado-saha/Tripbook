@@ -14,6 +14,20 @@ import tech.xken.tripbook.domain.DATE_NOW
 typealias CI = ColumnInfo
 private typealias SN = SerialName
 
+class Car(
+    val name: String,
+    var speed: Double,
+    val model: String
+) {
+    fun incSpeed(new: Double) {
+        speed += new
+    }
+}
+
+fun main() {
+    var myCar = Car(name = "Carina", speed = 4.0, "II")
+}
+
 @Serializable
 @Entity(tableName = Booker.NAME, primaryKeys = ["booker_id"])
 data class Booker(
@@ -26,9 +40,9 @@ data class Booker(
     @CI(name = "occupation") @SN("occupation") val occupation: String? = null,
     @CI(name = "nationality") @SN("nationality") val nationality: String? = null,
     @ColumnInfo("modified_on") @SerialName("modified_on") val modifiedOn: Instant? = null
-){
-    companion object{
-        const val NAME =  "booker"
+) {
+    companion object {
+        const val NAME = "booker"
     }
 }
 

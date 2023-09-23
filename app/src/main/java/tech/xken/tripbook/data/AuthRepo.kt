@@ -23,6 +23,7 @@ import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.decodeFromJsonElement
 import kotlinx.serialization.json.put
+import tech.xken.tripbook.data.models.NEW_ID
 import tech.xken.tripbook.data.models.Results
 import tech.xken.tripbook.data.models.booker.Booker
 import tech.xken.tripbook.data.models.booker.BookerCredentials
@@ -43,9 +44,6 @@ class AuthRepo @Inject constructor(
     }.onEach {
         isSignedIn.value = it
     }
-
-    val agencyId: String? = "gp"
-
 
     init {
         CoroutineScope(ioDispatcher).launch {
@@ -91,6 +89,10 @@ class AuthRepo @Inject constructor(
         }
     }
 
+    val agencyId
+        get() = authClient.currentSessionOrNull()?.user?.userMetadata?.get(
+            "agency_id"
+        )?.let { Json.decodeFromJsonElement<String>(it) } ?: "78a9294f-9da4-4af2-8354-c320fe662f40"
     /**
      * Tells us if a booker has already created a profile or not
      */

@@ -1,6 +1,8 @@
 package tech.xken.tripbook.ui.theme
 
 import android.app.Activity
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.darkColors
@@ -43,6 +45,7 @@ private val LightColorPalette = lightColors(
 //    onError = Color(0xFF4FFFDF)
 )
 
+
 @Composable
 fun TripbookTheme(darkTheme: Boolean = isSystemInDarkTheme(), content: @Composable () -> Unit) {
     val colors = if (darkTheme) {
@@ -54,22 +57,21 @@ fun TripbookTheme(darkTheme: Boolean = isSystemInDarkTheme(), content: @Composab
     if (!view.isInEditMode)
         SideEffect {
             val window = (view.context as Activity).window
-            window.statusBarColor = if (darkTheme) {
-                colors.background.copy(alpha = 0.905f)
+
+            if (darkTheme) {
+                colors.background
             } else {
                 colors.primary
-            }.toArgb()
+            }.toArgb().also {
+                window.statusBarColor = it
+                window.navigationBarColor = it
 
-            window.navigationBarColor = if (darkTheme) {
-                colors.background.copy()
-            } else {
-                colors.primary
-            }.toArgb()
+            }
 
-            WindowCompat.getInsetsController(window, view)
-                .isAppearanceLightStatusBars = false
             WindowCompat.getInsetsController(window, view)
                 .isAppearanceLightNavigationBars = false
+            WindowCompat.getInsetsController(window, view)
+                .isAppearanceLightStatusBars = false
         }
     MaterialTheme(
         colors = colors,

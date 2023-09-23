@@ -28,7 +28,7 @@ interface AgencyDataSource {
     fun agencyAccountFlow(agencyId: String): Flow<Results<AgencyAccount>>
     suspend fun createAgencyAccount(account: AgencyAccount): Results<AgencyAccount?>
     suspend fun updateAgencyAccount(agencyId: String, account: AgencyAccount): Results<AgencyAccount?>
-    suspend fun countAgencyAccount(agencyId: String): Flow<Results<Long>>
+    fun countAgencyAccount(agencyId: String): Flow<Results<Long>>
 
     // Agency Email support
     suspend fun emailSupports(agencyId: String, emails: List<String>): Results<List<AgencyEmailSupport>>
@@ -38,7 +38,7 @@ interface AgencyDataSource {
     suspend fun createEmailSupports(supports: List<AgencyEmailSupport>): Results<List<AgencyEmailSupport?>>
     suspend fun updateEmailSupports(agencyId: String, supports: List<AgencyEmailSupport>): Results<List<AgencyEmailSupport?>>
     suspend fun deleteEmailSupports(agencyId: String, emails: List<String>): Results<Unit>
-    suspend fun countEmailSupports(agencyId: String): Flow<Results<Long>>
+    fun countEmailSupports(agencyId: String): Flow<Results<Long>>
 
     // Agency Phone support
     suspend fun phoneSupports(agencyId: String, phoneCodes: List<String>, phoneNumbers: List<String>): Results<List<AgencyPhoneSupport>>
@@ -48,7 +48,7 @@ interface AgencyDataSource {
     suspend fun createPhoneSupports(supports: List<AgencyPhoneSupport>): Results<List<AgencyPhoneSupport?>>
     suspend fun updatePhoneSupports(agencyId: String, supports: List<AgencyPhoneSupport>): Results<List<AgencyPhoneSupport?>>
     suspend fun deletePhoneSupports(agencyId: String, phoneCodes: List<String>, phoneNumbers: List<String>): Results<Unit>
-    suspend fun countPhoneSupports(agencyId: String): Flow<Results<Long>>
+    fun countPhoneSupports(agencyId: String): Flow<Results<Long>>
 
     // Agency Social support
     suspend fun socialSupport(agencyId: String): Results<AgencySocialSupport?>
@@ -56,9 +56,9 @@ interface AgencyDataSource {
     fun socialSupportLogFlow(agencyId: String): Flow<Results<AgencySocialSupport.Log>>
     fun socialSupportFlow(agencyId: String): Flow<Results<AgencySocialSupport>>
     suspend fun createSocialSupport(support: AgencySocialSupport): Results<AgencySocialSupport?>
-    suspend fun updateSocialSupports(agencyId: String, supports: AgencySocialSupport): Results<AgencySocialSupport?>
+    suspend fun updateSocialSupport(agencyId: String, supports: AgencySocialSupport): Results<AgencySocialSupport?>
     suspend fun deleteSocialSupport(agencyId: String): Results<Unit>
-    suspend fun countSocialAccount(agencyId: String): Flow<Results<Long>>
+    fun countSocialAccount(agencyId: String): Flow<Results<Long>>
 
     // Agency Refund policies
     suspend fun refundPolicies(agencyId: String, reasons: List<TripCancellationReason>): Results<List<AgencyRefundPolicy>>
@@ -68,7 +68,7 @@ interface AgencyDataSource {
     suspend fun createRefundPolicies(policies: List<AgencyRefundPolicy>): Results<List<AgencyRefundPolicy?>>
     suspend fun updateRefundPolicies(agencyId: String, policies: List<AgencyRefundPolicy>): Results<List<AgencyRefundPolicy?>>
     suspend fun deleteRefundPolicies(agencyId: String, reasons: List<TripCancellationReason>): Results<Unit>
-    suspend fun countRefundPolicies(agencyId: String): Flow<Results<Long>>
+    fun countRefundPolicies(agencyId: String): Flow<Results<Long>>
 
     // Agency Legal Documents
     suspend fun legalDocs(agencyId: String): Results<AgencyLegalDocs>
@@ -86,8 +86,7 @@ interface AgencyDataSource {
 //    fun phoneSupportsFlow(agencyId: String): Flow<Results<List<AgencyPhoneSupport>>>
 //    suspend fun createPhoneSupports(supports: List<AgencyPhoneSupport>): Results<List<AgencyPhoneSupport?>>
 //    suspend fun updatePhoneSupports(agencyId: String, supports: List<AgencyPhoneSupport>): Results<List<AgencyPhoneSupport?>>
-//    suspend fun deletePhoneSupports(agencyId: String, phoneCodes: List<String>, phoneNumbers: List<String>): Results<Unit>
-//    suspend fun countPhoneSupports(agencyId: String): Flow<Results<Long>>
+//    suspend fun deletePhoneSupports(agencyId: String, phoneCodes: List<String>, phoneNumbers: List<String>): Results<Unit> suspend fun countPhoneSupports(agencyId: String): Flow<Results<Long>>
 
 
 //    suspend fun stationScannerMapsFromStation(station: String)

@@ -1,9 +1,8 @@
 package tech.xken.tripbook.data.sources.agency.local
 
 import androidx.room.Dao
-import androidx.room.Insert
 import androidx.room.Query
-import androidx.room.Update
+import androidx.room.Upsert
 import kotlinx.coroutines.flow.Flow
 import kotlinx.datetime.Instant
 import tech.xken.tripbook.data.models.agency.AgencyAccount
@@ -13,12 +12,6 @@ import tech.xken.tripbook.data.models.agency.AgencyRefundPolicy
 import tech.xken.tripbook.data.models.agency.AgencySocialSupport
 import tech.xken.tripbook.data.models.agency.TripCancellationReason
 
-//
-//import androidx.room.*
-//import androidx.room.OnConflictStrategy.Companion.REPLACE
-//import kotlinx.coroutines.flow.Flow
-//import tech.xken.tripbook.data.models.*
-//
 @Dao
 interface AgencyDao {
     @Query("select * from agency_account where agency_id = :agencyId")
@@ -32,15 +25,15 @@ interface AgencyDao {
     @Query("select * from agency_refund_policy where agency_id = :agencyId")
     fun agencyRefundPolicies(agencyId: String): List<AgencyRefundPolicy>
 
-    @Query("select max(*) from agency_account where agency_id = :agencyId")
+    @Query("select max(modified_on) from agency_account where agency_id = :agencyId")
     fun agencyAccountLastModifiedOn(agencyId: String):Instant?
-    @Query("select max(*) from agency_email_support where agency_id = :agencyId")
+    @Query("select max(modified_on) from agency_email_support where agency_id = :agencyId")
     fun agencyEmailSupportsLastModifiedOn(agencyId: String):Instant?
-    @Query("select max(*) from agency_phone_support where agency_id = :agencyId")
+    @Query("select max(modified_on) from agency_phone_support where agency_id = :agencyId")
     fun agencyPhoneSupportsLastModifiedOn(agencyId: String):Instant?
-    @Query("select max(*) from agency_social_support where agency_id = :agencyId")
+    @Query("select max(modified_on) from agency_social_support where agency_id = :agencyId")
     fun agencySocialSupportsLastModifiedOn(agencyId: String):Instant?
-    @Query("select max(*) from agency_refund_policy where agency_id = :agencyId")
+    @Query("select max(modified_on) from agency_refund_policy where agency_id = :agencyId")
     fun agencyRefundPoliciesLastModifiedOn(agencyId: String):Instant?
 
     @Query("select count(agency_id) from agency_account where agency_id = :agencyId")
@@ -67,26 +60,26 @@ interface AgencyDao {
 //    @Query("select max(modified_on) from agency_account where agency_id=:agencyId")
 //    fun agencyLastModifiedOn(agencyId: String): Instant?
 
-    @Insert
-    fun createAgencyAccount(account: AgencyAccount)
-    @Insert
-    fun createEmailSupports(supports: List<AgencyEmailSupport>)
-    @Insert
-    fun createPhoneSupports(supports: List<AgencyPhoneSupport>)
-    @Insert
-    fun createSocialSupport(support: AgencySocialSupport)
-    @Insert
-    fun createRefundPolicies(policies: List<AgencyRefundPolicy>)
-    @Update
-    fun updateAgencyAccount(account: AgencyAccount)
-    @Update
-    fun updateEmailSupports(supports: List<AgencyEmailSupport>)
-    @Update
-    fun updatePhoneSupports(supports: List<AgencyPhoneSupport>)
-    @Update
-    fun updateSocialSupport(support: AgencySocialSupport)
-    @Update
-    fun updateRefundPolicies(supports: List<AgencyRefundPolicy>)
+//    @Insert
+//    fun createAgencyAccount(account: AgencyAccount)
+//    @Insert
+//    fun createEmailSupports(supports: List<AgencyEmailSupport>)
+//    @Insert
+//    fun createPhoneSupports(supports: List<AgencyPhoneSupport>)
+//    @Insert
+//    fun createSocialSupport(support: AgencySocialSupport)
+//    @Insert
+//    fun createRefundPolicies(policies: List<AgencyRefundPolicy>)
+    @Upsert
+    fun upsertAgencyAccount(account: AgencyAccount)
+    @Upsert
+    fun upsertEmailSupports(supports: List<AgencyEmailSupport>)
+    @Upsert
+    fun upsertPhoneSupports(supports: List<AgencyPhoneSupport>)
+    @Upsert
+    fun upsertSocialSupport(support: AgencySocialSupport)
+    @Upsert
+    fun upsertRefundPolicies(supports: List<AgencyRefundPolicy>)
 
 //    @Query("delete from agency_account where agency_id = :agencyId")
 //    fun deleteAgencyAccount(agencyId: String)

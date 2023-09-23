@@ -331,6 +331,7 @@ fun BookerOMAccounts(
                         )
 
                         false -> TopAppBar(
+                            elevation = 0.dp,
                             title = {
                                 Text(
                                     text = if (uis.toDelete.isEmpty()) stringResource(id = R.string.lb_my_om_accounts).titleCase else "${uis.toDelete.size}",
@@ -457,7 +458,7 @@ fun BookerOMAccounts(
                         ) {
                             DashboardSubItem(
                                 modifier = Modifier.padding(start = 8.dp, bottom = 4.dp),
-                                isError = !account.isActive,
+                                isError = !account.isEnabled,
                                 positiveText = "Enabled",
                                 errorText = "Disabled"
                             )
@@ -605,6 +606,7 @@ fun BookerOMAccountDetails(
         scaffoldState = scaffoldState,
         topBar = {
             TopAppBar(
+                elevation = 0.dp,
                 title = {
                     Text(
                         text = if (uis.isEditMode) uis.formattedPhone else stringResource(id = R.string.lb_new_om_account).titleCase,
@@ -678,11 +680,11 @@ fun BookerOMAccountDetails(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        if (uis.account.isActive) "Enabled" else "Disabled",
+                        if (uis.account.isEnabled) "Enabled" else "Disabled",
                         modifier = Modifier.padding(start = 8.dp, end = 4.dp)
                     )
                     Switch(
-                        checked = uis.account.isActive,
+                        checked = uis.account.isEnabled,
                         onCheckedChange = { vm.onIsActiveChange(it) },
                         modifier = Modifier.padding(start = 4.dp)
 //                        modifier = Modifier.fillMaxWidth()

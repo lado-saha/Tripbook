@@ -248,7 +248,7 @@ class BookerOMAccountsVM @Inject constructor(
     }
 
     fun onIsActiveChange(new: Boolean) {
-        _accountDetails.value = _accountDetails.value.copy(isActive = new)
+        _accountDetails.value = _accountDetails.value.copy(isEnabled = new)
     }
 
     fun phoneErrorText(text: String? = _accountDetails.value.phoneNumber) = when {

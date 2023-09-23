@@ -31,6 +31,7 @@ import tech.xken.tripbook.ui.navigation.BookingDestinations.BOOKER_MOMO_ACCOUNT_
 import tech.xken.tripbook.ui.navigation.BookingDestinations.BOOKER_OM_ACCOUNTS_ROUTE
 import tech.xken.tripbook.ui.navigation.BookingDestinations.BOOKER_OM_ACCOUNT_DETAILS_ROUTE
 import tech.xken.tripbook.ui.navigation.BookingScreens.BASE_BOOKER
+import tech.xken.tripbook.ui.screens.agency.AgencyProfile
 import tech.xken.tripbook.ui.screens.agency.station.*
 import tech.xken.tripbook.ui.screens.booking.AgencyPortal
 import tech.xken.tripbook.ui.screens.booking.BookerAccount
@@ -44,7 +45,7 @@ import tech.xken.tripbook.ui.screens.booking.TripSearch
 
 //import tech.xken.tripbook.ui.screens.universe.*
 
-@OptIn(ExperimentalAnimationApi::class)
+@OptIn(ExperimentalAnimationApi::class, ExperimentalMaterialApi::class)
 @Composable
 fun BookingNavGraph(
     modifier: Modifier = Modifier,
@@ -310,9 +311,18 @@ fun AgencyNavGraph(
                 agencyNavActions = agencyNavActions,
                 isSignedIn = { authRepo.isSignedIn.value },
             ) {
-                Column {
-                    Text("This is it")
-                }
+                AgencyProfile(
+                    openDrawer = {
+                        scope.launch {
+                            drawerState.open()
+                        }
+                    },
+                    onNavigateToAccount = { /*TODO*/ },
+                    onNavigateToMoMoAccount = { /*TODO*/ },
+                    onNavigateToOMAccount = { /*TODO*/ },
+                    onNavigateToBookerAgencySettings = { /*TODO*/ },
+                    onNavigateToCreditCardAccount = { /*TODO*/ },
+                    navigateUp = { /*TODO*/ })
             }
         }
 

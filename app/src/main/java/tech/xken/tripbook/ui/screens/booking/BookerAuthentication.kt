@@ -297,6 +297,7 @@ fun BookerAuthentication(
             scaffoldState = scaffoldState,
             topBar = {
                 TopAppBar(
+                    elevation = 0.dp,
                     navigationIcon = {
                         IconButton(onClick = { onMenuClick() }) {
                             Icon(

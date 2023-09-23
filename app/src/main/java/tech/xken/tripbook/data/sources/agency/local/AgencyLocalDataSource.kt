@@ -1,5 +1,6 @@
 package tech.xken.tripbook.data.sources.agency.local
 
+import android.util.Log
 import io.github.jan.supabase.realtime.RealtimeChannel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -29,7 +30,9 @@ class AgencyLocalDataSource internal constructor(
 
     override suspend fun agencyAccountLastModifiedOn(agencyId: String) = withContext(ioDispatcher) {
         try {
-            Success(dao.agencyAccountLastModifiedOn(agencyId))
+            Success(
+                dao.agencyAccountLastModifiedOn(agencyId).also { Log.d("A_repo", it.toString()) }
+            )
         } catch (e: Exception) {
             Failure(e)
         }
@@ -99,8 +102,9 @@ class AgencyLocalDataSource internal constructor(
         account: AgencyAccount
     ) = withContext(ioDispatcher) {
         try {
-            Success(dao.createAgencyAccount(account).run { null })
+            Success(dao.upsertAgencyAccount(account).run { null })
         } catch (e: Exception) {
+            Log.d("A_repo", "$e")
             Failure(e)
         }
     }
@@ -110,13 +114,13 @@ class AgencyLocalDataSource internal constructor(
         account: AgencyAccount
     ) = withContext(ioDispatcher) {
         try {
-            Success(dao.updateAgencyAccount(account).run { null })
+            Success(dao.upsertAgencyAccount(account).run { null })
         } catch (e: Exception) {
             Failure(e)
         }
     }
 
-    override suspend fun countAgencyAccount(agencyId: String) =
+    override fun countAgencyAccount(agencyId: String) =
         dao.agencyAccountCount(agencyId).map { Success(it) }
 
     override suspend fun emailSupports(
@@ -147,7 +151,7 @@ class AgencyLocalDataSource internal constructor(
         supports: List<AgencyEmailSupport>
     ) = withContext(ioDispatcher) {
         try {
-            Success(dao.createEmailSupports(supports).run { listOf(null) })
+            Success(dao.upsertEmailSupports(supports).run { listOf(null) })
         } catch (e: Exception) {
             Failure(e)
         }
@@ -158,7 +162,7 @@ class AgencyLocalDataSource internal constructor(
         supports: List<AgencyEmailSupport>
     ): Results<List<AgencyEmailSupport?>> = withContext(ioDispatcher) {
         try {
-            Success(dao.updateEmailSupports(supports).run { listOf(null) })
+            Success(dao.upsertEmailSupports(supports).run { listOf(null) })
         } catch (e: Exception) {
             Failure(e)
         }
@@ -175,7 +179,7 @@ class AgencyLocalDataSource internal constructor(
         }
     }
 
-    override suspend fun countEmailSupports(agencyId: String) =
+    override fun countEmailSupports(agencyId: String) =
         dao.agencyEmailSupportsCount(agencyId).map { Success(it) }
 
     override suspend fun phoneSupports(
@@ -204,7 +208,7 @@ class AgencyLocalDataSource internal constructor(
         supports: List<AgencyPhoneSupport>
     ) = withContext(ioDispatcher) {
         try {
-            Success(dao.createPhoneSupports(supports).run { listOf(null) })
+            Success(dao.upsertPhoneSupports(supports).run { listOf(null) })
         } catch (e: Exception) {
             Failure(e)
         }
@@ -215,7 +219,7 @@ class AgencyLocalDataSource internal constructor(
         supports: List<AgencyPhoneSupport>
     ) = withContext(ioDispatcher) {
         try {
-            Success(dao.updatePhoneSupports(supports).run { listOf(null) })
+            Success(dao.upsertPhoneSupports(supports).run { listOf(null) })
         } catch (e: Exception) {
             Failure(e)
         }
@@ -233,8 +237,8 @@ class AgencyLocalDataSource internal constructor(
         }
     }
 
-    override suspend fun countPhoneSupports(agencyId: String) =
-        dao.agencyEmailSupportsCount(agencyId).map { Success(it) }
+    override fun countPhoneSupports(agencyId: String) =
+        dao.agencyPhoneSupportsCount(agencyId).map { Success(it) }
 
     override suspend fun socialSupport(
         agencyId: String,
@@ -253,7 +257,7 @@ class AgencyLocalDataSource internal constructor(
         TODO("Not to be called from remote.")
     }
 
-    override fun socialSupportLogFlow(agencyId: String)= TODO("Not to be called from remote.")
+    override fun socialSupportLogFlow(agencyId: String) = TODO("Not to be called from remote.")
 
 
     override fun socialSupportFlow(agencyId: String) =
@@ -263,18 +267,18 @@ class AgencyLocalDataSource internal constructor(
         support: AgencySocialSupport
     ) = withContext(ioDispatcher) {
         try {
-            Success(dao.createSocialSupport(support).run { null })
+            Success(dao.upsertSocialSupport(support).run { null })
         } catch (e: Exception) {
             Failure(e)
         }
     }
 
-    override suspend fun updateSocialSupports(
+    override suspend fun updateSocialSupport(
         agencyId: String,
         supports: AgencySocialSupport
     ): Results<AgencySocialSupport?> = withContext(ioDispatcher) {
         try {
-            Success(dao.updateSocialSupport(supports).run { null })
+            Success(dao.upsertSocialSupport(supports).run { null })
         } catch (e: Exception) {
             Failure(e)
         }
@@ -288,7 +292,7 @@ class AgencyLocalDataSource internal constructor(
         }
     }
 
-    override suspend fun countSocialAccount(agencyId: String): Flow<Results<Long>> =
+    override fun countSocialAccount(agencyId: String): Flow<Results<Long>> =
         dao.agencySocialSupportsCount(agencyId).map { Success(it) }
 
     override suspend fun refundPolicies(
@@ -322,7 +326,7 @@ class AgencyLocalDataSource internal constructor(
         policies: List<AgencyRefundPolicy>
     ) = withContext(ioDispatcher) {
         try {
-            Success(dao.createRefundPolicies(policies).run { listOf(null) })
+            Success(dao.upsertRefundPolicies(policies).run { listOf(null) })
         } catch (e: Exception) {
             Failure(e)
         }
@@ -333,7 +337,7 @@ class AgencyLocalDataSource internal constructor(
         policies: List<AgencyRefundPolicy>
     ) = withContext(ioDispatcher) {
         try {
-            Success(dao.updateRefundPolicies(policies).run { listOf(null) })
+            Success(dao.upsertRefundPolicies(policies).run { listOf(null) })
         } catch (e: Exception) {
             Failure(e)
         }
@@ -350,7 +354,7 @@ class AgencyLocalDataSource internal constructor(
         }
     }
 
-    override suspend fun countRefundPolicies(agencyId: String) =
+    override fun countRefundPolicies(agencyId: String) =
         dao.agencyRefundPoliciesCount(agencyId).map { Success(it) }
 
     override suspend fun legalDocs(

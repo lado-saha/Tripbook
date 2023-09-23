@@ -1,11 +1,16 @@
 package tech.xken.tripbook.data.sources.agency
 
-import io.github.jan.supabase.realtime.RealtimeChannel
+import android.util.Log
+import io.github.jan.supabase.realtime.realtime
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.datetime.Instant
 import tech.xken.tripbook.data.models.DbAction
+import tech.xken.tripbook.data.models.DbAction.*
 import tech.xken.tripbook.data.models.Results
 import tech.xken.tripbook.data.models.Results.Failure
 import tech.xken.tripbook.data.models.Results.Success
@@ -16,24 +21,36 @@ import tech.xken.tripbook.data.models.agency.AgencyRefundPolicy
 import tech.xken.tripbook.data.models.agency.AgencySocialSupport
 import tech.xken.tripbook.data.models.agency.TripCancellationReason
 import tech.xken.tripbook.data.models.data
+import tech.xken.tripbook.data.sources.agency.remote.AgencyRemoteDataSource
 
 class AgencyRepositoryImpl(
     private val localDS: AgencyDataSource,
     private val remoteDS: AgencyDataSource,
     private val ioDispatcher: CoroutineDispatcher,
 ) : AgencyRepository {
-    override val channel: RealtimeChannel = remoteDS.channel!!
+    init {
+        CoroutineScope(ioDispatcher).launch {
+            (remoteDS as AgencyRemoteDataSource).client.realtime.connect()
+            remoteDS.channel.join()
+        }
+    }
+//    override val channel: RealtimeChannel = remoteDS.channel!!
 
     override suspend fun agencyAccountFullSync(agencyId: String) = withContext(ioDispatcher) {
-        localDS.agencyAccountLastModifiedOn(agencyId).data?.let { instant ->
+        localDS.agencyAccountLastModifiedOn(agencyId).data.let { instant ->
             remoteDS.agencyAccountLatestLog(
                 agencyId,
-                instant
-            ).data.run {
-                when (dbAction) {
-                    DbAction.INSERT -> localDS.createAgencyAccount(data!!)
-                    DbAction.UPDATE -> localDS.updateAgencyAccount(agencyId, data!!)
-                    DbAction.DELETE -> Success(Unit)
+                instant ?: Instant.fromEpochSeconds(0L)
+            ).also {
+                when (it) {
+                    is Failure -> Log.e("A_repo_FS_account", "${it.exception}")
+                    is Success -> {
+                        when (it.data.dbAction) {
+                            INSERT -> localDS.createAgencyAccount(it.data.data!!)
+                            UPDATE -> localDS.updateAgencyAccount(agencyId, it.data.data!!)
+                            DELETE -> Success(Unit)
+                        }
+                    }
                 }
             }
         }
@@ -41,119 +58,172 @@ class AgencyRepositoryImpl(
     }
 
     override suspend fun emailSupportsFullSync(agencyId: String) = withContext(ioDispatcher) {
-        localDS.agencyEmailSupportsLastModifiedOn(agencyId).data?.let { instant ->
+        localDS.agencyEmailSupportsLastModifiedOn(agencyId).data.let { instant ->
             remoteDS.emailSupportLatestLogs(
                 agencyId,
-                instant
-            )
-                .data
-                .groupBy { it.dbAction }
-                .map { group ->
-                    when (group.key) {
-                        DbAction.INSERT -> localDS.createEmailSupports(group.value.map { it.data!! })
-                        DbAction.UPDATE -> localDS.updateEmailSupports(
-                            agencyId,
-                            group.value.map { it.data!! })
+                instant ?: Instant.fromEpochSeconds(0L)
+            ).also { res ->
+                when (res) {
+                    is Failure -> Log.e("A_repo_FS_Email", "${res.exception}")
+                    is Success -> {
+                        res.data
+                            .groupBy { it.dbAction }
+                            .map { group ->
+                                Log.d("A_repo_FS_Email", "$group")
+                                when (group.key) {
+                                    INSERT -> {
+                                        try {
+                                            localDS.createEmailSupports(group.value.map { it.data!! })
+                                        } catch (e: Exception) {
+                                            Log.e("A_repo_FS_Email1", "$group")
+                                        }
+                                    }
 
-                        DbAction.DELETE -> localDS.deleteEmailSupports(
-                            agencyId,
-                            group.value.map { it.email })
+                                    UPDATE -> localDS.updateEmailSupports(
+                                        agencyId,
+                                        group.value.map { it.data!! })
+
+                                    DELETE -> localDS.deleteEmailSupports(
+                                        agencyId,
+                                        group.value.map { it.email })
+                                }
+                            }
                     }
                 }
+            }
+        }.run {
+            Success(Unit)
         }
-        Success(Unit)
     }
 
     override suspend fun phoneSupportsFullSync(agencyId: String) = withContext(ioDispatcher) {
-        localDS.agencyPhoneSupportsLastModifiedOn(agencyId).data?.let { instant ->
+        localDS.agencyPhoneSupportsLastModifiedOn(agencyId).data.let { instant ->
             remoteDS.phoneSupportsLatestLogs(
                 agencyId,
-                instant
-            )
-                .data
-                .groupBy { it.dbAction }
-                .map { group ->
-                    when (group.key) {
-                        DbAction.INSERT -> localDS.createPhoneSupports(group.value.map { it.data!! })
-                        DbAction.UPDATE -> localDS.updatePhoneSupports(
-                            agencyId,
-                            group.value.map { it.data!! })
+                instant ?: Instant.fromEpochSeconds(0L)
+            ).also { res ->
+                when (res) {
+                    is Failure -> Log.e("A_repo_FS_Phone", "${res.exception}")
 
-                        DbAction.DELETE -> localDS.deletePhoneSupports(
-                            agencyId,
-                            group.value.map { it.phoneCode },
-                            group.value.map { it.phoneNumber }
-                        )
+                    is Success -> {
+                        res.data
+                            .groupBy { it.dbAction }
+                            .map { group ->
+                                when (group.key) {
+                                    INSERT -> localDS.createPhoneSupports(group.value.map { it.data!! })
+                                    UPDATE -> localDS.updatePhoneSupports(
+                                        agencyId,
+                                        group.value.map { it.data!! })
+
+                                    DELETE -> localDS.deletePhoneSupports(
+                                        agencyId,
+                                        group.value.map { it.phoneCode },
+                                        group.value.map { it.phoneNumber }
+                                    )
+                                }
+                            }.run { Success(Unit) }
                     }
-                }.run { Success(Unit) }
-        }
-        Success(Unit)
-    }
-
-    override suspend fun socialSupportFullSync(agencyId: String) = withContext(ioDispatcher) {
-        localDS.agencySocialSupportsLastModifiedOn(agencyId).data?.let { instant ->
-            remoteDS.socialSupportLatestLogs(
-                agencyId,
-                instant
-            ).data.run {
-                when (dbAction) {
-                    DbAction.INSERT -> localDS.createSocialSupport(data!!)
-                    DbAction.UPDATE -> localDS.updateSocialSupports(agencyId, data!!)
-                    DbAction.DELETE -> localDS.deleteSocialSupport(agencyId)
                 }
+            }.run {
+                Success(Unit)
             }
         }
-        Success(Unit)
     }
 
-    override suspend fun refundPoliciesFullSync(agencyId: String) = withContext(ioDispatcher) {
-        localDS.agencyRefundPoliciesLastModifiedOn(agencyId).data?.let { instant ->
-            remoteDS.refundPolicyLatestLogs(
-                agencyId,
-                instant
-            )
-                .data
-                .groupBy { it.dbAction }
-                .map { group ->
-                    when (group.key) {
-                        DbAction.INSERT -> localDS.createRefundPolicies(group.value.map { it.data!! })
-                        DbAction.UPDATE -> localDS.updateRefundPolicies(
-                            agencyId,
-                            group.value.map { it.data!! })
+    override suspend fun socialSupportFullSync(agencyId: String) =
+        withContext(ioDispatcher) {
+            localDS.agencySocialSupportsLastModifiedOn(agencyId).data.let { instant ->
+                remoteDS.socialSupportLatestLogs(
+                    agencyId,
+                    instant ?: Instant.fromEpochSeconds(0L)
+                ).also {
+                    when (it) {
+                        is Failure -> {
+                            Log.e("A_repo_FS_social", it.exception.toString())
+                        }
 
-                        DbAction.DELETE -> localDS.deleteRefundPolicies(
-                            agencyId,
-                            group.value.map { it.reason }
-                        )
+                        is Success -> {
+                            when (it.data.dbAction) {
+                                INSERT -> localDS.createSocialSupport(it.data.data!!)
+
+                                UPDATE -> localDS.updateSocialSupport(
+                                    agencyId,
+                                    it.data.data!!
+                                )
+
+                                DELETE -> localDS.deleteSocialSupport(agencyId)
+                            }
+                        }
                     }
                 }
+            }.run {
+                Success(Unit)
+            }
         }
-        Success(Unit)
-    }
+
+    override suspend fun refundPoliciesFullSync(agencyId: String) =
+        withContext(ioDispatcher) {
+            localDS.agencyRefundPoliciesLastModifiedOn(agencyId).data.let { instant ->
+                remoteDS.refundPolicyLatestLogs(
+                    agencyId,
+                    instant ?: Instant.fromEpochSeconds(0L)
+                )
+                    .also { res ->
+                        when (res) {
+                            is Failure -> {
+                                Log.e("A_repo_FS_Policy", "${res.exception}")
+                            }
+
+                            is Success -> {
+                                res.data
+                                    .groupBy { it.dbAction }
+                                    .map { group ->
+                                        when (group.key) {
+                                            INSERT -> localDS.createRefundPolicies(group.value.map { it.data!! })
+                                            UPDATE -> localDS.updateRefundPolicies(
+                                                agencyId,
+                                                group.value.map { it.data!! })
+
+                                            DELETE -> localDS.deleteRefundPolicies(
+                                                agencyId,
+                                                group.value.map { it.reason }
+                                            )
+                                        }
+                                    }
+                            }
+                        }
+                    }.run {
+                        Success(Unit)
+                    }
+            }
+        }
 
     override suspend fun agencyAccount(agencyId: String) = localDS.agencyAccount(agencyId)
-
 
     override fun agencyAccountLogFlow(agencyId: String) =
         remoteDS.agencyAccountLogFlow(agencyId)
             .onEach { flow ->
-                if (flow is Success) {
-                    when (flow.data.dbAction) {
-                        DbAction.INSERT -> {
-                            remoteDS.agencyAccount(agencyId).data.let {
-                                localDS.createAgencyAccount(it!!)
-                            }
-                        }
+                when (flow) {
+                    is Success -> {
+                        val log = flow.data
+                        when (flow.data.dbAction) {
+                            INSERT ->
+                                remoteDS.agencyAccount(agencyId).also {
+                                    localDS.createAgencyAccount(it.data!!)
+                                }
 
-                        DbAction.UPDATE -> {
-                            remoteDS.agencyAccount(agencyId).data.let {
-                                localDS.updateAgencyAccount(it!!.agencyId, it)
-                            }
-                        }
+                            UPDATE ->
+                                remoteDS.agencyAccount(agencyId).also {
+                                    localDS.updateAgencyAccount(log.agencyId, it.data!!)
+                                }
 
-                        DbAction.DELETE -> {
-                            TODO("Never happen for now")
+
+                            DELETE -> TODO("Never happen for now")
                         }
+                    }
+
+                    is Failure -> {
+                        Log.e("A_repo_RS_Account", flow.exception.toString())
                     }
                 }
             }
@@ -173,31 +243,43 @@ class AgencyRepositoryImpl(
         account: AgencyAccount
     ) = remoteDS.updateAgencyAccount(agencyId, account)
 
-    override suspend fun countAgencyAccount(agencyId: String) = localDS.countAgencyAccount(agencyId)
+    override fun countAgencyAccount(agencyId: String) = localDS.countAgencyAccount(agencyId)
 
     override fun emailSupportsLogFlow(agencyId: String) =
         remoteDS.emailSupportsLogFlow(agencyId)
             .onEach { flow ->
-                if (flow is Success) {
-                    val result: AgencyEmailSupport.Log = flow.data
-                    when (result.dbAction) {
-                        DbAction.INSERT -> localDS.createEmailSupports(listOf(result.data!!))
-                        DbAction.UPDATE -> localDS.updateEmailSupports(
-                            agencyId,
-                            listOf(result.data!!)
-                        )
+                when (flow) {
+                    is Success -> {
+                        val log: AgencyEmailSupport.Log = flow.data
+                        Log.d("A_repo_RS_Email1", "$log")
+                        when (log.dbAction) {
+                            INSERT -> {
+                                remoteDS.emailSupports(agencyId, listOf(log.email)).also {
+                                    localDS.createEmailSupports(it.data)
+                                }
 
-                        DbAction.DELETE -> localDS.deleteEmailSupports(
-                            agencyId,
-                            listOf(result.email)
-                        )
+                            }
+
+                            UPDATE -> remoteDS.emailSupports(agencyId, listOf(log.email))
+                                .also {
+                                    localDS.updateEmailSupports(
+                                        agencyId,
+                                        it.data
+                                    )
+                                }
+
+                            DELETE -> localDS.deleteEmailSupports(
+                                agencyId,
+                                listOf(log.email)
+                            )
+                        }
+                    }
+
+                    is Failure -> {
+                        Log.e("A_repo_RS_email", flow.exception.toString())
                     }
                 }
             }
-            .catch {
-                emit(Failure(it as Exception))
-            }
-
 
     override suspend fun emailSupports(
         agencyId: String,
@@ -221,7 +303,7 @@ class AgencyRepositoryImpl(
         emails: List<String>
     ) = remoteDS.deleteEmailSupports(agencyId, emails)
 
-    override suspend fun countEmailSupports(agencyId: String) = localDS.countEmailSupports(agencyId)
+    override fun countEmailSupports(agencyId: String) = localDS.countEmailSupports(agencyId)
 
     override suspend fun phoneSupports(
         agencyId: String,
@@ -229,42 +311,50 @@ class AgencyRepositoryImpl(
         phoneNumbers: List<String>
     ) = localDS.phoneSupports(agencyId, phoneCodes, phoneNumbers)
 
-    override fun phoneSupportsLogFlow(agencyId: String) = remoteDS.phoneSupportsLogFlow(agencyId)
-        .onEach { flow ->
-            if (flow is Success) {
-                val log = flow.data
-                when (flow.data.dbAction) {
-                    DbAction.INSERT -> {
-                        remoteDS.phoneSupports(
-                            agencyId,
-                            listOf(log.phoneCode),
-                            listOf(log.phoneNumber)
-                        ).data.let {
-                            localDS.createPhoneSupports(it)
+    override fun phoneSupportsLogFlow(agencyId: String) =
+        remoteDS.phoneSupportsLogFlow(agencyId)
+            .onEach { flow ->
+                when (flow) {
+                    is Success -> {
+                        val log = flow.data
+                        when (flow.data.dbAction) {
+                            INSERT -> {
+                                // We first get the
+                                remoteDS.phoneSupports(
+                                    agencyId,
+                                    listOf(log.phoneCode),
+                                    listOf(log.phoneNumber)
+                                ).data.let {
+                                    localDS.createPhoneSupports(it)
+                                }
+                            }
+
+                            UPDATE -> {
+                                remoteDS.phoneSupports(
+                                    agencyId,
+                                    listOf(log.phoneCode),
+                                    listOf(log.phoneNumber)
+                                ).data.let {
+                                    localDS.updatePhoneSupports(agencyId, it)
+                                }
+                            }
+
+                            DELETE -> localDS.deletePhoneSupports(
+                                agencyId,
+                                listOf(log.phoneCode),
+                                listOf(log.phoneNumber)
+                            )
                         }
                     }
 
-                    DbAction.UPDATE -> {
-                        remoteDS.phoneSupports(
-                            agencyId,
-                            listOf(log.phoneCode),
-                            listOf(log.phoneNumber)
-                        ).data.let {
-                            localDS.updatePhoneSupports(agencyId, it)
-                        }
+                    is Failure -> {
+                        Log.e("A_repo_RS_Phone", flow.exception.toString())
                     }
-
-                    DbAction.DELETE -> localDS.deletePhoneSupports(
-                        agencyId,
-                        listOf(log.phoneCode),
-                        listOf(log.phoneNumber)
-                    )
                 }
             }
-        }
-        .catch {
-            emit(Failure(it as Exception))
-        }
+            .catch {
+                emit(Failure(it as Exception))
+            }
 
     override fun phoneSupportsFlow(agencyId: String) = localDS.phoneSupportsFlow(agencyId)
 
@@ -284,33 +374,35 @@ class AgencyRepositoryImpl(
         phoneNumbers: List<String>
     ) = remoteDS.deletePhoneSupports(agencyId, phoneCodes, phoneNumbers)
 
-    override suspend fun countPhoneSupports(agencyId: String) = localDS.countPhoneSupports(agencyId)
+    override fun countPhoneSupports(agencyId: String) = localDS.countPhoneSupports(agencyId)
 
     override suspend fun socialSupport(agencyId: String) = localDS.socialSupport(agencyId)
-    override fun socialSupportLogFlow(agencyId: String) = remoteDS.socialSupportLogFlow(agencyId)
-        .onEach { flow ->
-            if (flow is Success) {
-                val log = flow.data
-                when (flow.data.dbAction) {
-                    DbAction.INSERT -> {
-                        remoteDS.socialSupport(agencyId).data!!.let {
-                            localDS.createSocialSupport(it)
+
+    override fun socialSupportLogFlow(agencyId: String) =
+        remoteDS.socialSupportLogFlow(agencyId)
+            .onEach { flow ->
+                when (flow) {
+                    is Success -> {
+                        val log = flow.data
+                        when (log.dbAction) {
+                            INSERT -> remoteDS.socialSupport(agencyId).also {
+                                localDS.createSocialSupport(it.data!!)
+                            }
+
+                            UPDATE -> remoteDS.socialSupport(agencyId).also {
+                                localDS.updateSocialSupport(agencyId, it.data!!)
+                            }
+
+                            DELETE -> localDS.deleteSocialSupport(agencyId)
                         }
                     }
 
-                    DbAction.UPDATE -> {
-                        remoteDS.socialSupport(agencyId).data!!.let {
-                            localDS.updateSocialSupports(agencyId, it)
-                        }
-                    }
-
-                    DbAction.DELETE -> localDS.deleteSocialSupport(agencyId)
+                    is Failure -> Log.e("A_repo_RS_Social", flow.exception.toString())
                 }
             }
-        }
-        .catch {
-            emit(Failure(it as Exception))
-        }
+            .catch {
+                emit(Failure(it as Exception))
+            }
 
     override fun socialSupportFlow(agencyId: String) = localDS.socialSupportFlow(agencyId)
 
@@ -322,38 +414,54 @@ class AgencyRepositoryImpl(
     override suspend fun updateSocialSupports(
         agencyId: String,
         support: AgencySocialSupport
-    ) = remoteDS.updateSocialSupports(agencyId, support)
+    ) = remoteDS.updateSocialSupport(agencyId, support)
 
     override suspend fun deleteSocialSupport(agencyId: String) =
         remoteDS.deleteSocialSupport(agencyId)
 
-    override suspend fun countSocialAccount(agencyId: String) = localDS.countSocialAccount(agencyId)
+    override fun countSocialAccount(agencyId: String) = localDS.countSocialAccount(agencyId)
 
     override suspend fun refundPolicies(
         agencyId: String,
         reasons: List<TripCancellationReason>
     ): Results<List<AgencyRefundPolicy>> = localDS.refundPolicies(agencyId, reasons)
 
-    override fun refundPoliciesLogFlow(agencyId: String) = remoteDS.refundPoliciesLogFlow(agencyId)
-        .onEach { flow ->
-            if (flow is Success) {
-                val log = flow.data
-                when (flow.data.dbAction) {
-                    DbAction.INSERT -> remoteDS.refundPolicies(agencyId, listOf(log.reason)).data.let {
-                        localDS.createRefundPolicies(it)
+    override fun refundPoliciesLogFlow(agencyId: String) =
+        remoteDS.refundPoliciesLogFlow(agencyId)
+            .onEach { flow ->
+                when (flow) {
+                    is Success -> {
+                        val log = flow.data
+                        when (flow.data.dbAction) {
+                            INSERT -> remoteDS.refundPolicies(
+                                agencyId,
+                                listOf(log.reason)
+                            ).data.let {
+                                localDS.createRefundPolicies(it)
+                            }
+
+                            UPDATE -> remoteDS.refundPolicies(
+                                agencyId,
+                                listOf(log.reason)
+                            ).data.let {
+                                localDS.updateRefundPolicies(agencyId, it)
+                            }
+
+                            DELETE -> localDS.deleteRefundPolicies(
+                                agencyId,
+                                listOf(log.reason)
+                            )
+                        }
                     }
 
-                    DbAction.UPDATE -> remoteDS.refundPolicies(agencyId, listOf(log.reason)).data.let {
-                        localDS.updateRefundPolicies(agencyId, it)
+                    is Failure -> {
+                        Log.e("A_repo_RS_Policy", flow.exception.toString())
                     }
-
-                    DbAction.DELETE -> localDS.deleteRefundPolicies(agencyId, listOf(log.reason))
                 }
             }
-        }
-        .catch {
-            emit(Failure(it as Exception))
-        }
+            .catch {
+                emit(Failure(it as Exception))
+            }
 
     override fun refundPoliciesFlow(agencyId: String) = localDS.refundPoliciesFlow(agencyId)
     override suspend fun createRefundPolicies(
@@ -371,9 +479,10 @@ class AgencyRepositoryImpl(
         reasons: List<TripCancellationReason>
     ) = remoteDS.deleteRefundPolicies(agencyId, reasons)
 
-    override suspend fun countRefundPolicies(agencyId: String) =
+    override fun countRefundPolicies(agencyId: String) =
         localDS.countRefundPolicies(agencyId)
 }
+
 //
 //    override suspend fun saveStationJobs(stationJobs: List<StationJob>) =
 //        localAgencySource.saveStationJobs(stationJobs)

@@ -63,9 +63,9 @@ data class AgencyLegalDocs(
     data class Log(
         @SN("data_json") val data: AgencyLegalDocs? = null,
         @SN("agency_id") val agencyId: String,
-        @SN("timestamp") val timestamp: Instant,
+        @SN("added_on") val addedOn: Instant,
         @SN("db_action") val dbAction: DbAction,
-        @SN("scanner_id") val scannerId: String
+        @SN("scanner_id") val scannerId: String?=null
     ) {
         companion object {
             const val NAME = "agency_legal_docs_log"
@@ -104,9 +104,9 @@ class AgencyRefundPolicy(
         @SN("log_id") val logId: Long,
         @SN("agency_id") val agencyId: String,
         @SN("reason") val reason: TripCancellationReason,
-        @SN("timestamp") val timestamp: Instant,
+        @SN("added_on") val addedOn: Instant,
         @SN("db_action") val dbAction: DbAction,
-        @SN("scanner_id") val scannerId: String
+        @SN("scanner_id") val scannerId: String?=null
     ) {
         companion object {
             const val NAME = "agency_refund_policy_log"

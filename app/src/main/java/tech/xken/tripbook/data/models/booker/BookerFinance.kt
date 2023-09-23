@@ -14,7 +14,7 @@ import tech.xken.tripbook.data.models.SortField
 data class BookerMoMoAccount(
     @ColumnInfo("booker_id") @SerialName("booker_id") val bookerId: String = "",
     @ColumnInfo("phone_number") @SerialName("phone_number") val phoneNumber: String = "",
-    @ColumnInfo("is_active") @SerialName("is_active") val isActive: Boolean = true,
+    @ColumnInfo("is_enabled") @SerialName("is_enabled") val isEnabled: Boolean = true,
     @ColumnInfo("added_on") @SerialName("added_on") val addedOn: Instant? = null,
     @ColumnInfo("modified_on") @SerialName("modified_on") val modifiedOn: Instant? = null
 ) {
@@ -39,7 +39,7 @@ data class BookerMoMoAccount(
 
     fun backingField(nameRes: Int) = when (nameRes) {
         R.string.lb_phone -> phoneNumber
-        R.string.lb_sort_enabled -> if(isActive) "a" else "b"
+        R.string.lb_sort_enabled -> if(isEnabled) "a" else "b"
         R.string.lb_sort_modified_on -> "${modifiedOn?.epochSeconds}"
         R.string.lb_sort_added_on -> "${addedOn?.epochSeconds}"
         else -> ""
@@ -51,7 +51,7 @@ data class BookerMoMoAccount(
 data class BookerOMAccount(
     @ColumnInfo("booker_id") @SerialName("booker_id") val bookerId: String = "",
     @ColumnInfo("phone_number") @SerialName("phone_number") val phoneNumber: String = "",
-    @ColumnInfo("is_active") @SerialName("is_active") val isActive: Boolean = true,
+    @ColumnInfo("is_enabled") @SerialName("is_enabled") val isEnabled: Boolean = true,
     @ColumnInfo("added_on") @SerialName("added_on") val addedOn: Instant? = null,
     @ColumnInfo("modified_on") @SerialName("modified_on") val modifiedOn: Instant? = null
 ) {
@@ -76,7 +76,7 @@ data class BookerOMAccount(
 
     fun backingField(nameRes: Int): String = when (nameRes) {
         R.string.lb_phone -> phoneNumber
-        R.string.lb_sort_enabled -> if (isActive) "a" else "b"
+        R.string.lb_sort_enabled -> if (isEnabled) "a" else "b"
         R.string.lb_sort_modified_on -> "${modifiedOn?.epochSeconds}"
         R.string.lb_sort_added_on -> "${addedOn?.epochSeconds}"
         else -> ""
