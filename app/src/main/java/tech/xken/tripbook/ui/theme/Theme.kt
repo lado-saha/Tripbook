@@ -1,6 +1,8 @@
 package tech.xken.tripbook.ui.theme
 
 import android.app.Activity
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.darkColors
@@ -18,10 +20,10 @@ private val DarkColorPalette = darkColors(
     secondary = SecondaryColorDark,
     background = MainColorDark,
     surface = MainColorDark,
-    onPrimary = Color.White,
-    onSecondary = Color.White,
-    onBackground = Color.White,
-    onSurface = Color.White,
+//    onPrimary = Color.White,
+//    onSecondary = Color.White,
+//    onBackground = Color.White,
+//    onSurface = Color.White,
 //    primary = Purple200,
 //    primaryVariant = Purple700,
 //    secondary = Teal200,
@@ -30,16 +32,19 @@ private val DarkColorPalette = darkColors(
 private val LightColorPalette = lightColors(
     primary = MainColorLight,
     primaryVariant = MainColorLight,
-    secondary = MainColorLight,
-    background = Color.White,
-    surface = Color.White,
-    onPrimary = Color.White,
-    onSecondary = Color.White,
-    onBackground = Color.Black,
-    onSurface = Color.Black,
-    error = Color(0xFFB00020),
+    secondary = SecondaryColorDark,
+//    background = Color.White,
+//    surface = Color.White,
+//    onPrimary = Color.White,
+//    onSecondary = Color.White,
+//    onBackground = Color.Black,
+//    onSurface = Color.Black,
+//    error = Color(0xFFB00020),
+    secondaryVariant = SecondaryColorDark,
+    onError = Color.White
 //    onError = Color(0xFF4FFFDF)
 )
+
 
 @Composable
 fun TripbookTheme(darkTheme: Boolean = isSystemInDarkTheme(), content: @Composable () -> Unit) {
@@ -52,22 +57,21 @@ fun TripbookTheme(darkTheme: Boolean = isSystemInDarkTheme(), content: @Composab
     if (!view.isInEditMode)
         SideEffect {
             val window = (view.context as Activity).window
-            window.statusBarColor = if (darkTheme) {
-                colors.background.copy(alpha = 0.905f)
+
+            if (darkTheme) {
+                colors.background
             } else {
                 colors.primary
-            }.toArgb()
+            }.toArgb().also {
+                window.statusBarColor = it
+                window.navigationBarColor = it
 
-            window.navigationBarColor = if (darkTheme) {
-                colors.background.copy()
-            } else {
-                colors.primary
-            }.toArgb()
+            }
 
-            WindowCompat.getInsetsController(window, view)
-                .isAppearanceLightStatusBars = false
             WindowCompat.getInsetsController(window, view)
                 .isAppearanceLightNavigationBars = false
+            WindowCompat.getInsetsController(window, view)
+                .isAppearanceLightStatusBars = false
         }
     MaterialTheme(
         colors = colors,

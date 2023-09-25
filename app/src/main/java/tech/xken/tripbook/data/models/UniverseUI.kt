@@ -3,17 +3,12 @@ package tech.xken.tripbook.data.models
 import androidx.compose.ui.geometry.Offset
 import androidx.room.ColumnInfo
 import androidx.room.Entity
+import androidx.room.Ignore
 import androidx.room.PrimaryKey
+import kotlinx.datetime.Instant
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
 import java.util.*
-
-/**
- * A town is a unit place
- */
-interface UniverseUI {
-    val id: String
-    val name: String?
-    val parent: String?
-}
 
 
 /**
@@ -26,153 +21,62 @@ data class TownNode(
     val pinPoint: Offset = Offset(0f, 0f),
 )
 
-@Entity(tableName = Planet.TABLE_NAME)
-data class Planet(
-    @ColumnInfo(name = ID) @PrimaryKey override val id: String,
-    @ColumnInfo(name = NAME) override val name: String?,
-    @ColumnInfo(name = TIMESTAMP) val timestamp: Long?,
-) : UniverseUI {
-    companion object {
-        const val ID = "id"
-        const val NAME = "name"
-        const val TABLE_NAME = "Planets"
-        const val TIMESTAMP = "timestamp"
-    }
-
-    override val parent: String?
-        get() = id
-}
-
-@Entity(tableName = Continent.TABLE_NAME)
-data class Continent(
-    @ColumnInfo(name = ID) @PrimaryKey override val id: String,
-    @ColumnInfo(name = NAME) override val name: String?,
-    @ColumnInfo(name = PLANET) val planet: String?,
-    @ColumnInfo(name = TIMESTAMP) val timestamp: Long?,
-) : UniverseUI {
-
-    override val parent: String?
-        get() = planet
-
-    companion object {
-        const val ID = "id"
-        const val NAME = "name"
-        const val PLANET = "planet"
-        const val TABLE_NAME = "Continents"
-        const val TIMESTAMP = "timestamp"
-    }
-}
-
-@Entity(tableName = Country.TABLE_NAME)
+@Serializable
+@Entity(tableName = "country")
 data class Country(
-    @ColumnInfo(name = ID) @PrimaryKey override val id: String,
-    @ColumnInfo(name = NAME) override val name: String?,
-    @ColumnInfo(name = CONTINENT) val continent: String?,
-    @ColumnInfo(name = TIMESTAMP) val timestamp: Long?,
-) : UniverseUI {
+    @SerialName("country_id") @ColumnInfo(name = "country_id") @PrimaryKey val countryId: String,
+    @SerialName("name") @ColumnInfo(name = "name") val name: String?,
+    @SerialName("added_on") @ColumnInfo(name = "added_on") val addedOn: Long?
+)
 
-    override val parent: String?
-        get() = continent
-    companion object {
-        const val ID = "id"
-        const val NAME = "name"
-        const val CONTINENT = "continent"
-        const val TABLE_NAME = "Countries"
-        const val TIMESTAMP = "timestamp"
-    }
-}
-
-@Entity(tableName = Region.TABLE_NAME)
+@Serializable
+@Entity(tableName = "region")
 data class Region(
-    @ColumnInfo(name = ID) @PrimaryKey override val id: String,
-    @ColumnInfo(name = NAME) override val name: String?,
-    @ColumnInfo(name = COUNTRY) val country: String?,
-    @ColumnInfo(name = TIMESTAMP) val timestamp: Long?,
-    @ColumnInfo(name = IS_CAPITAL) val isCapital: Boolean?,
-) : UniverseUI {
+    @SerialName("region_id") @ColumnInfo(name = "region_id") @PrimaryKey val regionId: String,
+    @SerialName("name") @ColumnInfo(name = "name") val name: String?,
+    @SerialName("country_id") @ColumnInfo(name = "country_id") val countryId: String?,
+    @SerialName("added_on") @ColumnInfo(name = "added_on") val addedOn: Long?,
+) {
+    @Ignore
+    lateinit var country: Country
 
-    override val parent: String?
-        get() = country
-    companion object {
-        const val ID = "id"
-        const val NAME = "name"
-        const val COUNTRY = "country"
-        const val TABLE_NAME = "Regions"
-        const val TIMESTAMP = "timestamp"
-        const val IS_CAPITAL = "is_capital"
-    }
 }
 
-@Entity(tableName = Division.TABLE_NAME)
+@Serializable
+@Entity(tableName = "division")
 data class Division(
-    @ColumnInfo(name = ID) @PrimaryKey override val id: String,
-    @ColumnInfo(name = NAME) override val name: String?,
-    @ColumnInfo(name = REGION) val region: String?,
-    @ColumnInfo(name = TIMESTAMP) val timestamp: Long?,
-    @ColumnInfo(name = IS_CAPITAL) val isCapital: Boolean?,
-) : UniverseUI {
-
-    override val parent: String?
-        get() = region
-
-    companion object {
-        const val ID = "id"
-        const val NAME = "name"
-        const val REGION = "region"
-        const val TABLE_NAME = "Divisions"
-        const val TIMESTAMP = "timestamp"
-        const val IS_CAPITAL = "is_capital"
-    }
+    @SerialName("division_id") @ColumnInfo(name = "division_id") @PrimaryKey val divisionId: String,
+    @SerialName("name") @ColumnInfo(name = "name") val name: String?,
+    @SerialName("region_id") @ColumnInfo(name = "region_id") val regionId: String?,
+    @SerialName("added_on") @ColumnInfo(name = "added_on") val addedOn: Long?
+) {
+    @Ignore
+    lateinit var region: Region
 
 }
 
-@Entity(tableName = Subdivision.TABLE_NAME)
+@Serializable
+@Entity(tableName = "subdivision")
 data class Subdivision(
-    @ColumnInfo(name = ID) @PrimaryKey override val id: String,
-    @ColumnInfo(name = NAME) override val name: String?,
-    @ColumnInfo(name = DIVISION) val division: String?,
-    @ColumnInfo(name = TIMESTAMP) val timestamp: Long?,
-    @ColumnInfo(name = IS_CAPITAL) val isCapital: Boolean?,
-) : UniverseUI {
+    @SerialName("subdivision_id") @ColumnInfo(name = "subdivision_id") @PrimaryKey val subdivisionId: String,
+    @SerialName("name") @ColumnInfo(name = "name") val name: String?,
+    @SerialName("division_id") @ColumnInfo(name = "division_id") val divisionId: String?,
+    @SerialName("added_on") @ColumnInfo(name = "added_on") val addedOn: Long?,
+) {
+    @Ignore
+    lateinit var division: Division
 
-    override val parent: String?
-        get() = division
-    companion object {
-        const val ID = "id"
-        const val NAME = "name"
-        const val DIVISION = "division"
-        const val TABLE_NAME = "Subdivisions"
-        const val TIMESTAMP = "timestamp"
-        const val IS_CAPITAL = "is_capital"
-    }
 }
 
-@Entity(tableName = Town.TABLE_NAME)
+@Entity(tableName = "town")
+@Serializable
 data class Town(
-    @ColumnInfo(name = ID) @PrimaryKey override val id: String,
-    @ColumnInfo(name = NAME) override val name: String?,
-    @ColumnInfo(name = SUBDIVISION) val subdivision: String?,
-    @ColumnInfo(name = LAT) val lat: Double?,
-    @ColumnInfo(name = LON) val lon: Double?,
-    @ColumnInfo(name = XM) val xm: Double?,
-    @ColumnInfo(name = YM) val ym: Double?,
-    @ColumnInfo(name = TIMESTAMP) val timestamp: Long?,
-    @ColumnInfo(name = IS_CAPITAL) val isCapital: Boolean?,
-) : UniverseUI {
-
-    override val parent: String?
-        get() = subdivision
-    companion object {
-        const val TABLE_NAME = "Towns"
-        const val IS_CAPITAL = "is_capital"
-        const val ID = "id"
-        const val NAME = "name"
-        const val LAT = "lat"
-        const val LON = "lon"
-        const val SUBDIVISION = "subdivision"
-        const val XM = "xm"
-        const val YM = "ym"
-        const val TIMESTAMP = "timestamp"
-        const val all = "*"
-    }
+    @SerialName("town_id") @ColumnInfo(name = "town_id") @PrimaryKey val townId: String,
+    @SerialName("name") @ColumnInfo(name = "name") val name: String?,
+    @SerialName("subdivision_id") @ColumnInfo(name = "subdivision_id") val subdivisionId: String?,
+    @Serializable(GeoPointAsStringSerializer::class) @SerialName("geo_point") @ColumnInfo(name = "geo_point") val geoPoint: GeoPoint?,
+    @SerialName("added_on") @ColumnInfo(name = "added_on") val addedOn: Instant? = null,
+) {
+    @Ignore
+    var subdivision: Subdivision? = null
 }

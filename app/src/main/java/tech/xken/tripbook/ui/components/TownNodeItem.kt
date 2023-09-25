@@ -42,7 +42,7 @@ fun TownNodeItem(
         modifier = modifier
             .graphicsLayer(translationX = node().offset.x, translationY = node().offset.y)
             .pointerInput(Unit) {
-                detectTransformGestures { _, pan, _, _ -> onDragged(node().town.id, pan) }
+                detectTransformGestures { _, pan, _, _ -> onDragged(node().town.townId, pan) }
             }
     ) {
         val (markedIconRef, placeIconRef, currentIconRef, textRef, pinPointRef) = createRefs()
@@ -55,13 +55,13 @@ fun TownNodeItem(
                 }
                 .size(placeSizeDp)
                 .combinedClickable(
-                    onLongClick = { onLongClick(node().town.id) },
-                    onClick = { onClick(node().town.id) },
+                    onLongClick = { onLongClick(node().town.townId) },
+                    onClick = { onClick(node().town.townId) },
                 ), tint = MaterialTheme.colors.onBackground
         )
 
         //Current Place
-        AnimatedVisibility(visible = isFocus(node().town.id),
+        AnimatedVisibility(visible = isFocus(node().town.townId),
             modifier = Modifier.constrainAs(currentIconRef) {
                 centerHorizontallyTo(placeIconRef)
                 centerVerticallyTo(placeIconRef, 0.2f)
@@ -76,7 +76,7 @@ fun TownNodeItem(
         }
 
         //Marked place
-        AnimatedVisibility(visible = isSelected(node().town.id),
+        AnimatedVisibility(visible = isSelected(node().town.townId),
             modifier = Modifier.constrainAs(markedIconRef) {
                 centerHorizontallyTo(placeIconRef)
                 centerVerticallyTo(placeIconRef, 0.2f)
@@ -97,7 +97,7 @@ fun TownNodeItem(
             },
             text = node().town.name!!,
             style = LocalTextStyle.current.copy(color = MaterialTheme.colors.onBackground,
-                fontWeight = if (isFocus(node().town.id) || isSelected(node().town.id)) FontWeight.ExtraBold else null),
+                fontWeight = if (isFocus(node().town.townId) || isSelected(node().town.townId)) FontWeight.ExtraBold else null),
         )
 
         Text(text = "", modifier = Modifier
@@ -107,7 +107,7 @@ fun TownNodeItem(
             }
             .size(0.dp)
             .onPlaced {
-                onPinPointPositioned(node().town.id, it.positionInRoot())
+                onPinPointPositioned(node().town.townId, it.positionInRoot())
             }
         )
     }

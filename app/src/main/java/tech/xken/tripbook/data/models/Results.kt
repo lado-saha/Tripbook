@@ -12,6 +12,7 @@ sealed class Results<out R> {
     data class Failure(val exception: Exception) : Results<Nothing>()
     data class Success<out T>(val data: T) : Results<T>()
 
+
     /**
      * Used for debugging and testing
      */
@@ -22,6 +23,7 @@ sealed class Results<out R> {
         }
     }
 }
+
 /*sealed class Results<T> {
     data class Success<T>(val data: T) : Results<T>()
     data class Failure<T>(val exception: Exception) : Results<T>()

@@ -3,53 +3,50 @@ package tech.xken.tripbook.data.models
 import androidx.compose.ui.geometry.Offset
 import androidx.room.ColumnInfo
 import androidx.room.Entity
+import androidx.room.ForeignKey
 import androidx.room.Ignore
 import androidx.room.PrimaryKey
+import kotlinx.datetime.Instant
+import kotlinx.serialization.SerialName
+import kotlinx.serialization.Serializable
 
 /**
  * A chain of towns
  */
 @Entity(
-    tableName = Road.TABLE_NAME,
-//    foreignKeys = [
-//        ForeignKey(
-//            entity = Town::class,
-//            parentColumns = [Town.ID, Town.ID],
-//            childColumns = [Road.TOWN_1, Road.TOWN_2]
-//        )
-//    ]
+    tableName = "road",
+    foreignKeys = [
+        ForeignKey(
+            entity = Town::class,
+            parentColumns = ["town_id"],
+            childColumns = ["town_1_id"]
+        ),
+        ForeignKey(
+            entity = Town::class,
+            parentColumns = ["town_id"],
+            childColumns = ["town_2_id"]
+        )
+    ],
 )
+@Serializable
 data class Road(
-    @ColumnInfo(name = ID) @PrimaryKey val id: String,
-    @ColumnInfo(name = NAME) val name: String?,
-    @ColumnInfo(name = DISTANCE) val distance: Double?,
-    @ColumnInfo(name = SHAPE) val shape: String?,
-    @ColumnInfo(name = TOWN_1) val town1: String?,
-    @ColumnInfo(name = TOWN_2) val town2: String?,
-    @ColumnInfo(name = TIMESTAMP) val timestamp: Long?,
+    @SerialName("road_id") @ColumnInfo(name = "road_id") @PrimaryKey val roadId: String,
+    @SerialName("name") @ColumnInfo(name = "name") val name: String? = null,
+    @SerialName("distance") @ColumnInfo(name = "distance") val distance: Double? = null,
+    @SerialName("town_1_id") @ColumnInfo(name = "town_1_id") val town1Id: String? = null,
+    @SerialName("town_2_id") @ColumnInfo(name = "town_2_id") val town2Id: String? = null,
+    @SerialName("added_on") @ColumnInfo(name = "added_on") val addedOn: Instant? = null,
+    @SerialName("road_path") @ColumnInfo(name = "road_path") val roadPath: List<String>? = null
 ) {
     // Contains all towns which make up the road
     @Ignore
-    var itineraryTownsIds: List<String> = listOf()
+    var town1: Town? = null
+    @Ignore
+    var town2: Town? = null
 
-    companion object {
-        @Ignore
-        const val TABLE_NAME = "Roads"
-        @Ignore
-        const val ID = "id"
-        @Ignore
-        const val NAME = "name"
-        @Ignore
-        const val DISTANCE = "distance"
-        @Ignore
-        const val SHAPE = "shape"
-        @Ignore
-        const val TOWN_1 = "town1"
-        @Ignore
-        const val TOWN_2 = "town2"
-        @Ignore
-        const val TIMESTAMP = "timestamp"
-    }
+    @Ignore
+    var roadPathTowns: List<Town>? = null
+
 }
 
 /**
@@ -66,21 +63,6 @@ data class Itinerary(
     val townPairs: HashMap<String, String> = hashMapOf(),
     val isHighlighted: Boolean = false,
 ) {
-    /**
-     * We traverse like a Linked List i.e we use the previous element to get the next until
-     * there no next
-     */
-    val townIds = run {
-        //Managing reversal cases
-        var prev = start
-        val itinerary = mutableListOf(prev)
-        while (prev != stop) {
-            val next = townPairs[prev]!!
-            itinerary += next
-            prev = next
-        }
-        itinerary
-    }
 
     companion object {
         /**
