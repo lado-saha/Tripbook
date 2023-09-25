@@ -1,4 +1,4 @@
-# TripbookTRIP
+# Tripbook
 ## Exploring spacetime
 
 I warmly welcome all TeamBook members to our project.
