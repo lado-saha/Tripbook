@@ -13,13 +13,16 @@ const val SUPABASE_KEY =
  * I noticed that all the functions must be stored in the public schema
  */
 object RPC {
-    const val AGENCY_LATEST_ACCOUNT_LOG = "get_latest_agency_account_log"
-    const val AGENCY_LATEST_PHONE_SUPPORT_LOG = "get_latest_agency_phone_support_log"
-    const val AGENCY_LATEST_EMAIL_SUPPORT_LOG = "get_latest_agency_email_support_log"
-    const val AGENCY_LATEST_SOCIAL_SUPPORT_LOG = "get_latest_agency_social_support_log"
-    const val AGENCY_LATEST_MOMO_SUPPORT_LOG = "get_latest_agency_momo_account_log"
-    const val AGENCY_LATEST_OM_SUPPORT_LOG = "get_latest_agency_om_account_log"
-    const val AGENCY_LATEST_REFUND_POLICY_LOG = "get_latest_agency_refund_policy_log"
+    const val LATEST_AGENCY_ACCOUNT_LOG = "get_latest_agency_account_log"
+    const val LATEST_AGENCY_PHONE_SUPPORT_LOG = "get_latest_agency_phone_support_log"
+    const val LATEST_AGENCY_EMAIL_SUPPORT_LOG = "get_latest_agency_email_support_log"
+    const val LATEST_AGENCY_SOCIAL_SUPPORT_LOG = "get_latest_agency_social_support_log"
+    const val LATEST_AGENCY_MOMO_ACCOUNT_LOG = "get_latest_agency_momo_account_log"
+    const val LATEST_AGENCY_OM_ACCOUNT_LOG = "get_latest_agency_om_account_log"
+    const val LATEST_AGENCY_PAYPAL_ACCOUNT_LOG = "get_latest_agency_paypal_account_log"
+    const val LATEST_AGENCY_REFUND_POLICY_LOG = "get_latest_agency_refund_policy_log"
+
+    const val LATEST_AGENCY_GRAPHICS_LOG = "get_latest_agency_graphics_log"
 }
 
 

@@ -7,15 +7,10 @@ import io.github.jan.supabase.gotrue.SessionStatus
 import io.github.jan.supabase.gotrue.gotrue
 import io.github.jan.supabase.gotrue.providers.builtin.Phone
 import io.github.jan.supabase.postgrest.postgrest
-import io.github.jan.supabase.realtime.PostgresAction
-import io.github.jan.supabase.realtime.createChannel
-import io.github.jan.supabase.realtime.postgresChangeFlow
-import io.github.jan.supabase.realtime.realtime
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
@@ -23,9 +18,7 @@ import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.decodeFromJsonElement
 import kotlinx.serialization.json.put
-import tech.xken.tripbook.data.models.NEW_ID
 import tech.xken.tripbook.data.models.Results
-import tech.xken.tripbook.data.models.booker.Booker
 import tech.xken.tripbook.data.models.booker.BookerCredentials
 import javax.inject.Inject
 
@@ -92,19 +85,19 @@ class AuthRepo @Inject constructor(
     val agencyId
         get() = authClient.currentSessionOrNull()?.user?.userMetadata?.get(
             "agency_id"
-        )?.let { Json.decodeFromJsonElement<String>(it) } ?: "78a9294f-9da4-4af2-8354-c320fe662f40"
+        )?.let { Json.decodeFromJsonElement<String>(it) } ?: ""
     /**
      * Tells us if a booker has already created a profile or not
      */
-    val hasAccount
-        get() = authClient.currentSessionOrNull()?.user?.userMetadata?.get(
-            "has_account"
-        )?.let { Json.decodeFromJsonElement<Boolean>(it) } ?: false
+//    val hasAccount
+//        get() = authClient.currentSessionOrNull()?.user?.userMetadata?.get(
+//            "has_account"
+//        )?.let { Json.decodeFromJsonElement<Boolean>(it) } ?: false
 
-    val hasAccountPhoto
-        get() = authClient.currentSessionOrNull()?.user?.userMetadata?.get(
-            "has_account_photo"
-        )?.let { Json.decodeFromJsonElement<Boolean>(it) } ?: false
+//    val hasAccountPhoto
+//        get() = authClient.currentSessionOrNull()?.user?.userMetadata?.get(
+//            "has_account_photo"
+//        )?.let { Json.decodeFromJsonElement<Boolean>(it) } ?: false
 
     suspend fun forceRefreshUser() = withContext(ioDispatcher) {
         return@withContext try {

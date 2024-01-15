@@ -15,6 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
@@ -55,7 +56,7 @@ fun OutTextField(
             modifier = Modifier.fillMaxWidth(),
             enabled = enabled,
             readOnly = readOnly,
-            textStyle = textStyle,
+            textStyle = textStyle.copy(fontWeight = FontWeight.Bold),
             label = label,
             placeholder = placeholder,
             leadingIcon = leadingIcon,
@@ -68,7 +69,8 @@ fun OutTextField(
             maxLines = maxLines,
             interactionSource = interactionSource,
             shape = shape,
-            colors = colors)
+            colors = colors,
+        )
         AnimatedVisibility(visible = errorText(value) != null, modifier = Modifier.padding(horizontal = 2.dp)) {
             Text(text = stringResource(id = errorText(value) ?: R.string.empty).caps,
                 style = MaterialTheme.typography.caption,

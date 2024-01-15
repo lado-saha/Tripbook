@@ -2,6 +2,7 @@ package tech.xken.tripbook.data.sources.booker
 
 import android.util.Log
 import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.withContext
 import tech.xken.tripbook.data.AuthRepo
 import tech.xken.tripbook.data.models.Results
 import tech.xken.tripbook.data.models.Results.Failure
@@ -9,6 +10,8 @@ import tech.xken.tripbook.data.models.Results.Success
 import tech.xken.tripbook.data.models.booker.Booker
 import tech.xken.tripbook.data.models.booker.BookerMoMoAccount
 import tech.xken.tripbook.data.models.booker.BookerOMAccount
+import tech.xken.tripbook.data.models.data
+import tech.xken.tripbook.data.sources.storage.StorageRepository
 import tech.xken.tripbook.domain.NetworkState
 import tech.xken.tripbook.ui.screens.booking.CacheSyncUiState
 
@@ -18,6 +21,7 @@ class BookerRepositoryImpl(
     private val authRepo: AuthRepo,
     private val ioDispatcher: CoroutineDispatcher,
     private val networkState: NetworkState,
+    private val storageRepo: StorageRepository
 ) : BookerRepository {
 
     //    private val momoAccounts = channel.postgresChangeFlow<PostgresAction.Insert>("sc_booker") {
@@ -80,25 +84,29 @@ class BookerRepositoryImpl(
 
     }
 
-    override suspend fun createBooker(booker: Booker) =
-        when (val rBooker = remoteDS.createBooker(booker)) {
-            is Success -> {
-                localDS.createBooker(rBooker.data!!)
-                rBooker
-            }
+    override suspend fun createBooker(booker: Booker): Results<Booker?> {
+        val rBooker = remoteDS.createBooker(booker)
+        if (rBooker is Failure)
+            return rBooker
+        localDS.createBooker(rBooker.data!!)
+        val photoUpload = booker.updateOrDeletePhoto(storageRepo)
+        if (photoUpload is Failure)
+            return Failure(photoUpload.exception)
+        return rBooker
+    }
 
-            else -> rBooker
+    override suspend fun updateBooker(booker: Booker): Results<Booker?> {
+        val rBooker = remoteDS.updateBooker(booker)
+        if (rBooker is Failure)
+            return Failure(rBooker.exception)
+        localDS.updateBooker(rBooker.data!!)
+        return withContext(ioDispatcher){
+            val photoUpload = booker.updateOrDeletePhoto(storageRepo)
+            if (photoUpload is Failure)
+                Failure(photoUpload.exception)
+            rBooker
         }
-
-    override suspend fun updateBooker(booker: Booker) =
-        when (val rBooker = remoteDS.updateBooker(booker)) {
-            is Success -> {
-                localDS.updateBooker(rBooker.data!!)
-                rBooker
-            }
-
-            is Failure -> rBooker
-        }
+    }
 
     override suspend fun bookerFromId(bookerId: String, columns: List<String>) =
         localDS.bookerFromId(bookerId)
@@ -158,6 +166,9 @@ class BookerRepositoryImpl(
 
     override fun countBookerOMAccounts(bookerId: String) =
         localDS.countBookerOMAccountsStream(bookerId)
+
+    override fun countBookerAccount(bookerId: String) =
+        localDS.countBookerAccountStream(bookerId)
 
     override fun bookerMoMoAccounts(bookerId: String) =
         localDS.bookerMoMoAccountsStream(bookerId)

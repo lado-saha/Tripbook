@@ -186,7 +186,7 @@
     <string name="msg_error_saving_account">An unexpected error while creating your account. Try again</string>
     <string name="msg_error_update_account">An unexpected error while updating your account. Try again</string>
 
-    <string name="msg_error_get_photo">Could not get your profile picture.</string>
+    <string name="msg_error_get_photo">Could not get your account photo.</string>
     <string name="desc_close_dialog">close dialog box</string>
     <string name="desc_loading_image">loading image</string>
     <!--  My profile info  -->
@@ -250,4 +250,17 @@
     <string name="lb_delete_sel_accounts">Delete selected accounts</string>
     <string name="desc_more_options">More options</string>
     <string name="lb_agency_profile">Agency Profile</string>
+    <string name="msg_error_get_logo">Could not logo. Try again</string>
+    <string name="lb_agency_account">Agency Account</string>
+    <string name="lb_agency_support">Agency Support</string>
+    <string name="lb_agency_finance">Agency Finance</string>
+    <string name="lb_browse_gallery">Browse Gallery</string>
+    <string name="lb_browse_documents">Browse Documents</string>
+    <string name="lb_from_camera">From Camera</string>
+    <string name="msg_undo_all_changes">Undo the changes</string>
+    <string name="lb_about_picture">About picture</string>
+    <string name="desc_undo_changes">Undo all changes</string>
+    <string name="desc_change_picture">Change picture</string>
+    <string name="desc_delete_picture">Delete picture</string>
+    <string name="desc_save_changes">Save changes</string>
 </resources>

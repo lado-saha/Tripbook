@@ -1,10 +1,9 @@
 package tech.xken.tripbook.ui.screens.booking
 
 import android.app.DatePickerDialog
-import android.content.Intent
+import android.net.Uri
+import android.util.Log
 import androidx.activity.compose.BackHandler
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
@@ -19,6 +18,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusDirection
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
@@ -27,142 +27,89 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.*
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavController
 import kotlinx.datetime.LocalDate
 import tech.xken.tripbook.R
 import tech.xken.tripbook.data.models.ActionItem
 import tech.xken.tripbook.data.models.ActionSheet
+import tech.xken.tripbook.data.models.ImageUiState
 import tech.xken.tripbook.data.models.MainAction
 import tech.xken.tripbook.data.models.booker.Sex
 import tech.xken.tripbook.domain.caps
 import tech.xken.tripbook.domain.disableComposable
 import tech.xken.tripbook.domain.format
 import tech.xken.tripbook.domain.titleCase
+import tech.xken.tripbook.ui.components.FilePicker
 import tech.xken.tripbook.ui.components.InfoDialog
 import tech.xken.tripbook.ui.components.InfoDialogUiState
 import tech.xken.tripbook.ui.components.OutTextField
-import tech.xken.tripbook.ui.components.PhotoPicker
+import tech.xken.tripbook.ui.navigation.BookingNavArgs
 import tech.xken.tripbook.ui.screens.booking.BookerAccountDialogState.*
+import tech.xken.tripbook.ui.screens.booking.BookerAccountDialogState.NONE
+import tech.xken.tripbook.ui.screens.booking.BookerAccountSheetState.*
 import java.util.*
 
+
+/**
+ *Responsible for collecting the uri of the new image selected from th image picker
+ */
+fun collectImageUisStateFromNav(
+    vm: BookerAccountVM,
+    navController: NavController
+) {
+    navController.currentBackStackEntry!!.savedStateHandle.get<String?>(BookingNavArgs.BOOKER_IMAGE_UI_STATE)
+        ?.let {
+            val new = vm.parser.decodeFromString<ImageUiState>(it)
+            vm.onPhotoUriChange(new.localUri)
+        }
+}
+
+/**
+ * The main page
+ */
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
 fun BookerAccount(
     vm: BookerAccountVM = hiltViewModel(),
+    navigateToImageViewer: (String) -> Unit,
     scaffoldState: ScaffoldState = rememberScaffoldState(),
+    navController: () -> NavController,
     onComplete: () -> Unit,
     navigateUp: () -> Unit
 ) {
-    val statusMap = remember {
-        mapOf(
-            ABOUT_MAIN_PAGE to InfoDialogUiState(
-                mainIcon = Icons.Outlined.Badge,
-                title = "Tell more us about you",
-                text = buildAnnotatedString {
-                    append("Text") //TODO: Add profile page hel text
-                },
-                positiveText = "I understand"
-            ),
-            ABOUT_ON_JOB_SEEKING to InfoDialogUiState(
-                mainIcon = Icons.Outlined.Business,
-                title = "Do you want to be employed?",
-                text = buildAnnotatedString {
-                    append("Text here")//TODO: Add profile page is job seeker help text
-                },
-                positiveText = "I understand"
-            ),
-            LEAVING_WITHOUT_SAVING to InfoDialogUiState(
-                mainIcon = Icons.Outlined.Save,
-                title = "Some changes may be lost",
-                text = buildAnnotatedString {
-                    append("Text here")
-                },
-                positiveText = "Save changes",
-                otherText = "Discard",
-                isNegative = true
-            ),
-            WELCOME to InfoDialogUiState(
-                mainIcon = Icons.Outlined.Person,
-                title = "Welcome",
-                text = buildAnnotatedString {
-                    append("Text here")
-                },
-                positiveText = "I understand",
-            ),
-            COULD_NOT_GET_ACCOUNT to InfoDialogUiState(
-                mainIcon = Icons.Filled.PersonOff,
-                title = "Could not load account",
-                text = buildAnnotatedString {
-                    append("Text here")
-                },
-                positiveText = "Retry",
-                otherText = "Cancel",
-                isNegative = true
-            ),
-            COULD_NOT_GET_PHOTO to InfoDialogUiState(
-                mainIcon = Icons.Filled.PersonOff,
-                title = "Could not load photo",
-                text = buildAnnotatedString {
-                    append("Text here")
-                },
-                positiveText = "Retry",
-                otherText = "Cancel",
-                isNegative = true
-            ),
-            LEAVING_WITH_EMPTY_PROFILE to InfoDialogUiState(
-                mainIcon = Icons.Filled.ErrorOutline,
-                title = "Leaving with empty account",
-                text = buildAnnotatedString {
-                    append("Text here")
-                },
-                positiveText = "Stay",
-                otherText = "Leave",
-                isNegative = true
-            )
-        )
-    }
-
-    val focusManager = LocalFocusManager.current
-    //Initialisation Processes
     val uis by vm.uiState.collectAsState()
     val context = LocalContext.current
-    vm.loadPhotoBitmap(context)
-    //We navigate away
+
+    // Manages the currently highlighted textField
+    val focusManager = LocalFocusManager.current
+
+    collectImageUisStateFromNav(vm, navController())
+
+    //We navigate away when uis.isComplete is true
     if (uis.isComplete) {
         onComplete()
         vm.onCompleteChange(false)
     }
     val fieldPadding = PaddingValues(horizontal = 16.dp, vertical = 2.dp)
-    //To pick an image from the gallery
-    val galleryLauncher =
-        rememberLauncherForActivityResult(contract = ActivityResultContracts.OpenDocument()) { uri ->
-            uri?.let {
-                val persistentUri = it
-                context.contentResolver.takePersistableUriPermission(
-                    persistentUri,
-                    Intent.FLAG_GRANT_READ_URI_PERMISSION
-                )
-                vm.onPhotoUriChange(context, persistentUri)
-            }
-        }
     val scrollState = rememberScrollState()
-    val dialog = remember {
-        DatePickerDialog(
-            /* context = */ context,
-            /* listener = */ { _, y, m, d ->
+    val datePicker = remember {
+        DatePickerDialog(/* context = */ context,/* listener = */
+            { _, y, m, d ->
                 vm.onBirthdayChange(LocalDate(y, m, d))
-            },
-            /* year = */ uis.booker.birthday.year,
-            /* month = */ uis.booker.birthday.monthNumber,
-            /* dayOfMonth = */ uis.booker.birthday.dayOfMonth
+            },/* year = */
+            uis.booker.birthday.year,/* month = */
+            uis.booker.birthday.monthNumber,/* dayOfMonth = */
+            uis.booker.birthday.dayOfMonth
         )
     }
 
+    // Hides or shows the bottom sheet
     val sheetState = rememberModalBottomSheetState(
         initialValue = ModalBottomSheetValue.Hidden,
         confirmValueChange = {
             when (it) {
                 ModalBottomSheetValue.Hidden -> {
-                    vm.onSheetStateChange(BookerAccountSheetState.NONE)
+                    vm.onSheetStatusChange(BookerAccountSheetState.NONE)
                 }
 
                 ModalBottomSheetValue.Expanded -> {}
@@ -171,6 +118,7 @@ fun BookerAccount(
             true
         }
     )
+// Hides or shows the bottom sheet
     LaunchedEffect(uis.sheetStatus) {
         if (uis.sheetStatus != BookerAccountSheetState.NONE) {
             sheetState.show()
@@ -179,180 +127,64 @@ fun BookerAccount(
         }
     }
 
-
-
-    fun handleBackNav() = if (vm.hasAnyFieldChanged || vm.hasPhotoChanged) vm.onDialogStateChange(
+    // On back button or navigate Up, we do some logic checking and show appropriate dialog.
+    // Like to warn if the booker has not yet created an account
+    fun handleBackNav() = if (vm.hasAnyFieldChanged) vm.onDialogStateChange(
         LEAVING_WITHOUT_SAVING
-    ) else if (!uis.isEditMode) vm.onDialogStateChange(LEAVING_WITH_EMPTY_PROFILE) else vm.onCompleteChange(
+    ) else if (!uis.isEditMode) vm.onDialogStateChange(LEAVING_WITH_EMPTY_ACCOUNT) else vm.onCompleteChange(
         true
     )
 
     BackHandler(true) {
+        vm.onHideErrorsChange(false)
         handleBackNav()
     }
 
-    when (val status = uis.dialogStatus) {
-        NONE -> {}
-        ABOUT_MAIN_PAGE -> {
-            InfoDialog(
-                uis = statusMap[status]!!,
-                onCloseClick = {
-                    vm.onDialogStateChange(NONE)
-                }, onPositiveClick = {
-                    vm.onDialogStateChange(NONE)
-                }
-            )
-        }
 
-        ABOUT_ON_JOB_SEEKING -> {
-            InfoDialog(
-                uis = statusMap[status]!!,
-                onCloseClick = {
-                    vm.onDialogStateChange(NONE)
-                }, onPositiveClick = {
-                    vm.onDialogStateChange(NONE)
-                }
-            )
-        }
-
-        LEAVING_WITHOUT_SAVING -> {
-            InfoDialog(
-                uis = statusMap[status]!!,
-                onCloseClick = {
-                    vm.onDialogStateChange(NONE)
-                }, onPositiveClick = {
-                    vm.onDialogStateChange(NONE)
-                    vm.saveOrUpdateAccount()
-
-                }, onOtherClick = {
-                    vm.onDialogStateChange(NONE)
-                    vm.onCompleteChange(true)
-                }
-            )
-        }
-
-        WELCOME -> {
-            InfoDialog(
-                uis = statusMap[status]!!,
-                onCloseClick = {
-                    vm.onDialogStateChange(NONE)
-                }, onPositiveClick = {
-                    vm.onDialogStateChange(NONE)
-                }
-            )
-        }
-
-        COULD_NOT_GET_ACCOUNT -> {
-            InfoDialog(
-                uis = statusMap[status]!!,
-                onCloseClick = {
-                    vm.onDialogStateChange(NONE)
-                    navigateUp()
-                }, onPositiveClick = {
-                    vm.onDialogStateChange(NONE)
-                    vm.onAccountInitComplete(false)
-                },
-                onOtherClick = {
-                    vm.onDialogStateChange(NONE)
-                    vm.onCompleteChange(true)
-                    navigateUp()
-                }
-            )
-        }
-
-        LEAVING_WITH_EMPTY_PROFILE -> {
-            InfoDialog(
-                uis = statusMap[status]!!,
-                onCloseClick = {
-                    vm.onDialogStateChange(NONE)
-                }, onPositiveClick = {
-                    vm.onDialogStateChange(NONE)
-                }, onOtherClick = {
-                    vm.onDialogStateChange(NONE)
-                    vm.onCompleteChange(true)
-                }
-            )
-        }
-
-        COULD_NOT_GET_PHOTO -> {
-            InfoDialog(
-                uis = statusMap[status]!!,
-                onCloseClick = {
-                    vm.onDialogStateChange(NONE)
-                }, onPositiveClick = {
-                    vm.onDialogStateChange(NONE)
-                    vm.onPhotoInitComplete(false)
-                },
-                onOtherClick = {
-                    vm.onDialogStateChange(NONE)
-                }
-            )
-        }
-    }
+    // Manages showing the Info dialogs
+    InfoDialogs(uis, vm) { navigateUp() }
 
     ModalBottomSheetLayout(
         sheetContent = {
-            when (uis.sheetStatus) {
-                BookerAccountSheetState.ACTIONS -> {
-                    ActionSheet(
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-
-
-                        ActionItem(
-                            action = MainAction(R.string.lb_about_page, Icons.Outlined.Info),
-                            onClick = {
-                                vm.onDialogStateChange(ABOUT_MAIN_PAGE)
-                                vm.onSheetStateChange(BookerAccountSheetState.NONE)
-                            },
-                        )
-
-                    }
-                }
-                BookerAccountSheetState.NONE -> {}
-            }
-        }, sheetShape = MaterialTheme.shapes.medium.copy(
+            BottomSheetContent(uis, vm)
+        },
+        sheetShape = MaterialTheme.shapes.medium.copy(
             topEnd = CornerSize(10), topStart = CornerSize(10),
-        ), sheetState = sheetState,
+        ),
+        sheetState = sheetState,
         sheetElevation = 1.dp,
         scrimColor = ModalBottomSheetDefaults.scrimColor.copy(alpha = 0.1f)
     ) {
         Scaffold(
             scaffoldState = scaffoldState,
             topBar = {
-                TopAppBar(
-                    elevation = 0.dp,
-                    title = {
-                        Text(
-                            text = stringResource(id = R.string.lb_me).titleCase,
-                            style = MaterialTheme.typography.h5.copy(fontWeight = FontWeight.SemiBold)
+                TopAppBar(elevation = 0.dp, title = {
+                    Text(
+                        text = stringResource(id = R.string.lb_me).titleCase,
+                        style = MaterialTheme.typography.h5.copy(fontWeight = FontWeight.SemiBold)
+                    )
+                }, navigationIcon = {
+                    IconButton(onClick = {
+                        handleBackNav()
+                    }) {
+                        Icon(
+                            Icons.Outlined.ArrowBack,
+                            contentDescription = null,
+                            tint = LocalContentColor.current
                         )
-                    },
-                    navigationIcon = {
-                        IconButton(onClick = {
-                            handleBackNav()
-                        }) {
-                            Icon(
-                                Icons.Outlined.ArrowBack,
-                                contentDescription = null,
-                                tint = LocalContentColor.current
-                            )
-                        }
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                    actions = {
-                        IconButton(onClick = {
-                            vm.onSheetStateChange(BookerAccountSheetState.ACTIONS)
-                        }) {
-                            Icon(
-                                Icons.Outlined.MoreVert,
-                                contentDescription = stringResource(id = R.string.desc_more_options),
-                                tint = LocalContentColor.current
-
-                            )
-                        }
                     }
-                )
+                }, modifier = Modifier.fillMaxWidth(), actions = {
+                    IconButton(onClick = {
+                        vm.onSheetStatusChange(ACTIONS)
+                    }) {
+                        Icon(
+                            Icons.Outlined.MoreVert,
+                            contentDescription = stringResource(id = R.string.desc_more_options),
+                            tint = LocalContentColor.current
+
+                        )
+                    }
+                })
             },
         ) { paddingValues ->
             Column(
@@ -364,36 +196,48 @@ fun BookerAccount(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 AnimatedVisibility(
-                    visible = uis.isLoading,
-                    modifier = Modifier.padding(4.dp)
+                    visible = uis.isLoading, modifier = Modifier.padding(4.dp)
                 ) {
                     CircularProgressIndicator()
-                    if (uis.isLoading && uis.isInitComplete)
-                        LaunchedEffect(Unit) {
-                            scrollState.animateScrollTo(0)
-                        }
-
+                    if (uis.isLoading && uis.isInitComplete) LaunchedEffect(Unit) {
+                        scrollState.animateScrollTo(0)
+                    }
                 }
 
+                // Show the screen only when the request to get the Booker info were successful
                 if (uis.isInitComplete) {
-                    PhotoPicker(
-                        photoBitmap = uis.photoBitmap,
-                        placeholder = Icons.Filled.AccountCircle,
-                        onDeletePhotoClick = { vm.onPhotoUriChange(context, null) },
+                    // In this case use to choose profile photo
+                    FilePicker(
+                        uis = uis.photoUiState,
+                        onUiStateChange = {
+                            vm.onPhotoUiStateChange(it as ImageUiState)
+                        },
+                        onOpenClick = {
+//                            vm.setStateForNavigation()
+                            navigateToImageViewer(vm.encodedImageUis)
+                        },
+                        onEditClick = {
+//                            vm.setStateForNavigation()
+                            navigateToImageViewer(vm.encodedImageUis)
+                        },
+                        onInfoClick = {
+                            vm.onDialogStateChange(ABOUT_ACCOUNT_PHOTO)
+                        },
+                        onHideClick = {
+                            vm.onPhotoUiStateChange(uis.photoUiState.copy(isContentHidden = !uis.photoUiState.isContentHidden))
+                        },
+                        onDeleteClick = {
+                            vm.onPhotoUriChange(Uri.EMPTY)
+                        },
+                        onUndoClick = {
+                            vm.onPhotoUriChange(null)
+                        },
                         modifier = Modifier
-                            .padding(4.dp)
-                            .size(150.dp),
-                        onBrowseGalleryClick = {
-                            galleryLauncher.launch(arrayOf("image/*"))
-                        },
-                        onLaunchCameraClick = {
-                            //TODO: Launch camera
-                        },
-                        isLoading = uis.isLoadingPhoto,
-                        onReloadPhotoClick = {
-                            vm.onPhotoInitComplete(false)
-                        },
-                        isFailure = uis.isPhotoFailed
+                            .padding(fieldPadding),
+                        border = BorderStroke(
+                            1.dp,
+                            if (uis.photoUiState.isFailure && !uis.hideErrors) MaterialTheme.colors.error else Color.Unspecified
+                        ),
                     )
 
                     //Name
@@ -401,29 +245,28 @@ fun BookerAccount(
                         modifier = Modifier
                             .padding(fieldPadding)
                             .fillMaxWidth(),
-                        value = uis.booker.name ?: "",
+                        value = uis.booker.name,
                         errorText = { vm.nameErrorText(it) },
                         onValueChange = { vm.onNameChange(it) },
                         trailingIcon = {
-                            if (uis.booker.name.isNotBlank())
-                                IconButton(onClick = { vm.onNameChange("") }) {
-                                    Icon(
-                                        imageVector = Icons.Outlined.Clear,
-                                        contentDescription = ""
-                                    )
-                                }
+                            if (uis.booker.name.isNotBlank()) IconButton(onClick = {
+                                vm.onNameChange("")
+                            }) {
+                                Icon(
+                                    imageVector = Icons.Outlined.Clear, contentDescription = ""
+                                )
+                            }
                         },
                         leadingIcon = {
                             Icon(
-                                imageVector = Icons.Default.Person,
-                                contentDescription = ""
+                                imageVector = Icons.Default.Person, contentDescription = ""
                             )
                         },
                         label = { Text(stringResource(R.string.lb_name).caps) },
                         singleLine = true,
-                        keyboardActions = KeyboardActions(
-                            onNext = { focusManager.moveFocus(FocusDirection.Next) }
-                        ),
+                        keyboardActions = KeyboardActions(onNext = {
+                            focusManager.moveFocus(FocusDirection.Next)
+                        }),
                         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next)
                     )
 
@@ -432,24 +275,26 @@ fun BookerAccount(
                         modifier = Modifier
                             .padding(fieldPadding)
                             .fillMaxWidth(),
-                        value = uis.booker.idCardNumber ?: "",
+                        value = uis.booker.idCardNumber,
                         errorText = { vm.idCardNumberErrorText(it) },
                         onValueChange = { vm.onIdCardNumberChange(it) },
                         trailingIcon = {
-                            if (uis.booker.idCardNumber.isNotBlank())
-                                IconButton(onClick = { vm.onIdCardNumberChange("") }) {
-                                    Icon(
-                                        imageVector = Icons.Outlined.Clear,
-                                        contentDescription = ""
-                                    )
-                                }
+                            if (uis.booker.idCardNumber.isNotBlank()) IconButton(onClick = {
+                                vm.onIdCardNumberChange(
+                                    ""
+                                )
+                            }) {
+                                Icon(
+                                    imageVector = Icons.Outlined.Clear, contentDescription = ""
+                                )
+                            }
                         },
                         leadingIcon = {
                             Icon(imageVector = Icons.Default.Badge, contentDescription = "")
                         },
-                        keyboardActions = KeyboardActions(
-                            onNext = { focusManager.moveFocus(FocusDirection.Next) }
-                        ),
+                        keyboardActions = KeyboardActions(onNext = {
+                            focusManager.moveFocus(FocusDirection.Next)
+                        }),
                         label = { Text(stringResource(R.string.lb_id_card_number).titleCase) },
                         singleLine = true
                     )
@@ -461,7 +306,7 @@ fun BookerAccount(
                             .fillMaxWidth(),
                         value = uis.booker.birthday.format(),
                         trailingIcon = {
-                            IconButton(onClick = { dialog.show() }) {
+                            IconButton(onClick = { datePicker.show() }) {
                                 Icon(
                                     imageVector = Icons.Outlined.EditCalendar,
                                     contentDescription = ""
@@ -497,8 +342,7 @@ fun BookerAccount(
                             },
                             leadingIcon = {
                                 Icon(
-                                    imageVector = Icons.Default.Transgender,
-                                    contentDescription = ""
+                                    imageVector = Icons.Default.Transgender, contentDescription = ""
                                 )
                             },
                             label = { Text(stringResource(R.string.lb_sex).caps) },
@@ -532,21 +376,23 @@ fun BookerAccount(
                         value = uis.booker.nationality ?: "",
                         onValueChange = { vm.onNationalityChange(it) },
                         trailingIcon = {
-                            if (!uis.booker.nationality.isNullOrBlank())
-                                IconButton(onClick = { vm.onNationalityChange("") }) {
-                                    Icon(
-                                        imageVector = Icons.Outlined.Clear,
-                                        contentDescription = ""
-                                    )
-                                }
+                            if (!uis.booker.nationality.isNullOrBlank()) IconButton(onClick = {
+                                vm.onNationalityChange(
+                                    ""
+                                )
+                            }) {
+                                Icon(
+                                    imageVector = Icons.Outlined.Clear, contentDescription = ""
+                                )
+                            }
                         },
                         leadingIcon = {
                             Icon(imageVector = Icons.Default.Flag, contentDescription = "")
                         },
                         label = { Text(stringResource(R.string.lb_nationality).caps) },
-                        keyboardActions = KeyboardActions(
-                            onNext = { focusManager.moveFocus(FocusDirection.Next) }
-                        ),
+                        keyboardActions = KeyboardActions(onNext = {
+                            focusManager.moveFocus(FocusDirection.Next)
+                        }),
                         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
                         singleLine = true
                     )
@@ -558,22 +404,22 @@ fun BookerAccount(
                         value = uis.booker.occupation ?: "",
                         onValueChange = { vm.onOccupationChange(it) },
                         trailingIcon = {
-                            if (!uis.booker.occupation.isNullOrBlank())
-                                IconButton(onClick = { vm.onOccupationChange("") }) {
-                                    Icon(
-                                        imageVector = Icons.Outlined.Clear,
-                                        contentDescription = ""
-                                    )
-                                }
+                            if (!uis.booker.occupation.isNullOrBlank()) IconButton(onClick = {
+                                vm.onOccupationChange(
+                                    ""
+                                )
+                            }) {
+                                Icon(
+                                    imageVector = Icons.Outlined.Clear, contentDescription = ""
+                                )
+                            }
 
                         },
                         leadingIcon = {
                             Icon(imageVector = Icons.Default.Work, contentDescription = "")
                         },
                         label = { Text(stringResource(R.string.lb_occupation).caps) },
-                        keyboardActions = KeyboardActions(
-                            onGo = { vm.saveOrUpdateAccount() }
-                        ),
+                        keyboardActions = KeyboardActions(onGo = { vm.saveOrUpdateAccount() }),
                         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Go),
                         singleLine = true
                     )
@@ -599,30 +445,214 @@ fun BookerAccount(
                         )
                     }
 
-
                 }
-
 
             }
         }
     }
 
 // Check for user messages to display on the screen
-    if (uis.message != null) {
-        val message = stringResource(id = uis.message!!).caps
+    SnackbarManager(uis, scaffoldState, vm)
+}
 
+
+/**
+ * The bottom sheet shows the actions from [BookerAccountSheetState]
+ */
+@Composable
+private fun BottomSheetContent(
+    uis: BookerAccountUiState,
+    vm: BookerAccountVM,
+) {
+    when (uis.sheetStatus) {
+        BookerAccountSheetState.NONE -> {}
+        ACTIONS -> {
+            ActionSheet(
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                ActionItem(
+                    action = MainAction(R.string.lb_about_page, Icons.Outlined.Info),
+                    onClick = {
+                        vm.onDialogStateChange(ABOUT_MAIN_PAGE)
+                        vm.onSheetStatusChange(BookerAccountSheetState.NONE)
+                    },
+                )
+
+            }
+        }
+    }
+}
+
+/**
+ * Shows the snackbar messages
+ */
+@Composable
+private fun SnackbarManager(
+    uis: BookerAccountUiState,
+    scaffoldState: ScaffoldState,
+    vm: BookerAccountVM
+) {
+    if (uis.message != null) {
+        val message = stringResource(id = uis.message).caps
         LaunchedEffect(scaffoldState, vm, uis.message) {
             scaffoldState.snackbarHostState.showSnackbar(
                 message = message, /*actionLabel = retryActionLabel*/
             ).also {
-                if (it == SnackbarResult.ActionPerformed)
-                    when (uis.message) {
+                if (it == SnackbarResult.ActionPerformed) when (uis.message) {
 
-                    }
+                }
             }
             vm.onMessageChange(null)
         }
     }
 }
 
+/**
+ * Shows dialogs from [BookerAccountDialogState]
+ */
+@Composable
+private fun InfoDialogs(
+    uis: BookerAccountUiState,
+    vm: BookerAccountVM,
+    navigateUp: () -> Unit,
+) {
+    val statusMap = remember {
+        mapOf(
+            ABOUT_MAIN_PAGE to InfoDialogUiState(
+                mainIcon = Icons.Outlined.Badge,
+                title = "Tell more us about you",
+                text = buildAnnotatedString {
+                    append("Text") //TODO: Add profile page hel text
+                },
+                positiveText = "I understand"
+            ),
+            ABOUT_ACCOUNT_PHOTO to InfoDialogUiState(
+                mainIcon = Icons.Outlined.PersonPin,
+                title = "Account Photo",
+                text = buildAnnotatedString {
+                    append("Text") //TODO: Add profile page hel text
+                },
+                positiveText = "I understand"
+            ), LEAVING_WITHOUT_SAVING to InfoDialogUiState(
+                mainIcon = Icons.Outlined.Save,
+                title = "Some changes may be lost",
+                text = buildAnnotatedString {
+                    append("Text here")
+                },
+                positiveText = "Save changes",
+                otherText = "Discard",
+                isNegative = true
+            ), WELCOME_NEW_BOOKER to InfoDialogUiState(
+                mainIcon = Icons.Outlined.Person,
+                title = "Welcome",
+                text = buildAnnotatedString {
+                    append("Text here")
+                },
+                positiveText = "I understand",
+            ), COULD_NOT_GET_ACCOUNT to InfoDialogUiState(
+                mainIcon = Icons.Filled.PersonOff,
+                title = "Could not load account",
+                text = buildAnnotatedString {
+                    append("Text here")
+                },
+                positiveText = "Retry",
+                otherText = "Cancel",
+                isNegative = true
+            ), COULD_NOT_GET_PHOTO to InfoDialogUiState(
+                mainIcon = Icons.Filled.PersonOff,
+                title = "Could not load photo",
+                text = buildAnnotatedString {
+                    append("Text here")
+                },
+                positiveText = "Retry",
+                otherText = "Cancel",
+                isNegative = true
+            ), LEAVING_WITH_EMPTY_ACCOUNT to InfoDialogUiState(
+                mainIcon = Icons.Filled.ErrorOutline,
+                title = "Leaving with empty account",
+                text = buildAnnotatedString {
+                    append("Text here")
+                },
+                positiveText = "Stay",
+                otherText = "Leave",
+                isNegative = true
+            )
+        )
+    }
+    when (val status = uis.dialogStatus) {
+        NONE -> {}
+        ABOUT_MAIN_PAGE -> {
+            InfoDialog(uis = statusMap[status]!!, onCloseClick = {
+                vm.onDialogStateChange(NONE)
+            }, onPositiveClick = {
+                vm.onDialogStateChange(NONE)
+            })
+        }
+
+        ABOUT_ACCOUNT_PHOTO -> {
+            InfoDialog(uis = statusMap[status]!!, onCloseClick = {
+                vm.onDialogStateChange(NONE)
+            }, onPositiveClick = {
+                vm.onDialogStateChange(NONE)
+            })
+        }
+
+        LEAVING_WITHOUT_SAVING -> {
+            InfoDialog(uis = statusMap[status]!!, onCloseClick = {
+                vm.onDialogStateChange(NONE)
+            }, onPositiveClick = {
+                vm.onDialogStateChange(NONE)
+                vm.saveOrUpdateAccount()
+
+            }, onOtherClick = {
+                vm.onDialogStateChange(NONE)
+                vm.onCompleteChange(true)
+            })
+        }
+
+        WELCOME_NEW_BOOKER -> {
+            InfoDialog(uis = statusMap[status]!!, onCloseClick = {
+                vm.onDialogStateChange(NONE)
+            }, onPositiveClick = {
+                vm.onDialogStateChange(NONE)
+            })
+        }
+
+        COULD_NOT_GET_ACCOUNT -> {
+            InfoDialog(uis = statusMap[status]!!, onCloseClick = {
+                vm.onDialogStateChange(NONE)
+                navigateUp()
+            }, onPositiveClick = {
+                vm.onDialogStateChange(NONE)
+                vm.onInitCompleted(false)
+            }, onOtherClick = {
+                vm.onDialogStateChange(NONE)
+                vm.onCompleteChange(true)
+                navigateUp()
+            })
+        }
+
+        LEAVING_WITH_EMPTY_ACCOUNT -> {
+            InfoDialog(uis = statusMap[status]!!, onCloseClick = {
+                vm.onDialogStateChange(NONE)
+            }, onPositiveClick = {
+                vm.onDialogStateChange(NONE)
+            }, onOtherClick = {
+                vm.onDialogStateChange(NONE)
+                vm.onCompleteChange(true)
+            })
+        }
+
+        COULD_NOT_GET_PHOTO -> {
+            InfoDialog(uis = statusMap[status]!!, onCloseClick = {
+                vm.onDialogStateChange(NONE)
+            }, onPositiveClick = {
+                vm.onDialogStateChange(NONE)
+            }, onOtherClick = {
+                vm.onDialogStateChange(NONE)
+            })
+        }
+
+    }
+}
 

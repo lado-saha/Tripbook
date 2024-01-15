@@ -42,7 +42,9 @@ enum class BookerProfileSheetState {
 }
 
 enum class BookerProfileDialogState {
-    DELETE_ACCOUNT_3, DELETE_ACCOUNT_2, DELETE_ACCOUNT_1, ABOUT_ACCOUNT, ABOUT_MOMO, ABOUT_OM, ABOUT_CREDIT_CARD, ABOUT_AGENCY_SETTINGS, ABOUT_MAIN_PAGE, NONE, FAILED_GET_ACCOUNT, FAILED_GET_MOMO, FAILED_GET_OM, FAILED_GET_AGENCY_SETTINGS
+    ACCOUNT_DETAILS_REQUIRED,
+    DELETE_ACCOUNT_3, DELETE_ACCOUNT_2, DELETE_ACCOUNT_1, ABOUT_ACCOUNT, ABOUT_MOMO, ABOUT_OM,
+    ABOUT_CREDIT_CARD, ABOUT_AGENCY_SETTINGS, ABOUT_MAIN_PAGE, NONE, FAILED_GET_ACCOUNT, FAILED_GET_MOMO, FAILED_GET_OM, FAILED_GET_AGENCY_SETTINGS
 }
 
 @HiltViewModel
@@ -54,11 +56,10 @@ class BookerProfileVM @Inject constructor(
 ) : ViewModel() {
     // To know if we are signing in up or checking the booker profile
     private val _message = MutableStateFlow<Int?>(null)
-    private val _isInitComplete = MutableStateFlow(!authRepo.hasAccount)
+    private val _isInitComplete = MutableStateFlow(false)
     private val _isComplete = MutableStateFlow(false)
     private val _dialogStatus = MutableStateFlow(BookerProfileDialogState.NONE)
-    private val _hasAccount = MutableStateFlow(authRepo.hasAccount)
-    private val _hasAccountPhoto = MutableStateFlow(authRepo.hasAccountPhoto)
+    private val _hasAccountPhoto = MutableStateFlow(false)
     private val _bookerCreditCardCount = MutableStateFlow(0L)
     private val _hasAgencyConfigs = MutableStateFlow(false)
     private val _isAccountComplete = MutableStateFlow<Boolean?>(null)
@@ -66,9 +67,6 @@ class BookerProfileVM @Inject constructor(
     private val _isOMAccountComplete = MutableStateFlow<Boolean?>(null)
     private val _isAgencySettingsComplete = MutableStateFlow<Boolean?>(null)
     private val _sheetState = MutableStateFlow(BookerProfileSheetState.NONE)
-    init {
-        initProfile()
-    }
 
     val uiState = combine(
         // To know if we are signing in up or checking the booker profile
@@ -108,7 +106,19 @@ class BookerProfileVM @Inject constructor(
                     }
                 }
             },
-        _hasAccount,
+        //6
+        repo.countBookerAccount(authRepo.bookerId !!).map { account ->
+            when (account) {
+                is Results.Failure -> {
+                    _isAccountComplete.value = true
+                    false
+                }
+                is Results.Success -> {
+                    _isAccountComplete.value = true
+                    (account.data > 0L)
+                }
+            }
+        },
         _hasAccountPhoto,
         _hasAgencyConfigs,
         _bookerCreditCardCount,
@@ -117,6 +127,7 @@ class BookerProfileVM @Inject constructor(
         _isOMAccountComplete,
         _isAgencySettingsComplete,
         _sheetState,
+
     ) {
         BookerProfileUiState(
             message = it[0] as Int?,
@@ -133,37 +144,14 @@ class BookerProfileVM @Inject constructor(
             isMoMoAccountComplete = it[11] as Boolean?,
             isOMAccountComplete = it[12] as Boolean?,
             isAgencySettingsComplete = it[13] as Boolean?,
-            sheetStatus = it[14] as BookerProfileSheetState
+            sheetStatus = it[14] as BookerProfileSheetState,
         )
     }.stateIn(
         scope = viewModelScope, started = WhileUiSubscribed, initialValue = BookerProfileUiState()
     )
 
-    fun initProfile() {
-//        Accounts
-        if (_isAccountComplete.value == null)
-            viewModelScope.launch {
-                try {
-                    authRepo.forceRefreshUser()
-                    _hasAccount.value = authRepo.hasAccount
-                    _hasAccountPhoto.value = authRepo.hasAccountPhoto
-                    _isAccountComplete.value = true
-                } catch (e: Exception) {
-                    _isAccountComplete.value = false
-                    _dialogStatus.value = BookerProfileDialogState.FAILED_GET_ACCOUNT
-                    Log.e(TAG, "MAIN ACCOUNT: $e")
-                }
-            }
 
-//        My Agency Settings
-        if (_isAgencySettingsComplete.value == null)
-            viewModelScope.launch {
-
-            }
-
-    }
-
-    fun onSheetStateChange(new: BookerProfileSheetState){
+    fun onSheetStateChange(new: BookerProfileSheetState) {
         _sheetState.value = new
     }
 

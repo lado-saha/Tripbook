@@ -173,7 +173,6 @@ fun AgencyProfile(
 
             )
     }
-
     val uis by vm.uiState.collectAsState()
     val context = LocalContext.current
     val fieldPadding = PaddingValues(horizontal = 4.dp, vertical = 4.dp)
@@ -354,9 +353,11 @@ fun AgencyProfile(
 
                 AgencyProfileSheetStatus.NONE -> {}
             }
-        }, sheetShape = MaterialTheme.shapes.medium.copy(
+        },
+        sheetShape = MaterialTheme.shapes.medium.copy(
             topEnd = CornerSize(10), topStart = CornerSize(10),
-        ), sheetState = sheetState,
+        ),
+        sheetState = sheetState,
         sheetElevation = 1.dp,
         scrimColor = ModalBottomSheetDefaults.scrimColor.copy(alpha = 0.1f)
     ) {

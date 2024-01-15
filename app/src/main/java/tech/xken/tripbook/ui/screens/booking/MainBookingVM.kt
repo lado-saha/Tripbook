@@ -54,6 +54,8 @@ class MainBookingVM @Inject constructor(
     @NetworkStateFlowAnnot val networkState: NetworkState,
     private val datastore: DataStore<Preferences>
 ) : ViewModel() {
+
+
     private val _sheetState = MutableStateFlow(NONE)
     private val _isInitComplete = MutableStateFlow(authRepo.bookerId == null)
     private val _syncDialogStatus = MutableStateFlow(CacheSyncDialogStatus.NONE)

@@ -9,32 +9,49 @@ import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.datetime.Instant
-import tech.xken.tripbook.data.models.DbAction
 import tech.xken.tripbook.data.models.DbAction.*
 import tech.xken.tripbook.data.models.Results
 import tech.xken.tripbook.data.models.Results.Failure
 import tech.xken.tripbook.data.models.Results.Success
 import tech.xken.tripbook.data.models.agency.AgencyAccount
 import tech.xken.tripbook.data.models.agency.AgencyEmailSupport
+import tech.xken.tripbook.data.models.agency.AgencyGraphics
+import tech.xken.tripbook.data.models.agency.AgencyLegalDocs
+import tech.xken.tripbook.data.models.agency.AgencyMoMoAccount
+import tech.xken.tripbook.data.models.agency.AgencyOMAccount
+import tech.xken.tripbook.data.models.agency.AgencyPayPalAccount
 import tech.xken.tripbook.data.models.agency.AgencyPhoneSupport
 import tech.xken.tripbook.data.models.agency.AgencyRefundPolicy
 import tech.xken.tripbook.data.models.agency.AgencySocialSupport
 import tech.xken.tripbook.data.models.agency.TripCancellationReason
 import tech.xken.tripbook.data.models.data
 import tech.xken.tripbook.data.sources.agency.remote.AgencyRemoteDataSource
+import tech.xken.tripbook.data.sources.storage.StorageRepository
 
 class AgencyRepositoryImpl(
     private val localDS: AgencyDataSource,
     private val remoteDS: AgencyDataSource,
     private val ioDispatcher: CoroutineDispatcher,
+    private val storageRepo: StorageRepository
 ) : AgencyRepository {
+
     init {
         CoroutineScope(ioDispatcher).launch {
-            (remoteDS as AgencyRemoteDataSource).client.realtime.connect()
-            remoteDS.channel.join()
+            try {
+                (remoteDS as AgencyRemoteDataSource).client.realtime.connect()
+                remoteDS.channel.join()
+            } catch (_: IllegalStateException) {
+
+            }
         }
     }
-//    override val channel: RealtimeChannel = remoteDS.channel!!
+
+    override suspend fun cancelJobs() {
+        CoroutineScope(ioDispatcher).launch {
+            remoteDS.channel!!.leave()
+            println("Left it")
+        }
+    }
 
     override suspend fun agencyAccountFullSync(agencyId: String) = withContext(ioDispatcher) {
         localDS.agencyAccountLastModifiedOn(agencyId).data.let { instant ->
@@ -198,6 +215,173 @@ class AgencyRepositoryImpl(
             }
         }
 
+    override suspend fun moMoAccountsFullSync(agencyId: String, fromInstant: Instant?) =
+        withContext(ioDispatcher) {
+            localDS.agencyMoMoAccountsLastModifiedOn(agencyId).data.let { instant ->
+                remoteDS.moMoAccountsLatestLogs(
+                    agencyId,
+                    instant ?: Instant.fromEpochSeconds(0L)
+                ).also { res ->
+                    when (res) {
+                        is Failure -> Log.e("A_repo_FS_moMo", "${res.exception}")
+                        is Success -> {
+                            res.data
+                                .groupBy { it.dbAction }
+                                .map { group ->
+                                    Log.d("A_repo_FS_moMo", "$group")
+                                    when (group.key) {
+                                        INSERT -> {
+                                            try {
+                                                localDS.createMoMoAccounts(group.value.map { it.data!! })
+                                            } catch (e: Exception) {
+                                                Log.e("A_repo_FS_moMo", "$group")
+                                            }
+                                        }
+
+                                        UPDATE -> localDS.updateMoMoAccounts(
+                                            agencyId,
+                                            group.value.map { it.data!! })
+
+                                        DELETE -> localDS.deleteMoMoAccounts(
+                                            agencyId,
+                                            group.value.map { it.phoneNumber })
+                                    }
+                                }
+                        }
+                    }
+                }
+            }.run {
+                Success(Unit)
+            }
+        }
+
+    override suspend fun oMAccountsFullSync(agencyId: String, fromInstant: Instant?) =
+        withContext(ioDispatcher) {
+            localDS.agencyOMAccountsLastModifiedOn(agencyId).data.let { instant ->
+                remoteDS.oMAccountsLatestLogs(
+                    agencyId,
+                    instant ?: Instant.fromEpochSeconds(0L)
+                ).also { res ->
+                    when (res) {
+                        is Failure -> Log.e("A_repo_FS_oM", "${res.exception}")
+                        is Success -> {
+                            res.data
+                                .groupBy { it.dbAction }
+                                .map { group ->
+                                    Log.d("A_repo_FS_oM", "$group")
+                                    when (group.key) {
+                                        INSERT -> {
+                                            try {
+                                                localDS.createOMAccounts(group.value.map { it.data!! })
+                                            } catch (e: Exception) {
+                                                Log.e("A_repo_FS_oM", "$group")
+                                            }
+                                        }
+
+                                        UPDATE -> localDS.updateOMAccounts(
+                                            agencyId,
+                                            group.value.map { it.data!! })
+
+                                        DELETE -> localDS.deleteOMAccounts(
+                                            agencyId,
+                                            group.value.map { it.phoneNumber })
+                                    }
+                                }
+                        }
+                    }
+                }
+            }.run {
+                Success(Unit)
+            }
+        }
+
+    override suspend fun payPalAccountsFullSync(agencyId: String, fromInstant: Instant?) =
+        withContext(ioDispatcher) {
+            localDS.agencyPayPalAccountsLastModifiedOn(agencyId).data.let { instant ->
+                remoteDS.payPalAccountsLatestLogs(
+                    agencyId,
+                    instant ?: Instant.fromEpochSeconds(0L)
+                ).also { res ->
+                    when (res) {
+                        is Failure -> Log.e("A_repo_FS_payPal", "${res.exception}")
+                        is Success -> {
+                            res.data
+                                .groupBy { it.dbAction }
+                                .map { group ->
+                                    Log.d("A_repo_FS_payPal", "$group")
+                                    when (group.key) {
+                                        INSERT -> {
+                                            try {
+                                                localDS.createPayPalAccounts(group.value.map { it.data!! })
+                                            } catch (e: Exception) {
+                                                Log.e("A_repo_FS_payPal", "$group")
+                                            }
+                                        }
+
+                                        UPDATE -> localDS.updatePayPalAccounts(
+                                            agencyId,
+                                            group.value.map { it.data!! })
+
+                                        DELETE -> localDS.deletePayPalAccounts(
+                                            agencyId,
+                                            group.value.map { it.email })
+                                    }
+                                }
+                        }
+                    }
+                }
+            }.run {
+                Success(Unit)
+            }
+        }
+
+    override suspend fun agencyGraphicsFullSync(agencyId: String, fromInstant: Instant?) =
+        withContext(ioDispatcher) {
+            localDS.agencyGraphicsLastModifiedOn(agencyId).data.let { instant ->
+                remoteDS.agencyGraphicsLatestLog(
+                    agencyId,
+                    instant ?: Instant.fromEpochSeconds(0L)
+                ).also {
+                    when (it) {
+                        is Failure -> Log.e("A_repo_FS_graph", "${it.exception}")
+                        is Success -> {
+                            when (it.data.dbAction) {
+                                INSERT -> localDS.createAgencyGraphics(it.data.data!!)
+                                UPDATE -> localDS.updateAgencyGraphics(agencyId, it.data.data!!)
+                                DELETE -> localDS.deleteAgencyGraphics(agencyId)
+                            }
+                        }
+                    }
+                }
+            }.run {
+                Success(Unit)
+            }
+        }
+
+    override suspend fun legalDocsFullSync(agencyId: String, fromInstant: Instant?) =
+        withContext(ioDispatcher) {
+            localDS.agencyLegalDocsLastModifiedOn(agencyId).data.let { instant ->
+                remoteDS.legalDocsLatestLog(
+                    agencyId,
+                    instant ?: Instant.fromEpochSeconds(0L)
+                ).also {
+                    when (it) {
+                        is Failure -> Log.e("A_repo_FS_docs", "${it.exception}")
+                        is Success -> {
+                            when (it.data.dbAction) {
+                                INSERT -> localDS.createLegalDocs(it.data.data!!)
+                                UPDATE -> localDS.updateLegalDocs(agencyId, it.data.data!!)
+                                DELETE -> localDS.deleteLegalDocs(agencyId)
+                            }
+                        }
+                    }
+                }
+            }.run {
+                Success(Unit)
+            }
+        }
+
+    // Agency account
     override suspend fun agencyAccount(agencyId: String) = localDS.agencyAccount(agencyId)
 
     override fun agencyAccountLogFlow(agencyId: String) =
@@ -245,6 +429,119 @@ class AgencyRepositoryImpl(
 
     override fun countAgencyAccount(agencyId: String) = localDS.countAgencyAccount(agencyId)
 
+    //   Agency Graphics
+    override suspend fun agencyGraphics(agencyId: String) = localDS.agencyGraphics(agencyId)
+    override fun agencyGraphicsLogFlow(agencyId: String) =
+        remoteDS.agencyGraphicsLogFlow(agencyId)
+            .onEach { flow ->
+                when (flow) {
+                    is Success -> {
+                        val log = flow.data
+                        when (flow.data.dbAction) {
+                            INSERT ->
+                                remoteDS.agencyGraphics(agencyId).also {
+                                    localDS.createAgencyGraphics(it.data!!)
+                                }
+
+                            UPDATE ->
+                                remoteDS.agencyGraphics(agencyId).also {
+                                    localDS.updateAgencyGraphics(log.agencyId, it.data!!)
+                                }
+
+                            DELETE -> localDS.deleteAgencyGraphics(log.agencyId)
+                        }
+                    }
+
+                    is Failure -> {
+                        Log.e("A_repo_RS_Graph", flow.exception.toString())
+                    }
+                }
+            }
+            .catch {
+                emit(Failure(it as Exception))
+            }
+
+    override fun agencyGraphicsFlow(agencyId: String) = localDS.agencyGraphicsFlow(agencyId)
+    override suspend fun createAgencyGraphics(graphics: AgencyGraphics) =
+        remoteDS.createAgencyGraphics(graphics)
+
+    override suspend fun updateAgencyGraphics(agencyId: String, graphics: AgencyGraphics) =
+        remoteDS.updateAgencyGraphics(agencyId, graphics)
+            .run {
+                when (this) {
+                    is Failure -> this
+                    is Success -> graphics.updateOrDeleteImage(storageRepo)
+                }
+            }
+
+    override suspend fun deleteAgencyGraphics(agencyId: String) =
+        remoteDS.deleteAgencyGraphics(agencyId)
+            .run {
+                when (this) {
+                    is Failure -> this
+                    is Success -> AgencyGraphics(agencyId).deleteAllImages(storageRepo)
+                }
+            }
+
+    override fun countAgencyGraphics(agencyId: String) = localDS.countAgencyGraphics(agencyId)
+
+    // Agency Legal Documents
+    override suspend fun legalDocs(agencyId: String) = localDS.legalDocs(agencyId)
+    override fun legalDocsLogFlow(agencyId: String) =
+        remoteDS.legalDocsLogFlow(agencyId)
+            .onEach { flow ->
+                when (flow) {
+                    is Success -> {
+                        val log = flow.data
+                        when (flow.data.dbAction) {
+                            INSERT ->
+                                remoteDS.legalDocs(agencyId).also {
+                                    localDS.createLegalDocs(it.data!!)
+                                }
+
+                            UPDATE ->
+                                remoteDS.legalDocs(agencyId).also {
+                                    localDS.updateLegalDocs(log.agencyId, it.data!!)
+                                }
+
+
+                            DELETE -> localDS.deleteLegalDocs(log.agencyId)
+                        }
+                    }
+
+                    is Failure -> {
+                        Log.e("A_repo_RS_Docs", flow.exception.toString())
+                    }
+                }
+            }
+            .catch {
+                emit(Failure(it as Exception))
+            }
+
+    override fun legalDocsFlow(agencyId: String) = localDS.legalDocsFlow(agencyId)
+    override suspend fun createLegalDocs(docs: AgencyLegalDocs) = remoteDS.createLegalDocs(docs)
+    override suspend fun updateLegalDocs(agencyId: String, docs: AgencyLegalDocs) =
+        remoteDS.updateLegalDocs(agencyId, docs)
+            .run {
+                when (this) {
+                    is Failure -> this
+                    is Success -> docs.updateDocs(storageRepo)
+                }
+            }
+
+    override suspend fun deleteLegalDocs(agencyId: String) = remoteDS.deleteLegalDocs(agencyId)
+        .run {
+            when (this) {
+                is Failure -> this
+                is Success -> {
+                    AgencyLegalDocs(agencyId).deleteAllDocs(storageRepo)
+                }
+            }
+        }
+
+    override fun countLegalDocs(agencyId: String) = localDS.countLegalDocs(agencyId)
+
+    // Email
     override fun emailSupportsLogFlow(agencyId: String) =
         remoteDS.emailSupportsLogFlow(agencyId)
             .onEach { flow ->
@@ -305,6 +602,7 @@ class AgencyRepositoryImpl(
 
     override fun countEmailSupports(agencyId: String) = localDS.countEmailSupports(agencyId)
 
+    // Phone support
     override suspend fun phoneSupports(
         agencyId: String,
         phoneCodes: List<String>,
@@ -376,6 +674,7 @@ class AgencyRepositoryImpl(
 
     override fun countPhoneSupports(agencyId: String) = localDS.countPhoneSupports(agencyId)
 
+    // Social Support
     override suspend fun socialSupport(agencyId: String) = localDS.socialSupport(agencyId)
 
     override fun socialSupportLogFlow(agencyId: String) =
@@ -421,6 +720,7 @@ class AgencyRepositoryImpl(
 
     override fun countSocialAccount(agencyId: String) = localDS.countSocialAccount(agencyId)
 
+    // Refund policy
     override suspend fun refundPolicies(
         agencyId: String,
         reasons: List<TripCancellationReason>
@@ -481,179 +781,365 @@ class AgencyRepositoryImpl(
 
     override fun countRefundPolicies(agencyId: String) =
         localDS.countRefundPolicies(agencyId)
+
+    // MoMo Accounts
+    override suspend fun moMoAccounts(agencyId: String, phoneNumbers: List<String>) =
+        localDS.moMoAccounts(agencyId, phoneNumbers)
+
+    override fun moMoAccountsLogFlow(agencyId: String) =
+        remoteDS.moMoAccountsLogFlow(agencyId)
+            .onEach { flow ->
+                when (flow) {
+                    is Success -> {
+                        val log = flow.data
+                        when (flow.data.dbAction) {
+                            INSERT -> {
+                                // We first get the
+                                remoteDS.moMoAccounts(
+                                    agencyId,
+                                    listOf(log.phoneNumber)
+                                ).data.let {
+                                    localDS.createMoMoAccounts(it)
+                                }
+                            }
+
+                            UPDATE -> {
+                                remoteDS.moMoAccounts(
+                                    agencyId,
+                                    listOf(log.phoneNumber)
+                                ).data.let {
+                                    localDS.updateMoMoAccounts(agencyId, it)
+                                }
+                            }
+
+                            DELETE -> localDS.deleteMoMoAccounts(
+                                agencyId,
+                                listOf(log.phoneNumber)
+                            )
+                        }
+                    }
+
+                    is Failure -> {
+                        Log.e("A_repo_RS_Momo", flow.exception.toString())
+                    }
+                }
+            }
+            .catch {
+                emit(Failure(it as Exception))
+            }
+
+    override fun moMoAccountsFlow(agencyId: String) = localDS.moMoAccountsFlow(agencyId)
+    override suspend fun createMoMoAccounts(accounts: List<AgencyMoMoAccount>) =
+        remoteDS.createMoMoAccounts(accounts)
+
+    override suspend fun updateMoMoAccounts(agencyId: String, accounts: List<AgencyMoMoAccount>) =
+        remoteDS.updateMoMoAccounts(agencyId, accounts)
+
+    override suspend fun deleteMoMoAccounts(agencyId: String, phoneNumbers: List<String>) =
+        remoteDS.deleteMoMoAccounts(agencyId, phoneNumbers)
+
+    override suspend fun countMoMoAccounts(agencyId: String) = localDS.countMoMoAccounts(agencyId)
+
+    // OM Accounts
+    override suspend fun oMAccounts(agencyId: String, phoneNumbers: List<String>) =
+        localDS.oMAccounts(agencyId, phoneNumbers)
+
+    override fun oMAccountsLogFlow(agencyId: String) =
+        remoteDS.oMAccountsLogFlow(agencyId)
+            .onEach { flow ->
+                when (flow) {
+                    is Success -> {
+                        val log = flow.data
+                        when (flow.data.dbAction) {
+                            INSERT -> {
+                                // We first get the
+                                remoteDS.oMAccounts(
+                                    agencyId,
+                                    listOf(log.phoneNumber)
+                                ).data.let {
+                                    localDS.createOMAccounts(it)
+                                }
+                            }
+
+                            UPDATE -> {
+                                remoteDS.oMAccounts(
+                                    agencyId,
+                                    listOf(log.phoneNumber)
+                                ).data.let {
+                                    localDS.updateOMAccounts(agencyId, it)
+                                }
+                            }
+
+                            DELETE -> localDS.deleteOMAccounts(
+                                agencyId,
+                                listOf(log.phoneNumber)
+                            )
+                        }
+                    }
+
+                    is Failure -> {
+                        Log.e("A_repo_RS_OM", flow.exception.toString())
+                    }
+                }
+            }
+            .catch {
+                emit(Failure(it as Exception))
+            }
+
+    override fun oMAccountsFlow(agencyId: String) = localDS.oMAccountsFlow(agencyId)
+    override suspend fun createOMAccounts(accounts: List<AgencyOMAccount>) =
+        remoteDS.createOMAccounts(accounts)
+
+    override suspend fun updateOMAccounts(agencyId: String, accounts: List<AgencyOMAccount>) =
+        remoteDS.updateOMAccounts(agencyId, accounts)
+
+    override suspend fun deleteOMAccounts(agencyId: String, phoneNumbers: List<String>) =
+        remoteDS.deleteOMAccounts(agencyId, phoneNumbers)
+
+    override suspend fun countOMAccounts(agencyId: String) = localDS.countOMAccounts(agencyId)
+
+    // PayPal Accounts
+    override suspend fun payPalAccounts(agencyId: String, email: List<String>) =
+        localDS.payPalAccounts(agencyId, email)
+
+    override fun payPalAccountsLogFlow(agencyId: String) =
+        remoteDS.payPalAccountsLogFlow(agencyId)
+            .onEach { flow ->
+                when (flow) {
+                    is Success -> {
+                        val log = flow.data
+                        when (flow.data.dbAction) {
+                            INSERT -> {
+                                // We first get the
+                                remoteDS.payPalAccounts(
+                                    agencyId,
+                                    listOf(log.email)
+                                ).data.let {
+                                    localDS.createPayPalAccounts(it)
+                                }
+                            }
+
+                            UPDATE -> {
+                                remoteDS.payPalAccounts(
+                                    agencyId,
+                                    listOf(log.email)
+                                ).data.let {
+                                    localDS.updatePayPalAccounts(agencyId, it)
+                                }
+                            }
+
+                            DELETE -> localDS.deletePayPalAccounts(
+                                agencyId,
+                                listOf(log.email)
+                            )
+                        }
+                    }
+
+                    is Failure -> {
+                        Log.e("A_repo_RS_Paypal", flow.exception.toString())
+                    }
+                }
+            }
+            .catch {
+                emit(Failure(it as Exception))
+            }
+
+    override fun payPalAccountsFlow(agencyId: String) = localDS.payPalAccountsFlow(agencyId)
+    override suspend fun createPayPalAccounts(accounts: List<AgencyPayPalAccount>) =
+        remoteDS.createPayPalAccounts(accounts)
+
+    override suspend fun updatePayPalAccounts(
+        agencyId: String,
+        accounts: List<AgencyPayPalAccount>
+    ) = remoteDS.updatePayPalAccounts(agencyId, accounts)
+
+    override suspend fun deletePayPalAccounts(agencyId: String, emails: List<String>) =
+        remoteDS.deletePayPalAccounts(agencyId, emails)
+
+    override suspend fun countPayPalAccounts(agencyId: String) =
+        localDS.countPayPalAccounts(agencyId)
 }
 
-//
-//    override suspend fun saveStationJobs(stationJobs: List<StationJob>) =
-//        localAgencySource.saveStationJobs(stationJobs)
-//
-//    override fun observeStationJobs(station: String): Flow<Results<List<StationJob>>> =
-//        localAgencySource.observeStationJobs(station)
-//
-//    override suspend fun stationJobsFromIds(
-//        station: String,
-//        ids: List<String>,
-//    ): Results<List<StationJob>> = localAgencySource.stationJobsFromIds(station, ids)
-//
-//    override suspend fun stationJobs(station: String) = localAgencySource.stationJobs(station)
-//
-//    override suspend fun scannersFromIds(
-//        ids: List<String>,
-//        station: String,
-//        getBookers: Boolean,
-//        getJobs: Boolean,
-//    ): Results<Map<String, Scanner>> {
-//        val scanners = mutableMapOf<String, Scanner>()
-//        var exception: Exception? = null
-//        //Get scanner
-//        when (val results = localAgencySource.scannersFromIds(ids)) {
-//            is Success -> scanners += results.data.associateBy { it.bookerID }
-//            is Failure -> exception = results.exception
+/*
+
+    override suspend fun saveStationJobs(stationJobs: List<StationJob>) =
+        localAgencySource.saveStationJobs(stationJobs)
+
+    override fun observeStationJobs(station: String): Flow<Results<List<StationJob>>> =
+        localAgencySource.observeStationJobs(station)
+
+    override suspend fun stationJobsFromIds(
+        station: String,
+        ids: List<String>,
+    ): Results<List<StationJob>> = localAgencySource.stationJobsFromIds(station, ids)
+
+    override suspend fun stationJobs(station: String) = localAgencySource.stationJobs(station)
+
+    override suspend fun scannersFromIds(
+        ids: List<String>,
+        station: String,
+        getBookers: Boolean,
+        getJobs: Boolean,
+    ): Results<Map<String, Scanner>> {
+        val scanners = mutableMapOf<String, Scanner>()
+        var exception: Exception? = null
+        //Get scanner
+        when (val results = localAgencySource.scannersFromIds(ids)) {
+            is Success -> scanners += results.data.associateBy { it.bookerID }
+            is Failure -> exception = results.exception
+        }
+        //Get booker associated with scanner
+        if (getBookers && exception == null)
+            when (val results = bookingRepo.bookerFromId(scanners.keys.toList())) {
+                is Success -> results.data.forEach {
+                    scanners[it.bookerId]!!.apply { booker = it }
+                }
+                is Failure -> exception = results.exception
+            }
+        //Get jobs ids associated with each scanner
+        if (getJobs && exception == null)
+            when (
+                val results = localAgencySource.stationScannerMaps(
+                    station = station,
+                    scanners = scanners.keys.toList()
+                )
+            ) {
+                is Failure -> exception = results.exception
+                is Success -> results.data.forEach {
+                    scanners[it.scanner]!!.jobIds?.plusAssign(it.job)
+                }
+            }
+        //Get Permissions ids
+        */
+/*if (getPermissions && exception == null)
+            when (val results =
+                localAgencySource.stationJobPermissionsMaps(jobs = scanners.values.map { it. })) {
+                is Success -> results.data.forEach {
+                    scanners[it.scanner]!!.apply {
+                        if (permissionIds == null) permissionIds = mutableListOf(it.permission)
+                        else permissionIds!!.add(it.permission)
+                    }
+                }
+                is Failure -> exception = results.exception
+            }*//*
+
+        return if (exception == null) Success(scanners) else Failure(exception)
+    }
+
+    override suspend fun scanners(
+        agency: String,
+        station: String,
+        getBookers: Boolean,
+        getJobs: Boolean,
+    ): Results<Map<String, Scanner>> {
+        val scanners = mutableMapOf<String, Scanner>()
+        var exception: Exception? = null
+        when (val results = localAgencySource.scanners(agency)) {
+            is Success -> scanners += results.data.associateBy { it.bookerID }
+            is Failure -> exception = results.exception
+        }
+        if (getBookers && exception == null)
+            when (val results = bookingRepo.bookerFromId(scanners.keys.toList())) {
+                is Success -> results.data.forEach {
+                    scanners[it.bookerId]!!.apply { booker = it }
+                }
+                is Failure -> exception = results.exception
+            }
+        */
+/*if (getPermissions && exception == null)
+            when (val results =
+                localAgencySource.stationJobPermissionsMaps(scanners = scanners.keys.toList())) {
+                is Success -> results.data.forEach {
+                    scanners[it.scanner]!!.apply {
+                        if (permissionIds == null) permissionIds = mutableListOf(it.permission)
+                        else permissionIds!!.add(it.permission)
+                    }
+                }
+                is Failure -> exception = results.exception
+            }*//*
+
+        if (getJobs && exception == null)
+            when (
+                val results = localAgencySource.stationScannerMaps(
+                    station = station,
+                    scanners = scanners.keys.toList()
+                )
+            ) {
+                is Failure -> exception = results.exception
+                is Success -> results.data.forEach {
+                    scanners[it.scanner]!!.jobIds?.plusAssign(it.job)
+                }
+            }
+
+        return if (exception == null) Success(scanners) else Failure(exception)
+    }
+
+
+    override fun observeStationScannerMaps(station: String) =
+        localAgencySource.observeStationScannerMaps(station)
+
+    override suspend fun stationScannerMaps(station: String, scanners: List<String>) =
+        localAgencySource.stationScannerMaps(station, scanners)
+
+    override suspend fun saveStationScannerMaps(maps: List<StationScannerMap>) =
+        localAgencySource.saveStationScannerMaps(maps)
+
+    override suspend fun deleteStationScannerMap(station: String, scanners: List<String>) =
+        localAgencySource.deleteStationScannerMap(station, scanners)
+
+    override suspend fun saveStations(stations: List<Station>) =
+        localAgencySource.saveStations(stations)
+
+    override suspend fun saveStationTownMaps(stationTownMaps: List<StationTownMap>) =
+        localAgencySource.saveStationTownMaps(stationTownMaps)
+
+    override suspend fun deleteStationTownMaps(station: String, towns: List<String>) =
+        localAgencySource.deleteStationTownMaps(station, towns)
+
+    override suspend fun saveStationLocation(id: String, lat: Double, lon: Double) =
+        localAgencySource.saveStationLocation(id, lat, lon)
+
+    override fun observeStationTownMaps(station: String) =
+        localAgencySource.observeStationTownMaps(station)
+
+    override fun observeStationsFromIds(ids: List<String>) =
+        localAgencySource.observeStationsFromIds(ids)
+
+    override suspend fun stationTownMaps(station: String) =
+        localAgencySource.stationTownMaps(station)
+
+    override suspend fun stations() = localAgencySource.stations()
+
+    override suspend fun stationsFromIds(ids: List<String>) = localAgencySource.stationsFromIds(ids)
+
+    */
+/**
+ * Returns the [Station] from the ids gotten from [StationTownMap]
+ *//*
+
+//    override suspend fun parksFromTown(town: String) =
+//        when(val townParkMaps = localAgencySource.townParkMapFromTown(town)){
+//            is Results.Success -> {
+//                val parkIds = townParkMaps.data.map { it.park }
+//                localAgencySource.parksFromIds(parkIds)
+//            }
+//            is Results.Failure -> {
+//                throw townParkMaps.exception
+//            }
 //        }
-//        //Get booker associated with scanner
-//        if (getBookers && exception == null)
-//            when (val results = bookingRepo.bookerFromId(scanners.keys.toList())) {
-//                is Success -> results.data.forEach {
-//                    scanners[it.bookerId]!!.apply { booker = it }
-//                }
-//                is Failure -> exception = results.exception
-//            }
-//        //Get jobs ids associated with each scanner
-//        if (getJobs && exception == null)
-//            when (
-//                val results = localAgencySource.stationScannerMaps(
-//                    station = station,
-//                    scanners = scanners.keys.toList()
-//                )
-//            ) {
-//                is Failure -> exception = results.exception
-//                is Success -> results.data.forEach {
-//                    scanners[it.scanner]!!.jobIds?.plusAssign(it.job)
-//                }
-//            }
-//        //Get Permissions ids
-//        /*if (getPermissions && exception == null)
-//            when (val results =
-//                localAgencySource.stationJobPermissionsMaps(jobs = scanners.values.map { it. })) {
-//                is Success -> results.data.forEach {
-//                    scanners[it.scanner]!!.apply {
-//                        if (permissionIds == null) permissionIds = mutableListOf(it.permission)
-//                        else permissionIds!!.add(it.permission)
-//                    }
-//                }
-//                is Failure -> exception = results.exception
-//            }*/
-//        return if (exception == null) Success(scanners) else Failure(exception)
-//    }
-//
-//    override suspend fun scanners(
-//        agency: String,
-//        station: String,
-//        getBookers: Boolean,
-//        getJobs: Boolean,
-//    ): Results<Map<String, Scanner>> {
-//        val scanners = mutableMapOf<String, Scanner>()
-//        var exception: Exception? = null
-//        when (val results = localAgencySource.scanners(agency)) {
-//            is Success -> scanners += results.data.associateBy { it.bookerID }
-//            is Failure -> exception = results.exception
+
+    */
+/**
+ * Returns the [Station] from the ids gotten from [StationTownMap]
+ *//*
+
+//    override suspend fun town(station: String) = when(val townParkMaps = localAgencySource.townParkMapFromTown(station)){
+//        is Results.Success -> {
+//            val townIds = townParkMaps.data.map { it.town }
+//            localUnivSource.townsFromIds(townIds)
 //        }
-//        if (getBookers && exception == null)
-//            when (val results = bookingRepo.bookerFromId(scanners.keys.toList())) {
-//                is Success -> results.data.forEach {
-//                    scanners[it.bookerId]!!.apply { booker = it }
-//                }
-//                is Failure -> exception = results.exception
-//            }
-//        /*if (getPermissions && exception == null)
-//            when (val results =
-//                localAgencySource.stationJobPermissionsMaps(scanners = scanners.keys.toList())) {
-//                is Success -> results.data.forEach {
-//                    scanners[it.scanner]!!.apply {
-//                        if (permissionIds == null) permissionIds = mutableListOf(it.permission)
-//                        else permissionIds!!.add(it.permission)
-//                    }
-//                }
-//                is Failure -> exception = results.exception
-//            }*/
-//        if (getJobs && exception == null)
-//            when (
-//                val results = localAgencySource.stationScannerMaps(
-//                    station = station,
-//                    scanners = scanners.keys.toList()
-//                )
-//            ) {
-//                is Failure -> exception = results.exception
-//                is Success -> results.data.forEach {
-//                    scanners[it.scanner]!!.jobIds?.plusAssign(it.job)
-//                }
-//            }
-//
-//        return if (exception == null) Success(scanners) else Failure(exception)
+//        is Results.Failure -> {
+//            throw townParkMaps.exception
+//        }
 //    }
-//
-//
-//    override fun observeStationScannerMaps(station: String) =
-//        localAgencySource.observeStationScannerMaps(station)
-//
-//    override suspend fun stationScannerMaps(station: String, scanners: List<String>) =
-//        localAgencySource.stationScannerMaps(station, scanners)
-//
-//    override suspend fun saveStationScannerMaps(maps: List<StationScannerMap>) =
-//        localAgencySource.saveStationScannerMaps(maps)
-//
-//    override suspend fun deleteStationScannerMap(station: String, scanners: List<String>) =
-//        localAgencySource.deleteStationScannerMap(station, scanners)
-//
-//    override suspend fun saveStations(stations: List<Station>) =
-//        localAgencySource.saveStations(stations)
-//
-//    override suspend fun saveStationTownMaps(stationTownMaps: List<StationTownMap>) =
-//        localAgencySource.saveStationTownMaps(stationTownMaps)
-//
-//    override suspend fun deleteStationTownMaps(station: String, towns: List<String>) =
-//        localAgencySource.deleteStationTownMaps(station, towns)
-//
-//    override suspend fun saveStationLocation(id: String, lat: Double, lon: Double) =
-//        localAgencySource.saveStationLocation(id, lat, lon)
-//
-//    override fun observeStationTownMaps(station: String) =
-//        localAgencySource.observeStationTownMaps(station)
-//
-//    override fun observeStationsFromIds(ids: List<String>) =
-//        localAgencySource.observeStationsFromIds(ids)
-//
-//    override suspend fun stationTownMaps(station: String) =
-//        localAgencySource.stationTownMaps(station)
-//
-//    override suspend fun stations() = localAgencySource.stations()
-//
-//    override suspend fun stationsFromIds(ids: List<String>) = localAgencySource.stationsFromIds(ids)
-//
-//    /**
-//     * Returns the [Station] from the ids gotten from [StationTownMap]
-//     */
-////    override suspend fun parksFromTown(town: String) =
-////        when(val townParkMaps = localAgencySource.townParkMapFromTown(town)){
-////            is Results.Success -> {
-////                val parkIds = townParkMaps.data.map { it.park }
-////                localAgencySource.parksFromIds(parkIds)
-////            }
-////            is Results.Failure -> {
-////                throw townParkMaps.exception
-////            }
-////        }
-//
-//    /**
-//     * Returns the [Station] from the ids gotten from [StationTownMap]
-//     */
-////    override suspend fun town(station: String) = when(val townParkMaps = localAgencySource.townParkMapFromTown(station)){
-////        is Results.Success -> {
-////            val townIds = townParkMaps.data.map { it.town }
-////            localUnivSource.townsFromIds(townIds)
-////        }
-////        is Results.Failure -> {
-////            throw townParkMaps.exception
-////        }
-////    }
-//}
+}*/

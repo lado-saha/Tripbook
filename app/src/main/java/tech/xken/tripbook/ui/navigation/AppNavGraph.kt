@@ -3,6 +3,9 @@
 package tech.xken.tripbook.ui.navigation
 
 
+import android.content.Context
+import android.content.Intent
+import androidx.activity.result.ActivityResultLauncher
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.foundation.layout.Column
 import androidx.compose.material.DrawerState
@@ -26,12 +29,17 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import tech.xken.tripbook.data.AuthRepo
 import tech.xken.tripbook.ui.navigation.AgencyScreens.BASE_AGENCY
+import tech.xken.tripbook.ui.navigation.BookingDestinations.BOOKER_IMAGE_PICKER_ROUTE
 import tech.xken.tripbook.ui.navigation.BookingDestinations.BOOKER_MOMO_ACCOUNTS_ROUTE
 import tech.xken.tripbook.ui.navigation.BookingDestinations.BOOKER_MOMO_ACCOUNT_DETAILS_ROUTE
 import tech.xken.tripbook.ui.navigation.BookingDestinations.BOOKER_OM_ACCOUNTS_ROUTE
 import tech.xken.tripbook.ui.navigation.BookingDestinations.BOOKER_OM_ACCOUNT_DETAILS_ROUTE
+import tech.xken.tripbook.ui.navigation.BookingNavArgs.BOOKER_IMAGE_UI_STATE
 import tech.xken.tripbook.ui.navigation.BookingScreens.BASE_BOOKER
+import tech.xken.tripbook.ui.screens.ImageViewer
+import tech.xken.tripbook.ui.screens.ImageViewerVM
 import tech.xken.tripbook.ui.screens.agency.AgencyProfile
+import tech.xken.tripbook.ui.screens.agency.MainAgencyActivity
 import tech.xken.tripbook.ui.screens.agency.station.*
 import tech.xken.tripbook.ui.screens.booking.AgencyPortal
 import tech.xken.tripbook.ui.screens.booking.BookerAccount
@@ -49,13 +57,15 @@ import tech.xken.tripbook.ui.screens.booking.TripSearch
 @Composable
 fun BookingNavGraph(
     modifier: Modifier = Modifier,
+    activityLauncher: ActivityResultLauncher<Intent>,
+    context: Context,
     navController: NavHostController = rememberNavController(),
     startDestination: String = BASE_BOOKER,
     scope: CoroutineScope = rememberCoroutineScope(),
     drawerState: DrawerState = rememberDrawerState(initialValue = DrawerValue.Closed),
     authRepo: AuthRepo,
     bookingNavActions: BookingNavActions = remember(navController) {
-        BookingNavActions(navController, authRepo)
+        BookingNavActions(navController, authRepo, activityLauncher, context)
     },
     /* univNavActions: UnivNavActions = remember(navController){
          UnivNavActions(navController)
@@ -107,9 +117,32 @@ fun BookingNavGraph(
                                 null // use the defaults
                         }*/
         ) {
+            composable(
+                route = BOOKER_IMAGE_PICKER_ROUTE
+            ) { backStackEntry ->
+                val callerEntry = remember(backStackEntry) {
+                    navController.previousBackStackEntry!!
+                }
+
+                ImageViewer(
+                    onNavigateBack = {
+                        it?.let {
+                            callerEntry.savedStateHandle[BOOKER_IMAGE_UI_STATE] = it
+                        }
+                        navController.popBackStack()
+                    },
+                    vm = hiltViewModel<ImageViewerVM>(callerEntry).apply {
+                        try {
+                            initUiState(callerEntry.savedStateHandle[BOOKER_IMAGE_UI_STATE]!!)
+                        } catch (_: Exception) {
+
+                        }
+                    }
+                )
+            }
 //            this
             composable(
-                BookingDestinations.BOOKER_TRIP_SEARCH_ROUTE
+                route = BookingDestinations.BOOKER_TRIP_SEARCH_ROUTE
             ) {
                 BookingModalDrawer(
                     drawerState = drawerState,
@@ -201,7 +234,7 @@ fun BookingNavGraph(
                     AgencyPortal(
                         onNavigateToAccount = { bookingNavActions.navigateToAccount() },
                         onNavigateToAgency = {
-
+                            bookingNavActions.navigateToAgency()
                         },
 //                        onNavigateToMoMoAccount = { bookingNavActions.navigateToMoMoAccounts() },
 //                        onNavigateToOMAccount = { bookingNavActions.navigateToOMAccounts() },
@@ -218,10 +251,16 @@ fun BookingNavGraph(
 
             composable(
                 BookingDestinations.BOOKER_ACCOUNT_ROUTE
-            ) {
+            ) { entry ->
                 BookerAccount(
                     onComplete = { defaultNavigateUp() },
-                    navigateUp = { defaultNavigateUp() }
+                    navigateUp = { defaultNavigateUp() },
+                    navigateToImageViewer = {
+                        entry.savedStateHandle[BOOKER_IMAGE_UI_STATE] = it
+                        bookingNavActions.navigateToImagePicker()
+                    },
+                    navController = { navController },
+                    vm = hiltViewModel(entry)
                 )
             }
 
@@ -255,7 +294,7 @@ fun BookingNavGraph(
             }
 
             composable(
-                BOOKER_OM_ACCOUNT_DETAILS_ROUTE
+                BOOKER_OM_ACCOUNT_DETAILS_ROUTE,
             ) { backStackEntry ->
                 val parentEntry = remember(backStackEntry) {
                     navController.getBackStackEntry(BOOKER_OM_ACCOUNTS_ROUTE)
@@ -268,7 +307,6 @@ fun BookingNavGraph(
             }
 
         }
-
     }
 }
 
@@ -276,15 +314,15 @@ fun BookingNavGraph(
 @Composable
 fun AgencyNavGraph(
     modifier: Modifier = Modifier,
+    activity: MainAgencyActivity,
     navController: NavHostController = rememberNavController(),
     startDestination: String = AgencyDestinations.AGENCY_PROFILE_ROUTE,
     scope: CoroutineScope = rememberCoroutineScope(),
     drawerState: DrawerState = rememberDrawerState(initialValue = DrawerValue.Closed),
     agencyNavActions: AgencyNavActions = remember(navController) {
-        AgencyNavActions(navController)
+        AgencyNavActions(navController, activity)
     },
     authRepo: AuthRepo,
-
     /* univNavActions: UnivNavActions = remember(navController){
          UnivNavActions(navController)
      }*/
@@ -300,7 +338,8 @@ fun AgencyNavGraph(
     NavHost(
         navController = navController,
         startDestination = startDestination,
-        modifier = modifier, route = BASE_AGENCY
+        modifier = modifier,
+        route = BASE_AGENCY
     ) {
         composable(
             AgencyDestinations.AGENCY_PROFILE_ROUTE
@@ -327,6 +366,53 @@ fun AgencyNavGraph(
         }
 
         composable(
+            AgencyDestinations.AGENCY_PROFILE_ROUTE
+        ) {
+            AgencyModalDrawer(
+                drawerState = drawerState,
+                currentRoute = navController.currentBackStackEntry?.destination?.route ?: "",
+                agencyNavActions = agencyNavActions,
+                isSignedIn = { authRepo.isSignedIn.value },
+            ) {
+                AgencyProfile(
+                    openDrawer = {
+                        scope.launch {
+                            drawerState.open()
+                        }
+                    },
+                    onNavigateToAccount = { /*TODO*/ },
+                    onNavigateToMoMoAccount = { /*TODO*/ },
+                    onNavigateToOMAccount = { /*TODO*/ },
+                    onNavigateToBookerAgencySettings = { /*TODO*/ },
+                    onNavigateToCreditCardAccount = { /*TODO*/ },
+                    navigateUp = { /*TODO*/ })
+            }
+        }
+
+//        composable(
+//            AgencyDestinations.AGENCY_SUPPORT_ROUTE
+//        ) {
+//            AgencyModalDrawer(
+//                drawerState = drawerState,
+//                currentRoute = navController.currentBackStackEntry?.destination?.route ?: "",
+//                agencyNavActions = agencyNavActions,
+//                isSignedIn = { authRepo.isSignedIn.value },
+//            ) {
+//                AgencySupport(
+//                    openDrawer = {
+//                        scope.launch {
+//                            drawerState.open()
+//                        }
+//                    },
+//                    navigateUp = { /*TODO*/ },
+//                    onNavigateToEmailSupport = {},
+//                    onNavigateToPhoneSupport = {},
+//                    onNavigateToSocialSupport = {}
+//                )
+//            }
+//        }
+
+        composable(
             AgencyDestinations.AGENCY_HELP_CENTER_ROUTE,
         ) {
             AgencyModalDrawer(
@@ -340,7 +426,6 @@ fun AgencyNavGraph(
                 }
             }
         }
-
 
         /*               Agency navigations
                navigation(

@@ -18,6 +18,11 @@ import tech.xken.tripbook.data.models.TownPair
 import tech.xken.tripbook.data.models.UnivSelection
 import tech.xken.tripbook.data.models.agency.AgencyAccount
 import tech.xken.tripbook.data.models.agency.AgencyEmailSupport
+import tech.xken.tripbook.data.models.agency.AgencyGraphics
+import tech.xken.tripbook.data.models.agency.AgencyLegalDocs
+import tech.xken.tripbook.data.models.agency.AgencyMoMoAccount
+import tech.xken.tripbook.data.models.agency.AgencyOMAccount
+import tech.xken.tripbook.data.models.agency.AgencyPayPalAccount
 import tech.xken.tripbook.data.models.agency.AgencyPhoneSupport
 import tech.xken.tripbook.data.models.agency.AgencyRefundPolicy
 import tech.xken.tripbook.data.models.agency.AgencySocialSupport
@@ -38,6 +43,11 @@ import java.util.UUID
         AgencyPhoneSupport::class,
         AgencySocialSupport::class,
         AgencyRefundPolicy::class,
+        AgencyLegalDocs::class,
+        AgencyPayPalAccount::class,
+        AgencyGraphics::class,
+        AgencyMoMoAccount::class,
+        AgencyOMAccount::class,
 //        Booker
         BookerMoMoAccount::class,
         BookerOMAccount::class,
@@ -52,7 +62,7 @@ import java.util.UUID
         TownPair::class,
         UnivSelection::class
     ],
-    version = 2,
+    version = 4,
     exportSchema = false
 )
 @TypeConverters(LocalConverters::class)

@@ -27,12 +27,12 @@ import androidx.compose.material.icons.outlined.Badge
 import androidx.compose.material.icons.outlined.Dangerous
 import androidx.compose.material.icons.outlined.DeleteForever
 import androidx.compose.material.icons.outlined.ErrorOutline
-import androidx.compose.material.icons.outlined.HelpOutline
 import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Menu
 import androidx.compose.material.icons.outlined.MoreVert
 import androidx.compose.material.icons.outlined.Payments
 import androidx.compose.material.icons.outlined.Person
+import androidx.compose.material.icons.outlined.PersonOff
 import androidx.compose.material.rememberModalBottomSheetState
 import androidx.compose.material.rememberScaffoldState
 import androidx.compose.runtime.Composable
@@ -62,6 +62,7 @@ import tech.xken.tripbook.ui.screens.booking.BookerProfileDialogState.ABOUT_ACCO
 import tech.xken.tripbook.ui.screens.booking.BookerProfileDialogState.ABOUT_MAIN_PAGE
 import tech.xken.tripbook.ui.screens.booking.BookerProfileDialogState.ABOUT_MOMO
 import tech.xken.tripbook.ui.screens.booking.BookerProfileDialogState.ABOUT_OM
+import tech.xken.tripbook.ui.screens.booking.BookerProfileDialogState.ACCOUNT_DETAILS_REQUIRED
 import tech.xken.tripbook.ui.screens.booking.BookerProfileDialogState.DELETE_ACCOUNT_1
 import tech.xken.tripbook.ui.screens.booking.BookerProfileDialogState.DELETE_ACCOUNT_2
 import tech.xken.tripbook.ui.screens.booking.BookerProfileDialogState.DELETE_ACCOUNT_3
@@ -88,6 +89,14 @@ fun BookerProfile(
 ) {
     val statusMap = remember {
         mapOf(
+            ACCOUNT_DETAILS_REQUIRED to InfoDialogUiState(
+                mainIcon = Icons.Outlined.PersonOff,
+                title = "Account Details Required",
+                text = buildAnnotatedString {
+                    append("Text") //TODO: Add profile page hel text
+                },
+                positiveText = "Create",
+            ),
             ABOUT_MAIN_PAGE to InfoDialogUiState(
                 mainIcon = Icons.Outlined.Person,
                 title = "My Booking Profile",
@@ -327,7 +336,7 @@ fun BookerProfile(
         FAILED_GET_AGENCY_SETTINGS -> InfoDialog(
             uis = statusMap[status]!!,
             onCloseClick = {
-                vm.onDialogStateChange( NONE)
+                vm.onDialogStateChange(NONE)
                 navigateUp()
             },
             onPositiveClick = {
@@ -375,6 +384,17 @@ fun BookerProfile(
             onOtherClick = {
                 vm.onDialogStateChange(NONE)
             }, mainIconTint = MaterialTheme.colors.error
+        )
+
+        ACCOUNT_DETAILS_REQUIRED -> InfoDialog(
+            uis = statusMap[status]!!,
+            onCloseClick = {
+                vm.onDialogStateChange(NONE)
+            },
+            onPositiveClick = {
+                onNavigateToAccount()
+                vm.onDialogStateChange(NONE)
+            },
         )
 
         else -> {}
@@ -520,7 +540,9 @@ fun BookerProfile(
                     },
                     mainIconColor = MaterialTheme.colors.onSurface,
                     onClick = {
-                        onNavigateToMoMoAccount()
+                        if (uis.hasAccount)
+                            onNavigateToMoMoAccount()
+                        else vm.onDialogStateChange(ACCOUNT_DETAILS_REQUIRED)
                     },
                     onHelpClick = {
                         vm.onDialogStateChange(ABOUT_MOMO)
@@ -551,7 +573,10 @@ fun BookerProfile(
                         isFailure = uis.isOMAccountComplete == false,
                     ),
                     onClick = {
-                        onNavigateToOMAccount()
+                        if (uis.hasAccount)
+                            onNavigateToOMAccount()
+                        else
+                            vm.onDialogStateChange(ACCOUNT_DETAILS_REQUIRED)
                     },
                     onHelpClick = {
                         vm.onDialogStateChange(ABOUT_OM)

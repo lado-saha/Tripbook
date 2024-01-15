@@ -5,27 +5,52 @@ import android.net.ConnectivityManager
 import android.net.Network
 import android.net.NetworkCapabilities
 import android.net.NetworkRequest
+import android.net.Uri
 import android.telephony.PhoneNumberUtils
+import androidx.compose.material.MaterialTheme
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.Check
+import androidx.compose.material.icons.outlined.Edit
+import androidx.compose.material.icons.outlined.HelpCenter
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.pointer.PointerEventPass
 import androidx.compose.ui.input.pointer.PointerInputChange
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.core.net.toUri
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.datetime.LocalDate
+import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerialName
+import kotlinx.serialization.descriptors.PrimitiveKind
+import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
+import kotlinx.serialization.descriptors.SerialDescriptor
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
 import tech.xken.tripbook.R
 import tech.xken.tripbook.data.models.Results
 import tech.xken.tripbook.data.models.codeCountryMap
+import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Calendar
+import java.util.Date
 import java.util.Locale
 import kotlin.reflect.full.declaredMemberProperties
 import kotlin.reflect.full.findAnnotation
 
-
-
+/**
+ * A function which creates a temp picture which can be use to store pic taken from camera
+ */
+fun Context.createImageFile(): File {
+    // Create an image file name
+    val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
+    val imageFileName = "JPEG_" + timeStamp + "_"
+    return File("$externalCacheDir/${imageFileName}.jpg").apply {
+        createNewFile()
+    }
+}
 
 
 val DATE_NOW
@@ -137,7 +162,7 @@ private const val StopTimeoutMillis: Long = 5000L
  * back, the latest value is replayed and the upstream flows are executed again. This is done to
  * save resources when the app is in the background but let users switch between apps quickly.
  */
-val WhileUiSubscribed: SharingStarted = SharingStarted. WhileSubscribed(StopTimeoutMillis)
+val WhileUiSubscribed: SharingStarted = SharingStarted.WhileSubscribed(StopTimeoutMillis)
 
 /**
  * Capitalises the string
@@ -326,6 +351,21 @@ fun <T : Any> diffFields(old: T, new: T): Map<String, Any?> {
     }
     return differentFields
 }
+
+object UriAsStringSerializer : KSerializer<Uri> {
+    override val descriptor: SerialDescriptor
+        get() = PrimitiveSerialDescriptor("uri", PrimitiveKind.STRING)
+
+    override fun deserialize(decoder: Decoder): Uri {
+        return decoder.decodeString().toUri()
+    }
+
+    override fun serialize(encoder: Encoder, value: Uri) {
+        encoder.encodeString(value.toString())
+    }
+}
+
+
 /*class ConnectionLiveData(context: Context) : LiveData<Boolean>() {
     private lateinit var networkCallback: ConnectivityManager.NetworkCallback
     private val connectivityManager =

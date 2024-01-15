@@ -103,7 +103,7 @@ fun ActionSheet(
                 thickness = 4.dp
             )
             content()
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(8.dp))
         }
     }
 }

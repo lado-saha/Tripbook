@@ -41,7 +41,6 @@ import tech.xken.tripbook.data.sources.booker.remote.BookerRemoteDataSource
 import tech.xken.tripbook.data.sources.storage.StorageRepository
 import tech.xken.tripbook.data.sources.storage.StorageRepositoryImpl
 import tech.xken.tripbook.data.sources.storage.StorageSource
-import tech.xken.tripbook.data.sources.storage.local.LocalStorageSource
 import tech.xken.tripbook.data.sources.storage.remote.RemoteStorageSource
 import tech.xken.tripbook.data.sources.univ.UniverseDataSource
 import tech.xken.tripbook.data.sources.univ.UniverseRepository
@@ -82,9 +81,9 @@ annotation class LocalCachesDataSourceAnnot
 @Retention(AnnotationRetention.RUNTIME)
 annotation class NetworkStateFlowAnnot
 
-@Qualifier
-@Retention(AnnotationRetention.RUNTIME)
-annotation class LocalStorageSourceAnnot
+//@Qualifier
+//@Retention(AnnotationRetention.RUNTIME)
+//annotation class LocalStorageSourceAnnot
 
 @Qualifier
 @Retention(AnnotationRetention.RUNTIME)
@@ -102,13 +101,13 @@ object RepositoryModule {
     @Singleton
     @Provides
     fun provideStorageRepository(
-        @LocalStorageSourceAnnot local: StorageSource,
+//        @LocalStorageSourceAnnot local: StorageSource,
         @RemoteStorageSourceAnnot remote: StorageSource,
         @IoDispatcher ioDispatcher: CoroutineDispatcher,
         authRepo: AuthRepo,
         @NetworkStateFlowAnnot networkState: NetworkState
     ): StorageRepository = StorageRepositoryImpl(
-        lStorage = local,
+//        lStorage = local,
         rStorage = remote,
         authRepo = authRepo,
         ioDispatcher = ioDispatcher,
@@ -131,12 +130,14 @@ object RepositoryModule {
         @IoDispatcher ioDispatcher: CoroutineDispatcher,
         @NetworkStateFlowAnnot networkState: NetworkState,
         authRepo: AuthRepo,
+        storageRepo: StorageRepository
     ): BookerRepository = BookerRepositoryImpl(
         localDS,
         remoteDS,
         authRepo,
         ioDispatcher,
         networkState,
+        storageRepo
     )
 
     @Singleton
@@ -145,11 +146,13 @@ object RepositoryModule {
         @LocalAgencyDataSourceAnnot localDS: AgencyDataSource,
         @RemoteAgencyDataSourceAnnot remoteDS: AgencyDataSource,
         @IoDispatcher ioDispatcher: CoroutineDispatcher,
-        @NetworkStateFlowAnnot networkState: NetworkState
+        @NetworkStateFlowAnnot networkState: NetworkState,
+        storageRepository: StorageRepository
     ): AgencyRepository = AgencyRepositoryImpl(
         localDS = localDS,
         remoteDS = remoteDS,
-        ioDispatcher = ioDispatcher
+        ioDispatcher = ioDispatcher,
+        storageRepo = storageRepository
     )
 
 }
@@ -160,13 +163,13 @@ object RepositoryModule {
 @Module
 @InstallIn(SingletonComponent::class)
 object DataSourceModule {
-    @Singleton
-    @Provides
-    @LocalStorageSourceAnnot
-    fun provideLocalStorageSource(
-        @IoDispatcher ioDispatcher: CoroutineDispatcher,
-        @ApplicationContext context: Context
-    ): StorageSource = LocalStorageSource(ioDispatcher, context)
+//    @Singleton
+//    @Provides
+//    @LocalStorageSourceAnnot
+//    fun provideLocalStorageSource(
+//        @IoDispatcher ioDispatcher: CoroutineDispatcher,
+//        @ApplicationContext context: Context
+//    ): StorageSource = LocalStorageSource(ioDispatcher, context)
 
     @Singleton
     @Provides
