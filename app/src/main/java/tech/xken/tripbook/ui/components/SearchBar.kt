@@ -55,7 +55,7 @@ fun SearchBar(
     Card(
         modifier = modifier.padding(2.dp),
         shape = RoundedCornerShape(50f),
-        elevation = if (query.isBlank()) 4.dp else 8.dp,
+        elevation = if (query.isBlank()) 1.dp else 1.dp,
         border = if (query.isBlank()) null else BorderStroke(
             width = 1.dp,
             color = if (isError()) MaterialTheme.colors.error else MaterialTheme.colors.primary

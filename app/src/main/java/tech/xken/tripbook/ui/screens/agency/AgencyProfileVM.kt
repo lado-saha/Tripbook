@@ -44,6 +44,10 @@ enum class AgencyProfileSheetStatus {
     ACTIONS, NONE
 }
 
+enum class AgencyProfileDialogStatus {
+    ABOUT_ACCOUNT, ABOUT_PHONE_SUPPORT, ABOUT_EMAIL_SUPPORT, ABOUT_SOCIAL_SUPPORT, ABOUT_REFUND_POLICY, ABOUT_MAIN_PAGE, NONE, FAILED_GET_ACCOUNT, FAILED_GET_PHONE_SUPPORT, FAILED_GET_EMAIL_SUPPORT, FAILED_GET_SOCIAL_SUPPORT, FAILED_GET_REFUND_POLICY
+}
+
 @HiltViewModel
 class AgencyProfileVM @Inject constructor(
     private val repo: AgencyRepository,
@@ -56,12 +60,6 @@ class AgencyProfileVM @Inject constructor(
     private val _isInitComplete = MutableStateFlow(authRepo.agencyId == NEW_ID)
     private val _isComplete = MutableStateFlow(false)
     private val _dialogStatus = MutableStateFlow(AgencyProfileDialogStatus.NONE)
-
-//    private val _hasAccount = MutableStateFlow(authRepo.agencyId != NEW_ID)
-//    private val _emailSupportCount = MutableStateFlow(0)
-//    private val _phoneSupportCount = MutableStateFlow(0)
-//    private val _refundPoliciesCount = MutableStateFlow(0)
-//    private val _hasSocialSupport = MutableStateFlow(false)
 
     private val _isAccountComplete = MutableStateFlow(false)
     private val _isPhoneSupportComplete = MutableStateFlow(false)
@@ -183,8 +181,4 @@ class AgencyProfileVM @Inject constructor(
     companion object {
         const val TAG = "AP_VM"
     }
-}
-
-enum class AgencyProfileDialogStatus {
-    ABOUT_ACCOUNT, ABOUT_PHONE_SUPPORT, ABOUT_EMAIL_SUPPORT, ABOUT_SOCIAL_SUPPORT, ABOUT_REFUND_POLICY, ABOUT_MAIN_PAGE, NONE, FAILED_GET_ACCOUNT, FAILED_GET_PHONE_SUPPORT, FAILED_GET_EMAIL_SUPPORT, FAILED_GET_SOCIAL_SUPPORT, FAILED_GET_REFUND_POLICY
 }

@@ -2,6 +2,7 @@
 
 package tech.xken.tripbook.ui.screens.booking
 
+import android.app.Activity
 import android.content.Intent
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -53,12 +54,14 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import tech.xken.tripbook.R
 import tech.xken.tripbook.data.AuthRepo
 import tech.xken.tripbook.data.models.ActionItem
 import tech.xken.tripbook.data.models.ActionSheet
 import tech.xken.tripbook.data.models.MainAction
+import tech.xken.tripbook.data.models.Results
 import tech.xken.tripbook.data.sources.booker.BookerRepository
 import tech.xken.tripbook.domain.NetworkState
 import tech.xken.tripbook.domain.WhileUiSubscribed
@@ -98,10 +101,9 @@ class AgencyPortalVM @Inject constructor(
     @NetworkStateFlowAnnot val networkState: NetworkState
 ) : ViewModel() {
     private val _message = MutableStateFlow<Int?>(null)
-    private val _isInitComplete = MutableStateFlow(!authRepo.hasAccount)
+    private val _isInitComplete = MutableStateFlow(false)
     private val _isComplete = MutableStateFlow(false)
     private val _dialogStatus = MutableStateFlow(AgencyPortalDialogState.NONE)
-    private val _hasAccount = MutableStateFlow(authRepo.hasAccount)
     private val _sheetState = MutableStateFlow(AgencyPortalSheetState.NONE)
     private val _hasAgencyConfigs = MutableStateFlow(false)
 
@@ -111,9 +113,22 @@ class AgencyPortalVM @Inject constructor(
         _isInitComplete,
         _isComplete,
         _dialogStatus,
-        _hasAccount,
+        repo.countBookerAccount(authRepo.bookerId ?: "").map { account ->
+            when (account) {
+                is Results.Failure -> {
+                    false
+                }
+                is Results.Success -> {
+                    (account.data > 0L).also {
+                        // No need to initialise if there is no account
+                        _isInitComplete.value = !it
+                    }
+                }
+            }
+        },
         _hasAgencyConfigs,
         _sheetState,
+
     ) {
         AgencyPortalUiState(
             message = it[0] as Int?,
@@ -201,8 +216,9 @@ fun AgencyPortal(
     val uis by vm.uiState.collectAsState()
     val context = LocalContext.current
     if (uis.isComplete) {
-        val intent = Intent(context, MainAgencyActivity::class.java)
-        context.startActivity(intent)
+        onNavigateToAgency()
+//        val intent = Intent(context, MainAgencyActivity::class.java)
+//        context. startActivity(intent)
         vm.onCompleteChange(false)
     }
 
@@ -337,7 +353,6 @@ fun AgencyPortal(
                 )
             },
         ) { paddingValues ->
-
             Column(
                 modifier = Modifier
                     .padding(paddingValues)

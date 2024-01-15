@@ -27,8 +27,10 @@ class MainAgencyActivity : ComponentActivity() {
                 AgencyNavGraph(
                     authRepo = vm.authRepo,
                     modifier = Modifier.fillMaxSize(),
+                    activity = this
                 )
             }
         }
     }
+    
 }

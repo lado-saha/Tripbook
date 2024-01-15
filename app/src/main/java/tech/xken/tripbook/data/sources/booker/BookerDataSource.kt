@@ -7,6 +7,8 @@ import tech.xken.tripbook.data.models.booker.BookerMoMoAccount
 import tech.xken.tripbook.data.models.booker.BookerOMAccount
 
 interface BookerDataSource {
+    fun countBookerAccountStream(bookerId: String): Flow<Results<Long>>
+    suspend fun countBookerAccount(bookerId: String): Results<Long>
     suspend fun createBooker(booker: Booker): Results<Booker?>
     suspend fun updateBooker(booker: Booker): Results<Booker?>
     suspend fun bookerFromId(bookerId: String, columns: List<String> = listOf()): Results<Booker?>

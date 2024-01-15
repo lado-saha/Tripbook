@@ -1,18 +1,13 @@
 package tech.xken.tripbook.ui.navigation
 
-import androidx.activity.result.ActivityResult
 import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.Divider
@@ -21,8 +16,8 @@ import androidx.compose.material.Icon
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.ModalDrawer
 import androidx.compose.material.Text
-import androidx.compose.material.TextButton
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.AccountBalanceWallet
 import androidx.compose.material.icons.outlined.AccountCircle
 import androidx.compose.material.icons.outlined.AppRegistration
 import androidx.compose.material.icons.outlined.Book
@@ -35,12 +30,8 @@ import androidx.compose.material.icons.outlined.Search
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -226,22 +217,23 @@ private fun BookingDrawerContent(
                 isBold = true
             )
 
-            Divider(
-                modifier = Modifier
-                    .padding(bottom = 18.dp)
-                    .fillMaxWidth()
-            )
 
-            ActionItem(
-                action = MainAction(R.string.lb_agency_portal, Icons.Outlined.EmojiTransportation),
-                isSelected = currentRoute == AGENCY_PORTAL_ROUTE,
-                onClick = {
-                    navigateToAgencyPortal()
-                    closeDrawer()
-                },
-                isBold = true
-            )
         }
+        Divider(
+            modifier = Modifier
+                .padding(bottom = 18.dp)
+                .fillMaxWidth()
+        )
+
+        ActionItem(
+            action = MainAction(R.string.lb_agency_portal, Icons.Outlined.EmojiTransportation),
+            isSelected = currentRoute == AGENCY_PORTAL_ROUTE,
+            onClick = {
+                navigateToAgencyPortal()
+                closeDrawer()
+            },
+            isBold = true
+        )
 
     }
 }
@@ -262,7 +254,7 @@ fun AgencyModalDrawer(
             AgencyDrawerContent(
                 currentRoute = currentRoute,
                 navigateBackToAgencyPortal = {
-
+                    agencyNavActions.leaveAgency()
                 },
                 navigateToAgencyProfile = {
                     coroutineScope.launch {
@@ -275,7 +267,17 @@ fun AgencyModalDrawer(
                     coroutineScope.launch {
                         agencyNavActions.navigateHelpCenter()
                     }
-                }
+                },
+                navigateToAgencyFinance = {
+                    coroutineScope.launch {
+                        agencyNavActions.navigateToAgencyFinance()
+                    }
+                },
+//                navigateToAgencySupport = {
+//                    coroutineScope.launch {
+//                        agencyNavActions.navigateToAgencySupport()
+//                    }
+//                }
             )
         }, drawerElevation = 0.dp
     ) {
@@ -288,6 +290,8 @@ private fun AgencyDrawerContent(
     currentRoute: String,
     navigateToAgencyProfile: () -> Unit,
     navigateBackToAgencyPortal: () -> Unit,
+//    navigateToAgencySupport: () -> Unit,
+    navigateToAgencyFinance: () -> Unit,
     navigateToAgencyHelpCenter: () -> Unit,
     closeDrawer: () -> Unit,
     modifier: Modifier = Modifier,
@@ -338,6 +342,19 @@ private fun AgencyDrawerContent(
             isBold = true
         )
 
+//        ActionItem(
+//            action = MainAction(
+//                nameStr = R.string.lb_agency_support,
+//                icon = Icons.Outlined.Support
+//            ),
+//            isSelected = currentRoute == AgencyDestinations.AGENCY_SUPPORT_ROUTE,
+//            onClick = {
+//                closeDrawer()
+//                navigateToAgencySupport()
+//            },
+//            isBold = true
+//        )
+
         ActionItem(
             action = MainAction(
                 R.string.lb_help_center, Icons.Outlined.HelpCenter,
@@ -345,7 +362,19 @@ private fun AgencyDrawerContent(
             isSelected = currentRoute == AgencyDestinations.AGENCY_HELP_CENTER_ROUTE,
             onClick = {
                 closeDrawer()
-                navigateToAgencyHelpCenter()
+//                navigateToAgencyHelpCenter()
+            },
+            isBold = true
+        )
+
+        ActionItem(
+            action = MainAction(
+                R.string.lb_agency_finance, Icons.Outlined.AccountBalanceWallet,
+            ),
+            isSelected = currentRoute == AgencyDestinations.AGENCY_FINANCE_ROUTE,
+            onClick = {
+                closeDrawer()
+                navigateToAgencyFinance()
             },
             isBold = true
         )
@@ -360,7 +389,7 @@ private fun AgencyDrawerContent(
             action = MainAction(
                 R.string.lb_agency_portal, Icons.Outlined.Logout,
             ),
-            isSelected = currentRoute == BookingDestinations.AGENCY_PORTAL_ROUTE,
+            isSelected = currentRoute == AGENCY_PORTAL_ROUTE,
             onClick = {
                 closeDrawer()
                 navigateBackToAgencyPortal()
@@ -369,83 +398,5 @@ private fun AgencyDrawerContent(
         )
 
 
-    }
-}
-
-@Composable
-private fun DrawerHeader(
-    phoneNumber: String,
-    modifier: Modifier = Modifier,
-) {
-    Column(
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
-        modifier = modifier
-            .fillMaxWidth()
-            .background(MaterialTheme.colors.primary)
-//            .height(dimensionResource(id = R.dimen.header_height))
-            .height(20.dp)
-            .padding(dimensionResource(id = R.dimen.header_padding))
-    ) {
-//        Icon(
-//            imageVector = Icons.Outlined.AccountCircle,
-//            contentDescription = stringResource(id = R.string.desc_nav_account),
-//            modifier = Modifier
-//                .size(100.dp)
-//                .padding(2.dp) /*.width(dimensionResource(id = R.dimen.header_image_width))*/,
-//            tint = MaterialTheme.colors.onPrimary
-//        )
-//        Text(
-//            text = phoneNumber,
-//            color = MaterialTheme.colors.onPrimary,
-//            modifier = Modifier
-//                .fillMaxWidth()
-//                .padding(2.dp),
-//            textAlign = TextAlign.Center
-//        )
-    }
-}
-
-@Composable
-private fun DrawerButton(
-    imageVector: ImageVector,
-    label: String,
-    isSelected: Boolean,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    val tintColor = if (isSelected) {
-        MaterialTheme.colors.secondary
-    } else {
-        MaterialTheme.colors.onSurface
-    }
-
-    TextButton(
-        onClick = { onClick() },
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(horizontal = dimensionResource(id = R.dimen.horizontal_margin)),
-    ) {
-        Row(
-            horizontalArrangement = Arrangement.Start,
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Icon(
-                imageVector = imageVector,
-                contentDescription = null, // decorative
-                tint = tintColor,
-                modifier = Modifier.size(24.dp)
-            )
-            Spacer(Modifier.width(18.dp))
-            Text(
-                text = label.caps,
-                style = MaterialTheme.typography.button.run {
-                    if (isSelected) this.copy(fontWeight = FontWeight.Bold)
-                    else this
-                },
-                color = tintColor
-            )
-        }
     }
 }

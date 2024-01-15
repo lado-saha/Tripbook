@@ -36,6 +36,9 @@ interface BookerDao {
     @Update
     fun updateBookerOMAccount(account: BookerOMAccount)
 
+    @Query("SELECT COUNT(booker_id) FROM booker WHERE booker_id = :bookerId")
+    fun countBookerAccount(bookerId: String): Flow<Long>
+
     @Query("SELECT COUNT(phone_number) FROM booker_momo_account WHERE booker_id = :bookerId")
     fun countBookerMoMoAccounts(bookerId: String): Flow<Long>
 

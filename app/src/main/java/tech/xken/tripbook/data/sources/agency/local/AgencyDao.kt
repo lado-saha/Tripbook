@@ -7,6 +7,11 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.datetime.Instant
 import tech.xken.tripbook.data.models.agency.AgencyAccount
 import tech.xken.tripbook.data.models.agency.AgencyEmailSupport
+import tech.xken.tripbook.data.models.agency.AgencyGraphics
+import tech.xken.tripbook.data.models.agency.AgencyLegalDocs
+import tech.xken.tripbook.data.models.agency.AgencyMoMoAccount
+import tech.xken.tripbook.data.models.agency.AgencyOMAccount
+import tech.xken.tripbook.data.models.agency.AgencyPayPalAccount
 import tech.xken.tripbook.data.models.agency.AgencyPhoneSupport
 import tech.xken.tripbook.data.models.agency.AgencyRefundPolicy
 import tech.xken.tripbook.data.models.agency.AgencySocialSupport
@@ -23,7 +28,18 @@ interface AgencyDao {
     @Query("select * from agency_social_support where agency_id = :agencyId")
     fun agencySocialSupports(agencyId: String): AgencySocialSupport
     @Query("select * from agency_refund_policy where agency_id = :agencyId")
-    fun agencyRefundPolicies(agencyId: String): List<AgencyRefundPolicy>
+    fun agencyRefundPolicies(agencyId: String): List<AgencyRefundPolicy>//---------------------
+    @Query("select * from agency_momo_account where agency_id = :agencyId")
+    fun agencyMoMoAccounts(agencyId: String): List<AgencyMoMoAccount>
+    @Query("select * from agency_om_account where agency_id = :agencyId")
+    fun agencyOMAccounts(agencyId: String): List<AgencyOMAccount>
+    @Query("select * from agency_paypal_account where agency_id = :agencyId")
+    fun agencyPayPalAccounts(agencyId: String): List<AgencyPayPalAccount>
+    @Query("select * from agency_legal_docs where agency_id = :agencyId")
+    fun agencyLegalDocs(agencyId: String): AgencyLegalDocs
+    @Query("select * from agency_graphics where agency_id = :agencyId")
+    fun agencyGraphics(agencyId: String): AgencyGraphics
+
 
     @Query("select max(modified_on) from agency_account where agency_id = :agencyId")
     fun agencyAccountLastModifiedOn(agencyId: String):Instant?
@@ -34,7 +50,17 @@ interface AgencyDao {
     @Query("select max(modified_on) from agency_social_support where agency_id = :agencyId")
     fun agencySocialSupportsLastModifiedOn(agencyId: String):Instant?
     @Query("select max(modified_on) from agency_refund_policy where agency_id = :agencyId")
-    fun agencyRefundPoliciesLastModifiedOn(agencyId: String):Instant?
+    fun agencyRefundPoliciesLastModifiedOn(agencyId: String):Instant?//-------------------------
+    @Query("select max(modified_on) from agency_momo_account where agency_id = :agencyId")
+    fun agencyMoMoAccountsLastModifiedOn(agencyId: String): Instant?
+    @Query("select max(modified_on) from agency_om_account where agency_id = :agencyId")
+    fun agencyOMAccountsLastModifiedOn(agencyId: String): Instant?
+    @Query("select max(modified_on) from agency_paypal_account where agency_id = :agencyId")
+    fun agencyPayPalAccountsLastModifiedOn(agencyId: String): Instant?
+    @Query("select max(modified_on) from agency_legal_docs where agency_id = :agencyId")
+    fun agencyLegalDocsLastModifiedOn(agencyId: String): Instant?
+    @Query("select max(modified_on) from agency_graphics where agency_id = :agencyId")
+    fun agencyGraphicsLastModifiedOn(agencyId: String): Instant?
 
     @Query("select count(agency_id) from agency_account where agency_id = :agencyId")
     fun agencyAccountCount(agencyId: String): Flow<Long>
@@ -45,7 +71,17 @@ interface AgencyDao {
     @Query("select count(agency_id) from agency_social_support where agency_id = :agencyId")
     fun agencySocialSupportsCount(agencyId: String): Flow<Long>
     @Query("select count(agency_id) from agency_refund_policy where agency_id = :agencyId")
-    fun agencyRefundPoliciesCount(agencyId: String): Flow<Long>
+    fun agencyRefundPoliciesCount(agencyId: String): Flow<Long>//-------------------------------------
+    @Query("select count(agency_id) from agency_momo_account where agency_id = :agencyId")
+    fun agencyMoMoAccountsCount(agencyId: String): Flow<Long>
+    @Query("select count(agency_id) from agency_om_account where agency_id = :agencyId")
+    fun agencyOMAccountsCount(agencyId: String): Flow<Long>
+    @Query("select count(agency_id) from agency_paypal_account where agency_id = :agencyId")
+    fun agencyPayPalAccountsCount(agencyId: String): Flow<Long>
+    @Query("select count(agency_id) from agency_legal_docs where agency_id = :agencyId")
+    fun agencyLegalDocsCount(agencyId: String): Flow<Long>
+    @Query("select count(agency_id) from agency_graphics where agency_id = :agencyId")
+    fun agencyGraphicsCount(agencyId: String): Flow<Long>
 
     @Query("select * from agency_account where agency_id = :agencyId")
     fun agencyAccountFlow(agencyId: String): Flow<AgencyAccount>
@@ -56,20 +92,21 @@ interface AgencyDao {
     @Query("select * from agency_social_support where agency_id = :agencyId")
     fun agencySocialSupportFlow(agencyId: String):Flow<AgencySocialSupport>
     @Query("select * from agency_refund_policy where agency_id = :agencyId")
-    fun agencyRefundPolicyFlow(agencyId: String):Flow< List<AgencyRefundPolicy>>
+    fun agencyRefundPolicyFlow(agencyId: String):Flow< List<AgencyRefundPolicy>>//----------------------------
+    @Query("select * from agency_momo_account where agency_id = :agencyId")
+    fun agencyMoMoAccountsFlow(agencyId: String): Flow<List<AgencyMoMoAccount>>
+    @Query("select * from agency_om_account where agency_id = :agencyId")
+    fun agencyOMAccountsFlow(agencyId: String): Flow<List<AgencyOMAccount>>
+    @Query("select * from agency_paypal_account where agency_id = :agencyId")
+    fun agencyPayPalAccountsFlow(agencyId: String): Flow<List<AgencyPayPalAccount>>
+    @Query("select * from agency_legal_docs where agency_id = :agencyId")
+    fun agencyLegalDocsFlow(agencyId: String): Flow<AgencyLegalDocs>
+    @Query("select * from agency_graphics where agency_id = :agencyId")
+    fun agencyGraphicsFlow(agencyId: String): Flow<AgencyGraphics>
+
 //    @Query("select max(modified_on) from agency_account where agency_id=:agencyId")
 //    fun agencyLastModifiedOn(agencyId: String): Instant?
 
-//    @Insert
-//    fun createAgencyAccount(account: AgencyAccount)
-//    @Insert
-//    fun createEmailSupports(supports: List<AgencyEmailSupport>)
-//    @Insert
-//    fun createPhoneSupports(supports: List<AgencyPhoneSupport>)
-//    @Insert
-//    fun createSocialSupport(support: AgencySocialSupport)
-//    @Insert
-//    fun createRefundPolicies(policies: List<AgencyRefundPolicy>)
     @Upsert
     fun upsertAgencyAccount(account: AgencyAccount)
     @Upsert
@@ -80,6 +117,17 @@ interface AgencyDao {
     fun upsertSocialSupport(support: AgencySocialSupport)
     @Upsert
     fun upsertRefundPolicies(supports: List<AgencyRefundPolicy>)
+    @Upsert
+    fun upsertMoMoAccounts(accounts: List<AgencyMoMoAccount>)
+    @Upsert
+    fun upsertOMAccounts(accounts: List<AgencyOMAccount>)
+    @Upsert
+    fun upsertPayPalAccounts(accounts: List<AgencyPayPalAccount>)
+    @Upsert
+    fun upsertAgencyLegalDocs(legalDocs: AgencyLegalDocs)
+    @Upsert
+    fun upsertAgencyGraphics(graphics: AgencyGraphics)
+
 
 //    @Query("delete from agency_account where agency_id = :agencyId")
 //    fun deleteAgencyAccount(agencyId: String)
@@ -91,6 +139,16 @@ interface AgencyDao {
     fun deleteSocialSupport(agencyId: String)
     @Query("delete from agency_refund_policy where agency_id = :agencyId and reason in (:reasons)")
     fun deleteRefundPolicies(agencyId: String, reasons: List<TripCancellationReason>)
+    @Query("delete from agency_momo_account where agency_id = :agencyId and phone_number in (:phoneNumbers) ")
+    fun deleteMoMoAccounts(agencyId: String, phoneNumbers: List<String>)
+    @Query("delete from agency_om_account where agency_id = :agencyId and phone_number in (:phoneNumbers) ")
+    fun deleteOMAccounts(agencyId: String, phoneNumbers: List<String>)
+    @Query("delete from agency_paypal_account where agency_id = :agencyId and email in (:emails)")
+    fun deletePayPalAccounts(agencyId: String, emails: List<String>)
+    @Query("delete from agency_legal_docs where agency_id = :agencyId")
+    fun deleteAgencyLegalDocs(agencyId: String)
+    @Query("delete from agency_graphics where agency_id = :agencyId ")
+    fun deleteAgencyGraphics(agencyId: String)
 }
 //    /**
 //     * gets all scanner's associated permissions

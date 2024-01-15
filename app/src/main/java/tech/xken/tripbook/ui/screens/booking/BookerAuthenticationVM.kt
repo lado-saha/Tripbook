@@ -251,7 +251,7 @@ class BookerAuthenticationVM @Inject constructor(
             else authRepo.signInBooker(_credentials.value).also {
                 when (it) {
                     is Results.Failure -> {
-                        when (it.exception as RestException) {
+                        when (it.exception) {
                             is BadRequestRestException -> {
                                 if (it.exception.error == "Signups not allowed for otp") {
                                     onDialogStateChange(BookerAuthenticationDialogState.SIGN_UP_INSTEAD)

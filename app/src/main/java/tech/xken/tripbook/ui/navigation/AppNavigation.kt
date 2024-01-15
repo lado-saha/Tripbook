@@ -1,18 +1,28 @@
 package tech.xken.tripbook.ui.navigation
 
+import android.app.Activity
+import android.content.Context
+import android.content.Intent
+import androidx.activity.result.ActivityResultLauncher
 import androidx.navigation.NavHostController
 import tech.xken.tripbook.data.AuthRepo
+import tech.xken.tripbook.data.models.ImageUiState
 import tech.xken.tripbook.data.models.agency.Station
 import tech.xken.tripbook.domain.DEFAULT_UNIV_QUERY_FIELDS
+import tech.xken.tripbook.ui.navigation.AgencyArgs.AGENCY_CALLER_UUID
 import tech.xken.tripbook.ui.navigation.AgencyArgs.AGENCY_ID
+import tech.xken.tripbook.ui.navigation.AgencyArgs.AGENCY_IMAGE_UI_STATE
 import tech.xken.tripbook.ui.navigation.AgencyArgs.AGENCY_STATION_ID
 import tech.xken.tripbook.ui.navigation.AgencyArgs.AGENCY_STATION_IS_EDIT_MODE
 import tech.xken.tripbook.ui.navigation.AgencyArgs.AGENCY_STATION_JOB_ID
 import tech.xken.tripbook.ui.navigation.AgencyArgs.AGENCY_STATION_LAT
 import tech.xken.tripbook.ui.navigation.AgencyArgs.AGENCY_STATION_LON
 import tech.xken.tripbook.ui.navigation.AgencyArgs.AGENCY_STATION_NAME
+import tech.xken.tripbook.ui.navigation.AgencyDestinations.AGENCY_FINANCE_ROUTE
 import tech.xken.tripbook.ui.navigation.AgencyDestinations.AGENCY_PROFILE_ROUTE
+import tech.xken.tripbook.ui.navigation.AgencyScreens.AGENCY_FINANCE
 import tech.xken.tripbook.ui.navigation.AgencyScreens.AGENCY_HELP_CENTER
+import tech.xken.tripbook.ui.navigation.AgencyScreens.AGENCY_IMAGE_PICKER
 import tech.xken.tripbook.ui.navigation.AgencyScreens.AGENCY_PROFILE
 import tech.xken.tripbook.ui.navigation.AgencyScreens.AGENCY_STATION_DASHBOARD
 import tech.xken.tripbook.ui.navigation.AgencyScreens.AGENCY_STATION_JOBS
@@ -21,7 +31,6 @@ import tech.xken.tripbook.ui.navigation.AgencyScreens.AGENCY_STATION_LOCATION
 import tech.xken.tripbook.ui.navigation.AgencyScreens.AGENCY_STATION_PERSONNEL
 import tech.xken.tripbook.ui.navigation.AgencyScreens.AGENCY_STATION_PROFILE
 import tech.xken.tripbook.ui.navigation.BookingDestinations.AGENCY_PORTAL_ROUTE
-import tech.xken.tripbook.ui.navigation.BookingDestinations.BOOKER_ACCOUNT_ROUTE
 import tech.xken.tripbook.ui.navigation.BookingDestinations.BOOKER_CREDIT_CARDS_ACCOUNTS_ROUTE
 import tech.xken.tripbook.ui.navigation.BookingDestinations.BOOKER_MOMO_ACCOUNTS_ROUTE
 import tech.xken.tripbook.ui.navigation.BookingDestinations.BOOKER_MOMO_ACCOUNT_DETAILS_ROUTE
@@ -37,6 +46,7 @@ import tech.xken.tripbook.ui.navigation.BookingScreens.BOOKER_AUTHENTICATION
 import tech.xken.tripbook.ui.navigation.BookingScreens.BOOKER_BOOKS
 import tech.xken.tripbook.ui.navigation.BookingScreens.BOOKER_CREDIT_CARDS_ACCOUNTS
 import tech.xken.tripbook.ui.navigation.BookingScreens.BOOKER_CREDIT_CARD_ACCOUNT_DETAILS
+import tech.xken.tripbook.ui.navigation.BookingScreens.BOOKER_IMAGE_PICKER
 import tech.xken.tripbook.ui.navigation.BookingScreens.BOOKER_MOMO_ACCOUNTS
 import tech.xken.tripbook.ui.navigation.BookingScreens.BOOKER_MOMO_ACCOUNT_DETAILS
 import tech.xken.tripbook.ui.navigation.BookingScreens.BOOKER_OM_ACCOUNTS
@@ -50,6 +60,7 @@ import tech.xken.tripbook.ui.navigation.UniverseArgs.UNIVERSE_SEARCH_RETURN_TOWN
 import tech.xken.tripbook.ui.navigation.UniverseArgs.UNIV_SEARCH_CALLER_SCREEN
 import tech.xken.tripbook.ui.navigation.UniverseArgs.UNIV_SEARCH_FIELDS
 import tech.xken.tripbook.ui.navigation.UniverseArgs.UNIV_SEARCH_HAS_PRESELECTED_FIELDS
+import tech.xken.tripbook.ui.screens.agency.MainAgencyActivity
 import java.util.UUID
 
 /** Screens */
@@ -65,7 +76,9 @@ object AgencyScreens {
 
     //    -------------------------------------------------
     const val AGENCY_PROFILE = "agency_profile"
+    const val AGENCY_SUPPORT = "agency_support"
     const val AGENCY_HELP_CENTER = "agency_help_center"
+    const val AGENCY_FINANCE = "agency_finance"
 //    -------------------------------------------------
 
     const val AGENCY_STATION_DASHBOARD = "station_dashboard"
@@ -75,6 +88,7 @@ object AgencyScreens {
     const val AGENCY_STATION_JOBS = "station_jobs"
     const val AGENCY_STATION_JOB_DETAILS = "station_jobs_details"
 
+    const val AGENCY_IMAGE_PICKER = "ag_image_picker"
 }
 
 object BookingScreens {
@@ -95,6 +109,8 @@ object BookingScreens {
     const val BOOKER_TRIP_DETAILS = "booker_trip_details"
     const val BOOKER_TRIP_PAYMENT = "booker_trip_payment"
     const val AGENCY_PORTAL = "agency_portal"
+
+    const val BOOKER_IMAGE_PICKER = "bo_image_picker"
 }
 
 /** Destinations */
@@ -121,6 +137,7 @@ object BookingDestinations {
         "$BOOKER_PROFILE/$BOOKER_CREDIT_CARD_ACCOUNT_DETAILS/{$CARD_NUMBER}"
 
     const val AGENCY_PORTAL_ROUTE = AGENCY_PORTAL
+    const val BOOKER_IMAGE_PICKER_ROUTE = BOOKER_IMAGE_PICKER
 }
 
 object UnivDestinations {
@@ -130,6 +147,9 @@ object UnivDestinations {
 
 object AgencyDestinations {
     const val AGENCY_PROFILE_ROUTE = AGENCY_PROFILE
+    const val AGENCY_FINANCE_ROUTE = AGENCY_FINANCE
+//    const val AGENCY_SUPPORT_ROUTE = AGENCY_SUPPORT
+
     const val AGENCY_STATION_DASHBOARD_ROUTE =
         "$AGENCY_STATION_DASHBOARD/{$AGENCY_STATION_IS_EDIT_MODE}/{$AGENCY_STATION_ID}"
     const val AGENCY_HELP_CENTER_ROUTE = AGENCY_HELP_CENTER
@@ -142,6 +162,8 @@ object AgencyDestinations {
     const val AGENCY_STATION_JOBS_ROUTE = "$AGENCY_STATION_JOBS/{$AGENCY_STATION_ID}"
     const val AGENCY_STATION_JOB_DETAILS_ROUTE =
         "$AGENCY_STATION_JOB_DETAILS/{$AGENCY_STATION_JOB_ID}"
+    const val AGENCY_IMAGE_PICKER_ROUTE =
+        "$AGENCY_IMAGE_PICKER/{$AGENCY_IMAGE_UI_STATE}/{$AGENCY_CALLER_UUID}"
 }
 
 /** Nav Args */
@@ -153,6 +175,8 @@ object AgencyArgs {
     const val AGENCY_STATION_LON = "station_lon"
     const val AGENCY_STATION_LAT = "station_lan"
     const val AGENCY_STATION_JOB_ID = "station_job_id"
+    const val AGENCY_IMAGE_UI_STATE = "agency_image_ui_state"
+    const val AGENCY_CALLER_UUID = "img_picker_caller"
 }
 
 object UniverseArgs {
@@ -170,13 +194,28 @@ object BookingNavArgs {
     const val PHONE_NUMBER = "phone_number"
     const val CARD_NUMBER = "card_number"
     const val MOMO_ACCOUNT = "momo_account"
+
+    const val BOOKER_IMAGE_UI_STATE = "img_ui_state_json"
 }
 
 /** Nav Actions */
-class BookingNavActions constructor(
+class BookingNavActions(
     private val navController: NavHostController,
-    private val authRepo: AuthRepo
+    private val authRepo: AuthRepo,
+    private val activityLauncher: ActivityResultLauncher<Intent>,
+    private val context: Context
 ) {
+
+//    private val parser: Json = Json { encodeDefaults = true }
+
+    fun navigateToImagePicker() {
+//        val strUiState =
+//            parser.encodeToString(imageUiState)
+        navController.navigate(route = BOOKER_IMAGE_PICKER) {
+            launchSingleTop = true
+        }
+    }
+
     fun navigateToSignIn(shouldSignOut: Boolean = false) {
         navController.navigate(route = "$BOOKER_AUTHENTICATION/$shouldSignOut") {
             launchSingleTop = true
@@ -190,7 +229,7 @@ class BookingNavActions constructor(
     }
 
     fun navigateToAccount() {
-        navController.navigate(BOOKER_ACCOUNT_ROUTE) {
+        navController.navigate("$BOOKER_PROFILE/$BOOKER_ACCOUNT") {
             launchSingleTop = true
         }
     }
@@ -267,16 +306,49 @@ class BookingNavActions constructor(
             launchSingleTop = true
         }
     }
+
+    fun navigateToAgency() {
+        activityLauncher.launch(Intent(context, MainAgencyActivity::class.java))
+    }
 }
 
-class AgencyNavActions(private val navController: NavHostController) {
+class AgencyNavActions(
+    private val navController: NavHostController,
+    private val activity: MainAgencyActivity
+) {
+    fun navigateToImagePicker(imageUiState: ImageUiState, callerUUID: String) {
+        navController.navigate(route = "$AGENCY_IMAGE_PICKER/${imageUiState}/$callerUUID") {
+            launchSingleTop = true
+        }
+    }
 
+    fun leaveAgency() {
+        activity.setResult(Activity.RESULT_OK)
+        activity.finish()
+    }
 
     fun navigateToAgencyProfile() {
         navController.navigate(route = AGENCY_PROFILE_ROUTE) {
             launchSingleTop = true
         }
     }
+
+
+    fun navigateToAgencyFinance() {
+        navController.navigate(route = AGENCY_FINANCE_ROUTE) {
+            launchSingleTop = true
+        }
+    }
+
+
+    /**
+     * Navigate to the main support page
+     */
+//    fun navigateToAgencySupport() {
+//        navController.navigate(route = AGENCY_SUPPORT_ROUTE) {
+//            launchSingleTop = true
+//        }
+//    }
 
     fun navigateHelpCenter() {
         navController.navigate(route = AGENCY_HELP_CENTER) {
@@ -333,7 +405,9 @@ class AgencyNavActions(private val navController: NavHostController) {
     }
 }
 
-class UnivNavActions(private val navController: NavHostController) {
+class UnivNavActions(
+    private val navController: NavHostController
+) {
     fun navigateToUnivSearch(
         hasPreselectedFields: Boolean,
         callerScreen: String,

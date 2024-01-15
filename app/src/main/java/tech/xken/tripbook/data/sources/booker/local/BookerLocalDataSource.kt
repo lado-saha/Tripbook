@@ -113,9 +113,20 @@ class BookerLocalDataSource internal constructor(
             }
         }
 
+    override fun countBookerAccountStream(bookerId: String) =
+        dao.countBookerAccount(bookerId).map {
+            try {
+                Success(it)
+            } catch (e: Exception) {
+                Failure(e)
+            }
+        }
+
     override suspend fun countBookerOMAccounts(bookerId: String) =
         TODO("Not yet implemented")
 
+    override suspend fun countBookerAccount(bookerId: String) =
+        TODO("Not yet implemented")
 
     override fun bookerMoMoAccountsStream(bookerId: String) =
         dao.bookerMoMoAccounts(bookerId).map {

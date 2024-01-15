@@ -6,6 +6,11 @@ import kotlinx.datetime.Instant
 import tech.xken.tripbook.data.models.Results
 import tech.xken.tripbook.data.models.agency.AgencyAccount
 import tech.xken.tripbook.data.models.agency.AgencyEmailSupport
+import tech.xken.tripbook.data.models.agency.AgencyGraphics
+import tech.xken.tripbook.data.models.agency.AgencyLegalDocs
+import tech.xken.tripbook.data.models.agency.AgencyMoMoAccount
+import tech.xken.tripbook.data.models.agency.AgencyOMAccount
+import tech.xken.tripbook.data.models.agency.AgencyPayPalAccount
 import tech.xken.tripbook.data.models.agency.AgencyPhoneSupport
 import tech.xken.tripbook.data.models.agency.AgencyRefundPolicy
 import tech.xken.tripbook.data.models.agency.AgencySocialSupport
@@ -14,6 +19,7 @@ import tech.xken.tripbook.data.models.agency.TripCancellationReason
 interface AgencyRepository {
 //    val channel: RealtimeChannel
     //    Agency account
+    suspend fun cancelJobs()
     suspend fun agencyAccountFullSync(agencyId: String): Results<Unit>
     suspend fun agencyAccount(agencyId: String): Results<AgencyAccount?>
     /**
@@ -25,12 +31,30 @@ interface AgencyRepository {
         offline: Boolean?,
         account: AgencyAccount,
     ): Results<AgencyAccount?>
-
     suspend fun updateAgencyAccount(
         agencyId: String, account: AgencyAccount
     ): Results<AgencyAccount?>
-
     fun countAgencyAccount(agencyId: String): Flow<Results<Long>>
+
+    //   Agency Graphics
+    suspend fun agencyGraphicsFullSync(agencyId: String, fromInstant: Instant?): Results<Unit>
+    suspend fun agencyGraphics(agencyId: String): Results<AgencyGraphics?>
+    fun agencyGraphicsLogFlow(agencyId: String): Flow<Results<AgencyGraphics.Log>>
+    fun agencyGraphicsFlow(agencyId: String): Flow<Results<AgencyGraphics>>
+    suspend fun createAgencyGraphics(graphics: AgencyGraphics): Results<AgencyGraphics?>
+    suspend fun updateAgencyGraphics(agencyId: String, graphics: AgencyGraphics): Results<AgencyGraphics?>
+    suspend fun deleteAgencyGraphics(agencyId: String): Results<Unit>
+    fun countAgencyGraphics(agencyId: String): Flow<Results<Long>>
+
+    // Agency Legal Documents
+    suspend fun legalDocsFullSync(agencyId: String, fromInstant: Instant?): Results<Unit>
+    suspend fun legalDocs(agencyId: String): Results<AgencyLegalDocs?>
+    fun legalDocsLogFlow(agencyId: String): Flow<Results<AgencyLegalDocs.Log>>
+    fun legalDocsFlow(agencyId: String): Flow<Results<AgencyLegalDocs>>
+    suspend fun createLegalDocs(docs: AgencyLegalDocs): Results<AgencyLegalDocs?>
+    suspend fun updateLegalDocs(agencyId: String, docs: AgencyLegalDocs): Results<AgencyLegalDocs?>
+    suspend fun deleteLegalDocs(agencyId: String): Results<Unit>
+    fun countLegalDocs(agencyId: String): Flow<Results<Long>>
 
     // Agency Email support
     suspend fun emailSupportsFullSync(agencyId: String): Results<Unit>
@@ -44,11 +68,9 @@ interface AgencyRepository {
         offline: Boolean?,
         supports: List<AgencyEmailSupport>
     ): Results<List<AgencyEmailSupport?>>
-
     suspend fun updateEmailSupports(
         agencyId: String, supports: List<AgencyEmailSupport>
     ): Results<List<AgencyEmailSupport?>>
-
     suspend fun deleteEmailSupports(agencyId: String, emails: List<String>): Results<Unit>
     fun countEmailSupports(agencyId: String): Flow<Results<Long>>
 
@@ -64,11 +86,9 @@ interface AgencyRepository {
         offline: Boolean?,
         supports: List<AgencyPhoneSupport>
     ): Results<List<AgencyPhoneSupport?>>
-
     suspend fun updatePhoneSupports(
         agencyId: String, supports: List<AgencyPhoneSupport>
     ): Results<List<AgencyPhoneSupport?>>
-
     suspend fun deletePhoneSupports(agencyId: String, phoneCodes: List<String>, phoneNumbers: List<String>): Results<Unit>
     fun countPhoneSupports(agencyId: String): Flow<Results<Long>>
 
@@ -84,11 +104,9 @@ interface AgencyRepository {
         offline: Boolean?,
         support: AgencySocialSupport
     ): Results<AgencySocialSupport?>
-
     suspend fun updateSocialSupports(
         agencyId: String, support: AgencySocialSupport
     ): Results<AgencySocialSupport?>
-
     suspend fun deleteSocialSupport(agencyId: String): Results<Unit>
     fun countSocialAccount(agencyId: String): Flow<Results<Long>>
 
@@ -110,6 +128,36 @@ interface AgencyRepository {
     ): Results<List<AgencyRefundPolicy?>>
     suspend fun deleteRefundPolicies(agencyId: String, reasons: List<TripCancellationReason>): Results<Unit>
     fun countRefundPolicies(agencyId: String): Flow<Results<Long>>
+
+    // MoMo Accounts
+    suspend fun moMoAccountsFullSync(agencyId: String, fromInstant: Instant?): Results<Unit>
+    suspend fun moMoAccounts(agencyId: String, phoneNumbers: List<String>): Results<List<AgencyMoMoAccount>>
+    fun moMoAccountsLogFlow(agencyId: String): Flow<Results<AgencyMoMoAccount.Log>>
+    fun moMoAccountsFlow(agencyId: String): Flow<Results<List<AgencyMoMoAccount>>>
+    suspend fun createMoMoAccounts(accounts: List<AgencyMoMoAccount>): Results<List<AgencyMoMoAccount?>>
+    suspend fun updateMoMoAccounts(agencyId: String, accounts: List<AgencyMoMoAccount>): Results<List<AgencyMoMoAccount?>>
+    suspend fun deleteMoMoAccounts(agencyId: String, phoneNumbers: List<String>): Results<Unit>
+    suspend fun countMoMoAccounts(agencyId: String): Flow<Results<Long>>
+
+    // OM Accounts
+    suspend fun oMAccountsFullSync(agencyId: String, fromInstant: Instant?): Results<Unit>
+    suspend fun oMAccounts(agencyId: String, phoneNumbers: List<String>): Results<List<AgencyOMAccount>>
+    fun oMAccountsLogFlow(agencyId: String): Flow<Results<AgencyOMAccount.Log>>
+    fun oMAccountsFlow(agencyId: String): Flow<Results<List<AgencyOMAccount>>>
+    suspend fun createOMAccounts(accounts: List<AgencyOMAccount>): Results<List<AgencyOMAccount?>>
+    suspend fun updateOMAccounts(agencyId: String, accounts: List<AgencyOMAccount>): Results<List<AgencyOMAccount?>>
+    suspend fun deleteOMAccounts(agencyId: String, phoneNumbers: List<String>): Results<Unit>
+    suspend fun countOMAccounts(agencyId: String): Flow<Results<Long>>
+
+    // PayPal Accounts
+    suspend fun payPalAccountsFullSync(agencyId: String, fromInstant: Instant?): Results<Unit>
+    suspend fun payPalAccounts(agencyId: String, email: List<String>): Results<List<AgencyPayPalAccount>>
+    fun payPalAccountsLogFlow(agencyId: String): Flow<Results<AgencyPayPalAccount.Log>>
+    fun payPalAccountsFlow(agencyId: String): Flow<Results<List<AgencyPayPalAccount>>>
+    suspend fun createPayPalAccounts(accounts: List<AgencyPayPalAccount>): Results<List<AgencyPayPalAccount?>>
+    suspend fun updatePayPalAccounts(agencyId: String, accounts: List<AgencyPayPalAccount>): Results<List<AgencyPayPalAccount?>>
+    suspend fun deletePayPalAccounts(agencyId: String, emails: List<String>): Results<Unit>
+    suspend fun countPayPalAccounts(agencyId: String): Flow<Results<Long>>
 
 
 //    /**

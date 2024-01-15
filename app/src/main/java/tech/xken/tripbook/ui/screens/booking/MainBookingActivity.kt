@@ -3,9 +3,13 @@
 package tech.xken.tripbook.ui.screens.booking
 
 
+import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -75,12 +79,19 @@ import tech.xken.tripbook.ui.navigation.BookingNavGraph
 import tech.xken.tripbook.ui.theme.TripbookTheme
 
 @AndroidEntryPoint
-class BookingActivity : ComponentActivity() {
+class MainBookingActivity : ComponentActivity() {
     private lateinit var vm: MainBookingVM
+    private lateinit var activityLauncher: ActivityResultLauncher<Intent>
+
 
     @OptIn(ExperimentalMaterialApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        activityLauncher = registerForActivityResult(
+            ActivityResultContracts.StartActivityForResult()
+        ) { it ->
+            Log.d("Booking", "${it.data}")
+        }
 
         setContent {
             vm = hiltViewModel(this)
@@ -243,7 +254,9 @@ class BookingActivity : ComponentActivity() {
                     if (syncUis.syncDone)
                         BookingNavGraph(
                             authRepo = vm.authRepo,
-                            modifier = Modifier.fillMaxSize()
+                            modifier = Modifier.fillMaxSize(),
+                            activityLauncher = activityLauncher,
+                            context = this
                         )
                     else
                         CacheSync(
@@ -256,6 +269,8 @@ class BookingActivity : ComponentActivity() {
             }
         }
     }
+
+
 }
 
 @Composable

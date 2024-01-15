@@ -9,6 +9,11 @@ import tech.xken.tripbook.ui.screens.booking.CacheSyncUiState
 
 interface BookerRepository {
     suspend fun createBooker(booker: Booker): Results<Booker?>
+    fun countBookerAccount(bookerId: String): Flow<Results<Long>>
+
+    /**
+     * Upload profile photo before uploding the
+     */
     suspend fun updateBooker(booker: Booker): Results<Booker?>
     suspend fun bookerFromId(bookerId: String, columns: List<String> = listOf()): Results<Booker?>
     suspend fun deleteBooker(bookerId: String): Results<Booker?>

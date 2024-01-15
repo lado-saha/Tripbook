@@ -7,6 +7,7 @@ import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.cancel
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -42,7 +43,12 @@ class MainAgencyVM @Inject constructor(
         realtimeSync()
     }
 
-
+    override fun onCleared() {
+        viewModelScope.launch {
+            agencyRepo.cancelJobs()
+        }
+        super.onCleared()
+    }
     /**
      * This is a list of background functions which will be launched and forgotten as long as the
      */

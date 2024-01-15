@@ -23,8 +23,8 @@ data class AgencyPhoneSupport(
     @CI("is_whatsapp") @SN("is_whatsapp") val isWhatsapp: Boolean = false,
     @CI("is_telegram") @SN("is_telegram") val isTelegram: Boolean = false,
     @CI("is_enabled") @SN("is_enabled") val isEnabled: Boolean = false,
-    @CI("added_on") @SN("added_on") val addedOn: Instant? = null,
     @CI("description") @SN("description") val description: String? = null,
+    @CI("added_on") @SN("added_on") val addedOn: Instant? = null,
     @CI("modified_on") @SN("modified_on") val modifiedOn: Instant? = null,
 ) {
     @Serializable
@@ -73,7 +73,6 @@ data class AgencyEmailSupport(
         @SN("added_on") val addedOn: Instant,
         @SN("db_action") val dbAction: DbAction,
         @SN("scanner_id") val scannerId: String?=null,
-
     ) {
         companion object {
             const val NAME = "agency_email_support_log"

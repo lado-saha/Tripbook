@@ -64,7 +64,7 @@ fun TripbookTheme(darkTheme: Boolean = isSystemInDarkTheme(), content: @Composab
                 colors.primary
             }.toArgb().also {
                 window.statusBarColor = it
-                window.navigationBarColor = it
+//                window.navigationBarColor = it
 
             }
 

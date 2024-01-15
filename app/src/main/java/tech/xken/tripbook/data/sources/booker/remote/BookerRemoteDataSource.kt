@@ -8,6 +8,7 @@ import io.github.jan.supabase.postgrest.query.Returning
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.decodeFromJsonElement
+import kotlinx.serialization.json.jsonArray
 import tech.xken.tripbook.data.models.Results
 import tech.xken.tripbook.data.models.Results.Failure
 import tech.xken.tripbook.data.models.Results.Success
@@ -39,26 +40,24 @@ class BookerRemoteDataSource @Inject constructor(
                 value = booker,
                 returning = Returning.REPRESENTATION
             )
-            Success(parser.decodeFromJsonElement<Booker>(result.body!!))
+            Success(parser.decodeFromJsonElement<List<Booker>>(result.body!!)[0])
         } catch (e: Exception) {
             Failure(e)
         }
     }
 
-    override suspend fun updateBooker(booker: Booker) =
-        withContext(ioDispatcher) {
-            try {
-                val result = client.postgrest[Schema.BOOKER, Booker.NAME].update(
-                    value = booker,
-                    returning = Returning.REPRESENTATION
-                ) {
-                    Booker::bookerId eq booker.bookerId
-                }
-                Success(parser.decodeFromJsonElement<List<Booker>>(result.body!!)[0])
-            } catch (e: Exception) {
-                Failure(e)
-            }
+    override suspend fun updateBooker(booker: Booker) = withContext(ioDispatcher) {
+        try {
+            val result = client.postgrest[Schema.BOOKER, Booker.NAME].update(
+                value = booker,
+                returning = Returning.REPRESENTATION
+            ) { Booker::bookerId eq booker.bookerId }
+
+            Success(parser.decodeFromJsonElement<List<Booker>>(result.body!!)[0])
+        } catch (e: Exception) {
+            Failure(e)
         }
+    }
 
     override suspend fun bookerFromId(bookerId: String, columns: List<String>): Results<Booker?> =
         withContext(ioDispatcher) {
@@ -154,10 +153,11 @@ class BookerRemoteDataSource @Inject constructor(
     override suspend fun updateBookerMoMoAccount(account: BookerMoMoAccount) =
         withContext(ioDispatcher) {
             try {
-                val result = client.postgrest[Schema.BOOKER, BookerMoMoAccount.NAME].update(account) {
-                    BookerMoMoAccount::bookerId eq account.bookerId
-                    BookerMoMoAccount::phoneNumber eq account.phoneNumber
-                }
+                val result =
+                    client.postgrest[Schema.BOOKER, BookerMoMoAccount.NAME].update(account) {
+                        BookerMoMoAccount::bookerId eq account.bookerId
+                        BookerMoMoAccount::phoneNumber eq account.phoneNumber
+                    }
                 Success(
                     parser.decodeFromJsonElement<List<BookerMoMoAccount>>(result.body!!).first()
                 )
@@ -195,6 +195,21 @@ class BookerRemoteDataSource @Inject constructor(
         }
     }
 
+    override suspend fun countBookerAccount(bookerId: String) = withContext(ioDispatcher) {
+        try {
+            val result = client.postgrest[Schema.BOOKER, Booker.NAME].select(
+                Columns.raw("*"),
+                true,
+                Count.EXACT
+            ) {
+                Booker::bookerId eq bookerId
+            }
+            Success(result.count()!!)
+        } catch (e: Exception) {
+            Failure(e)
+        }
+    }
+
     override suspend fun countBookerOMAccounts(bookerId: String) = withContext(ioDispatcher) {
         try {
             val result = client.postgrest[Schema.BOOKER, BookerOMAccount.NAME].select(
@@ -216,6 +231,7 @@ class BookerRemoteDataSource @Inject constructor(
     override fun bookerMoMoAccountsStream(bookerId: String) = TODO("Not implemented")
 
     override fun bookerOMAccountsStream(bookerId: String) = TODO("Not implemented")
+    override fun countBookerAccountStream(bookerId: String) = TODO("Not yet implemented")
 
     override suspend fun bookerOMAccounts(bookerId: String) = withContext(ioDispatcher) {
         try {
@@ -250,11 +266,12 @@ class BookerRemoteDataSource @Inject constructor(
     override suspend fun deleteBookerOMAccounts(bookerId: String, phoneNumbers: List<String>) =
         withContext(ioDispatcher) {
             try {
-                val result = client.postgrest[Schema.BOOKER, BookerOMAccount.NAME].delete {
+                client.postgrest[Schema.BOOKER, BookerOMAccount.NAME].delete {
                     BookerOMAccount::bookerId eq bookerId
                     BookerOMAccount::phoneNumber isIn phoneNumbers
+                }.run {
+                    Success(Unit)
                 }
-                Success(Unit)
             } catch (e: Exception) {
                 Failure(e)
             }

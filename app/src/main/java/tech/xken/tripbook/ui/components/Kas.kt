@@ -2,6 +2,7 @@ package tech.xken.tripbook.ui.components
 
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -23,15 +24,16 @@ import androidx.compose.material.LinearProgressIndicator
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.Image
 import androidx.compose.material.icons.outlined.Cancel
 import androidx.compose.material.icons.outlined.Check
 import androidx.compose.material.icons.outlined.CheckCircleOutline
+import androidx.compose.material.icons.outlined.ChevronRight
 import androidx.compose.material.icons.outlined.Close
 import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.outlined.FileDownload
 import androidx.compose.material.icons.outlined.Info
-import androidx.compose.material.icons.outlined.NavigateNext
+import androidx.compose.material.icons.outlined.OpenInNew
 import androidx.compose.material.icons.outlined.Refresh
 import androidx.compose.material.icons.outlined.Sort
 import androidx.compose.runtime.Composable
@@ -304,6 +306,28 @@ data class DashboardItemNoIconUiState(
     val isFailure: Boolean = false
 )
 
+/**
+ * Composable function that renders a dashboard item. A dashboard item is a widget that displays information about a specific data point.
+ *
+ * @param modifier A `Modifier` object that can be used to customize the appearance and behavior of the `DashboardItem`.
+ * @param uis A `DashboardItemUiState` object that contains the UI state of the `DashboardItem`. This includes the main icon, the other icon, the title, the subtitle, and the loading state.
+ * @param mainIconColor The color of the main icon.
+ * @param shape The shape of the `DashboardItem`.
+ * @param elevation The elevation of the `DashboardItem`. Depth of the shadow casted by this container on the screen
+ * @param mainIconSize The size of the main icon.
+ * @param border A `BorderStroke` object that can be used to add a border to the `DashboardItem`.
+ * @param onClick A callback function that is called when the `DashboardItem` is clicked.
+ * @param onHelpClick A callback function that is called when the help icon of the `DashboardItem` is clicked.
+ * @param onDeleteClick A callback function that is called when the delete icon of the `DashboardItem` is clicked.
+ * @param onLongClick A callback function that is called when the `DashboardItem` is long clicked.
+ * @param onRefreshClick A callback function that is called when the refresh icon of the `DashboardItem` is clicked.
+ * @param onOtherClick A callback function that is called when the other icon of the `DashboardItem` is clicked.
+ * @param otherIcon An `ImageVector` object that represents the other icon of the `DashboardItem`.
+ * @param otherIconTint The color of the other icon.
+ * @param content A `@Composable` function that is used to render the content of the `DashboardItem`. * This includes states and graphs etc
+ *
+ * @return None.
+ */
 @OptIn(ExperimentalFoundationApi::class, ExperimentalMaterialApi::class)
 @Composable
 fun DashboardItem(
@@ -408,7 +432,7 @@ fun DashboardItem(
                             modifier = Modifier.padding(2.dp)
                         ) {
                             Icon(
-                                imageVector = Icons.Outlined.NavigateNext,
+                                imageVector = Icons.Outlined.ChevronRight,
                                 contentDescription = null,
                                 tint = MaterialTheme.colors.primary
                             )
@@ -511,7 +535,7 @@ fun DashboardItem(
 
 }
 
-@OptIn(ExperimentalMaterialApi::class, ExperimentalFoundationApi::class)
+@OptIn(ExperimentalMaterialApi::class)
 @Composable
 fun DashboardItemNoIcon(
     modifier: Modifier = Modifier,
@@ -528,6 +552,7 @@ fun DashboardItemNoIcon(
     otherIcon: ImageVector? = null,
     otherIconTint: Color = MaterialTheme.colors.onSurface,
     onLongClick: () -> Unit = {},
+    fullScreen: Boolean = false,
     content: @Composable () -> Unit
 ) {
     Card(
@@ -549,6 +574,7 @@ fun DashboardItemNoIcon(
             if (!uis.isLoading && !uis.isFailure && !uis.isMarked)
                 Row(
                     modifier = Modifier
+                        .horizontalScroll(rememberScrollState())
                         .constrainAs(toolboxRef) {
                             centerHorizontallyTo(parent, 1f)
                             top.linkTo(parent.top)
@@ -591,7 +617,7 @@ fun DashboardItemNoIcon(
                             modifier = Modifier.padding(1.dp)
                         ) {
                             Icon(
-                                imageVector = Icons.Outlined.Refresh,
+                                imageVector = Icons.Outlined.FileDownload,
                                 contentDescription = null
                             )
                         }
@@ -614,7 +640,7 @@ fun DashboardItemNoIcon(
                             modifier = Modifier.padding(2.dp)
                         ) {
                             Icon(
-                                imageVector = Icons.Outlined.NavigateNext,
+                                imageVector = Icons.Outlined.OpenInNew,
                                 contentDescription = null,
                                 tint = MaterialTheme.colors.primary
                             )
@@ -663,7 +689,6 @@ fun DashboardItemNoIcon(
                     }
                     .padding(top = 2.dp)
                     .fillMaxWidth())
-
 
             if (uis.isMarked || uis.isFailure)
                 Card(
